@@ -32,8 +32,12 @@ export default function RegistroEmpresa() {
         sectorId: "",
         tipoId: "",
         descripcion: "",
+        nombreContacto: "",
+        password: "",
+        confirmPassword: "",
     });
     const [exito, setExito] = useState(false);
+    const [error, setError] = useState("");
 
     useEffect(() => {
         cargarSectores();
@@ -69,7 +73,17 @@ export default function RegistroEmpresa() {
     };
 
     const handleSubmit = async () => {
+        if (formulario.password !== formulario.confirmPassword) {
+            setError("Las contraseñas no coinciden");
+            return;
+        }
+        if (formulario.password.length < 6) {
+            setError("La contraseña debe tener al menos 6 caracteres");
+            return;
+        }
+
         setCargando(true);
+        setError("");
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
             const res = await fetch(`${apiUrl}/empresas`, {
@@ -80,9 +94,13 @@ export default function RegistroEmpresa() {
 
             if (res.ok) {
                 setExito(true);
+            } else {
+                const data = await res.json();
+                setError(data.message || "Error al registrar empresa");
             }
         } catch (error) {
             console.error("Error registrando empresa:", error);
+            setError("Error de conexión. Intenta de nuevo.");
         } finally {
             setCargando(false);
         }
@@ -213,9 +231,53 @@ export default function RegistroEmpresa() {
                                 />
                             </div>
 
+                            <div className="pt-4 border-t">
+                                <h3 className="font-semibold text-gray-900 mb-3">👤 Datos de tu Cuenta</h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Tu Nombre *</label>
+                                        <input
+                                            type="text"
+                                            value={formulario.nombreContacto}
+                                            onChange={(e) => setFormulario({ ...formulario, nombreContacto: e.target.value })}
+                                            placeholder="Juan Pérez"
+                                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña *</label>
+                                            <input
+                                                type="password"
+                                                value={formulario.password}
+                                                onChange={(e) => setFormulario({ ...formulario, password: e.target.value })}
+                                                placeholder="Mínimo 6 caracteres"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar *</label>
+                                            <input
+                                                type="password"
+                                                value={formulario.confirmPassword}
+                                                onChange={(e) => setFormulario({ ...formulario, confirmPassword: e.target.value })}
+                                                placeholder="Repetir contraseña"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+                                    {error}
+                                </div>
+                            )}
+
                             <button
                                 onClick={() => setPaso(2)}
-                                disabled={!formulario.nombre || !formulario.email || !formulario.telefono}
+                                disabled={!formulario.nombre || !formulario.email || !formulario.telefono || !formulario.nombreContacto || !formulario.password}
                                 className="w-full mt-4 bg-gradient-to-r from-primary to-primary-600 text-white py-4 rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
                             >
                                 Continuar <ArrowRight size={20} />

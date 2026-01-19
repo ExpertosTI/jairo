@@ -157,4 +157,90 @@ export class UsersService {
             client.release();
         }
     }
+
+    async completeOnboarding(userId: string, data: any) {
+        const client = await this.pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            // 1. Resolve Sector and Type IDs (simplistic mapping or exact match needed)
+            // UI sends 'tecnologia', we map to 'Tecnología' or look up by partial match
+            // For now, let's assume we search by name ILIKE
+            let sectorId = null;
+            if (data.sector) {
+                const sectorRes = await client.query('SELECT id FROM sectors WHERE name ILIKE $1 LIMIT 1', [data.sector]);
+                if (sectorRes.rows.length > 0) sectorId = sectorRes.rows[0].id;
+                else {
+                    // Fallback: Use first sector or specific 'Other' if exists. Or create?
+                    // Let's create 'Otros' if completely missing to avoid blockers
+                    const defaultSector = await client.query('SELECT id FROM sectors LIMIT 1');
+                    if (defaultSector.rows.length > 0) sectorId = defaultSector.rows[0].id;
+                }
+            }
+
+            let typeId = null;
+            if (data.tipoEmpresa) {
+                const typeRes = await client.query('SELECT id FROM company_types WHERE name ILIKE $1 LIMIT 1', [data.tipoEmpresa]);
+                if (typeRes.rows.length > 0) typeId = typeRes.rows[0].id;
+                else {
+                    const defaultType = await client.query('SELECT id FROM company_types LIMIT 1');
+                    if (defaultType.rows.length > 0) typeId = defaultType.rows[0].id;
+                }
+            }
+
+            // 2. Create Company
+            // Generate slug
+            const slug = data.empresaNombre.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.floor(Math.random() * 1000);
+
+            const companyRes = await client.query(`
+                INSERT INTO companies (name, slug, description, sector_id, type_id, website, status)
+                VALUES ($1, $2, $3, $4, $5, $6, 'active')
+                RETURNING id
+            `, [
+                data.empresaNombre,
+                slug,
+                data.empresaDescripcion,
+                sectorId,
+                typeId,
+                data.website
+            ]);
+            const companyId = companyRes.rows[0].id;
+
+            // 3. Update User
+            await client.query(`
+                UPDATE users 
+                SET name = COALESCE($2, name),
+                    phone = COALESCE($3, phone),
+                    job_title = COALESCE($4, job_title),
+                    company_id = $5,
+                    role = 'admin'  -- First user of company is admin
+                WHERE id = $1
+            `, [
+                userId,
+                data.nombre,
+                data.telefono,
+                data.cargo,
+                companyId
+            ]);
+
+            await client.query('COMMIT');
+
+            return {
+                message: 'Onboarding completado',
+                companyId: companyId,
+                user: {
+                    id: userId,
+                    name: data.nombre,
+                    role: 'admin'
+                }
+            };
+
+        } catch (error) {
+            await client.query('ROLLBACK');
+            this.logger.error('Error in completeOnboarding', error);
+            throw new HttpException('Error al completar onboarding', HttpStatus.INTERNAL_SERVER_ERROR);
+        } finally {
+            client.release();
+        }
+    }
 }

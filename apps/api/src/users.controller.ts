@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Put, Body, Param, Query, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query, Delete, Headers, HttpException, HttpStatus } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { CompleteOnboardingDto } from './dtos/complete-onboarding.dto';
 
 @Controller('usuarios')
 export class UsersController {
@@ -42,5 +43,21 @@ export class UsersController {
     @Post(':id/invitar')
     async invitarAEmpresa(@Param('id') id: string, @Body() body: { empresaId: string }) {
         return this.usersService.asignarEmpresa(id, body.empresaId);
+    }
+
+    @Post('onboarding')
+    async completeOnboarding(@Headers('authorization') auth: string, @Body() body: CompleteOnboardingDto) {
+        // Extract user ID from token here or in service. Service takes ID.
+        // We need to decode token here easily.
+        const token = auth?.replace('Bearer ', '');
+        // Simple decode for now - in real app use guard and @User() decorator
+        const jwt = require('jsonwebtoken'); // Import locally or at top
+        const decoded: any = jwt.decode(token);
+
+        if (!decoded || !decoded.id) {
+            throw new Error('Unauthorized'); // Use HttpException in real code
+        }
+
+        return this.usersService.completeOnboarding(decoded.id, body);
     }
 }

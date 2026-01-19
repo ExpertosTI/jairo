@@ -60,8 +60,24 @@ export class SeedService implements OnModuleInit {
                     role user_role DEFAULT 'user',
                     company_id UUID,
                     avatar VARCHAR(500),
+                    phone VARCHAR(20),
+                    job_title VARCHAR(100),
                     created_at TIMESTAMP DEFAULT NOW()
                 );
+            `);
+
+            // Migration for existing tables
+            await client.query(`
+                DO $$ BEGIN
+                    ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20);
+                EXCEPTION WHEN duplicate_column THEN null;
+                END $$;
+            `);
+            await client.query(`
+                DO $$ BEGIN
+                    ALTER TABLE users ADD COLUMN IF NOT EXISTS job_title VARCHAR(100);
+                EXCEPTION WHEN duplicate_column THEN null;
+                END $$;
             `);
 
             // Tabla de sectores
@@ -103,9 +119,39 @@ export class SeedService implements OnModuleInit {
                     rnc VARCHAR(20),
                     descripcion TEXT,
                     status company_status DEFAULT 'pending',
+                    stripe_customer_id VARCHAR(255),
+                    subscription_id VARCHAR(255),
+                    subscription_status VARCHAR(50) DEFAULT 'free',
+                    plan VARCHAR(50) DEFAULT 'free',
                     created_at TIMESTAMP DEFAULT NOW(),
                     updated_at TIMESTAMP DEFAULT NOW()
                 );
+            `);
+
+            // Migration for existing tables
+            await client.query(`
+                DO $$ BEGIN
+                    ALTER TABLE companies ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(255);
+                EXCEPTION WHEN duplicate_column THEN null;
+                END $$;
+            `);
+            await client.query(`
+                DO $$ BEGIN
+                    ALTER TABLE companies ADD COLUMN IF NOT EXISTS subscription_id VARCHAR(255);
+                EXCEPTION WHEN duplicate_column THEN null;
+                END $$;
+            `);
+            await client.query(`
+                DO $$ BEGIN
+                    ALTER TABLE companies ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(50) DEFAULT 'free';
+                EXCEPTION WHEN duplicate_column THEN null;
+                END $$;
+            `);
+            await client.query(`
+                DO $$ BEGIN
+                    ALTER TABLE companies ADD COLUMN IF NOT EXISTS plan VARCHAR(50) DEFAULT 'free';
+                EXCEPTION WHEN duplicate_column THEN null;
+                END $$;
             `);
 
             // Tabla de relaciones entre empresas

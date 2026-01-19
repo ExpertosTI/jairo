@@ -29,12 +29,13 @@ export default function DirectorioPage() {
     const [sectores, setSectores] = useState<Sector[]>([]);
     const [busqueda, setBusqueda] = useState("");
     const [sectorFiltro, setSectorFiltro] = useState("");
+    const [tipoFiltro, setTipoFiltro] = useState("");
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
 
     useEffect(() => {
         cargarDatos();
-    }, [busqueda, sectorFiltro]);
+    }, [busqueda, sectorFiltro, tipoFiltro]);
 
     const cargarDatos = async () => {
         setCargando(true);
@@ -42,6 +43,7 @@ export default function DirectorioPage() {
             const params = new URLSearchParams();
             if (busqueda) params.append('busqueda', busqueda);
             if (sectorFiltro) params.append('sector', sectorFiltro);
+            if (tipoFiltro) params.append('tipo', tipoFiltro);
             params.append('estado', 'active');
 
             const [empresasRes, sectoresRes] = await Promise.all([
@@ -66,69 +68,58 @@ export default function DirectorioPage() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-primary via-primary-600 to-primary-700 text-white">
-                <div className="max-w-7xl mx-auto px-4 py-6">
-                    <div className="flex items-center justify-between">
-                        <Link href="/" className="flex items-center gap-2">
-                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
-                                <span className="text-primary font-black text-lg">J</span>
-                            </div>
-                            <span className="text-2xl font-black">
-                                <span className="text-white">Jairo</span>
-                                <span className="text-secondary">App</span>
-                            </span>
-                        </Link>
-                        <div className="flex gap-3">
-                            <Link href="/login" className="px-4 py-2 border border-white/30 rounded-xl hover:bg-white/10 font-medium">
-                                Iniciar Sesión
-                            </Link>
-                            <Link href="/registro" className="px-4 py-2 bg-secondary text-white rounded-xl font-medium hover:bg-secondary-600">
-                                Registrar Empresa
-                            </Link>
-                        </div>
-                    </div>
+            {/* Header / Hero */}
+            <div className="pt-8 pb-8 bg-gradient-to-r from-primary via-primary-600 to-primary-700 text-white rounded-b-3xl mb-8">
+                <div className="max-w-7xl mx-auto px-4 mt-8 text-center">
+                    <h1 className="text-4xl md:text-5xl font-black mb-4">Directorio Empresarial</h1>
+                    <p className="text-xl text-white/80">
+                        Encuentra y conecta con empresas registradas
+                    </p>
 
-                    <div className="mt-12 mb-8 text-center">
-                        <h1 className="text-4xl md:text-5xl font-black mb-4">Directorio Empresarial</h1>
-                        <p className="text-xl text-white/80">
-                            Encuentra y conecta con empresas registradas
-                        </p>
-
-                        {/* Search */}
-                        <div className="max-w-2xl mx-auto mt-8 flex gap-2">
-                            <div className="flex-1 relative">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                                <input
-                                    type="text"
-                                    placeholder="Buscar empresas..."
-                                    value={busqueda}
-                                    onChange={(e) => setBusqueda(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-900 focus:outline-none focus:ring-4 focus:ring-white/30"
-                                />
-                            </div>
-                            <select
-                                value={sectorFiltro}
-                                onChange={(e) => setSectorFiltro(e.target.value)}
-                                className="px-4 py-4 rounded-xl text-gray-900 focus:outline-none"
-                            >
-                                <option value="">Todos los sectores</option>
-                                {sectores.map(s => (
-                                    <option key={s.id} value={s.name}>{s.icon} {s.name}</option>
-                                ))}
-                            </select>
+                    {/* Search */}
+                    <div className="max-w-2xl mx-auto mt-8 flex gap-2">
+                        <div className="flex-1 relative">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                            <input
+                                type="text"
+                                placeholder="Buscar empresas..."
+                                value={busqueda}
+                                onChange={(e) => setBusqueda(e.target.value)}
+                                className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-900 focus:outline-none focus:ring-4 focus:ring-white/30"
+                            />
                         </div>
+                        <select
+                            value={sectorFiltro}
+                            onChange={(e) => setSectorFiltro(e.target.value)}
+                            className="px-4 py-4 rounded-xl text-gray-900 focus:outline-none"
+                        >
+                            <option value="">Todos los sectores</option>
+                            {sectores.map(s => (
+                                <option key={s.id} value={s.name}>{s.icon} {s.name}</option>
+                            ))}
+                        </select>
+                        <select
+                            value={tipoFiltro}
+                            onChange={(e) => setTipoFiltro(e.target.value)}
+                            className="px-4 py-4 rounded-xl text-gray-900 focus:outline-none"
+                        >
+                            <option value="">Todos los tipos</option>
+                            <option value="proveedor">Proveedor</option>
+                            <option value="distribuidor">Distribuidor</option>
+                            <option value="fabricante">Fabricante</option>
+                            <option value="servicio">Servicios</option>
+                        </select>
                     </div>
                 </div>
             </div>
 
             {/* Sectors Filter */}
-            <div className="border-b bg-white sticky top-0 z-10">
+            <div className="border-b bg-white sticky top-16 z-10 shadow-sm mb-6">
                 <div className="max-w-7xl mx-auto px-4 py-4">
-                    <div className="flex gap-2 overflow-x-auto pb-2">
+                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                         <button
                             onClick={() => setSectorFiltro("")}
-                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${!sectorFiltro ? 'bg-primary text-white shadow-lg' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${!sectorFiltro ? 'bg-primary text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                         >
                             Todos
@@ -138,7 +129,7 @@ export default function DirectorioPage() {
                                 key={sector.id}
                                 onClick={() => setSectorFiltro(sector.name)}
                                 className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap flex items-center gap-1 transition-all ${sectorFiltro === sector.name
-                                    ? 'bg-primary text-white shadow-lg'
+                                    ? 'bg-primary text-white shadow-md'
                                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                     }`}
                             >
@@ -151,7 +142,7 @@ export default function DirectorioPage() {
             </div>
 
             {/* Companies Grid */}
-            <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="max-w-7xl mx-auto px-4 py-8 pb-20">
                 {cargando ? (
                     <div className="text-center py-12">
                         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
@@ -241,25 +232,6 @@ export default function DirectorioPage() {
                     </>
                 )}
             </div>
-
-            {/* Footer */}
-            <footer className="bg-gray-900 text-white py-12 mt-12">
-                <div className="max-w-7xl mx-auto px-4 text-center">
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                        <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
-                            <span className="text-white font-black text-lg">J</span>
-                        </div>
-                        <span className="text-2xl font-black">JairoApp</span>
-                    </div>
-                    <p className="text-gray-400">Plataforma B2B Empresarial</p>
-                    <div className="flex justify-center gap-6 mt-6 text-sm text-gray-400">
-                        <Link href="/terms" className="hover:text-white">Términos</Link>
-                        <Link href="/privacy" className="hover:text-white">Privacidad</Link>
-                        <Link href="/registro" className="hover:text-white">Registrar Empresa</Link>
-                    </div>
-                    <p className="text-gray-500 text-xs mt-6">© 2026 JairoApp. Todos los derechos reservados.</p>
-                </div>
-            </footer>
         </div>
     );
 }

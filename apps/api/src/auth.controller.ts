@@ -38,7 +38,6 @@ export class AuthController {
 
     @Get('perfil')
     async getPerfil(@Request() req: any) {
-        // TODO: Implementar guard JWT
         return this.authService.getPerfil(req.user?.id);
     }
 

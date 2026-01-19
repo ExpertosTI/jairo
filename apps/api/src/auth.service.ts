@@ -139,7 +139,7 @@ export class AuthService {
             const user = result.rows[0];
             const token = jwt.sign({ id: user.id, type: 'password_reset' }, this.jwtSecret, { expiresIn: '1h' });
 
-            // TODO: Enviar email con enlace de recuperación
+
             const resetLink = `https://jairoapp.renace.tech/recuperar?token=${token}`;
 
             await this.emailService.sendEmail(

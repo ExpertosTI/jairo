@@ -1,15 +1,19 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Pool } from 'pg';
+import * as bcrypt from 'bcrypt';
+import { EmailService } from './email.service';
 
 @Injectable()
 export class CompaniesService {
     private readonly logger = new Logger(CompaniesService.name);
     private pool: Pool;
+    private emailService: EmailService;
 
     constructor() {
         this.pool = new Pool({
             connectionString: process.env.DATABASE_URL,
         });
+        this.emailService = new EmailService();
     }
 
     async findAll(filters: { sector?: string; tipo?: string; estado?: string; busqueda?: string }) {
@@ -83,29 +87,62 @@ export class CompaniesService {
     async create(data: any) {
         const client = await this.pool.connect();
         try {
+            await client.query('BEGIN');
+
             const slug = data.nombre.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
-            const result = await client.query(`
-        INSERT INTO companies (name, slug, email, phone, address, website, sector_id, type_id, logo, status)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')
-        RETURNING *
-      `, [
+            // 1. Crear empresa
+            const companyResult = await client.query(`
+                INSERT INTO companies (name, slug, email, phone, address, website, sector_id, type_id, logo, descripcion, status)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending')
+                RETURNING *
+            `, [
                 data.nombre,
                 slug,
                 data.email,
                 data.telefono,
                 data.direccion,
                 data.website,
-                data.sectorId,
-                data.tipoId,
-                data.logo
+                data.sectorId || null,
+                data.tipoId || null,
+                data.logo || null,
+                data.descripcion || null
             ]);
 
-            // Registrar actividad
-            await this.registrarActividad('nueva_empresa', result.rows[0].id, `Nueva empresa registrada: ${data.nombre}`);
+            const company = companyResult.rows[0];
+
+            // 2. Crear usuario admin para la empresa
+            if (data.password) {
+                const hashedPassword = await bcrypt.hash(data.password, 10);
+                const userName = data.nombreContacto || data.nombre;
+
+                await client.query(`
+                    INSERT INTO users (email, password, name, role, company_id)
+                    VALUES ($1, $2, $3, 'admin', $4)
+                `, [data.email, hashedPassword, userName, company.id]);
+
+                this.logger.log(`👤 Usuario admin creado para: ${data.email}`);
+            }
+
+            await client.query('COMMIT');
+
+            // 3. Registrar actividad
+            await this.registrarActividad('nueva_empresa', company.id, `Nueva empresa registrada: ${data.nombre}`);
+
+            // 4. Enviar email de bienvenida
+            this.emailService.sendWelcomeEmail(data.email, data.nombreContacto || data.nombre).catch(err =>
+                this.logger.warn('No se pudo enviar email de bienvenida:', err)
+            );
 
             this.logger.log(`✅ Empresa creada: ${data.nombre}`);
-            return result.rows[0];
+            return {
+                ...company,
+                mensaje: 'Empresa registrada exitosamente. Recibirás un email cuando sea aprobada.'
+            };
+        } catch (error) {
+            await client.query('ROLLBACK');
+            this.logger.error('Error creando empresa:', error);
+            throw error;
         } finally {
             client.release();
         }

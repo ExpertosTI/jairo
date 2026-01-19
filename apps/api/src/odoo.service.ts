@@ -27,7 +27,7 @@ export class OdooService {
                     console.error('Odoo Auth Error:', error);
                     reject(error);
                 } else {
-                    console.log('Odoo Auth Success, UID:', uid);
+                    this.logger.log(`Odoo Auth Success, UID: ${uid}`);
                     this.uid = Number(uid);
                     resolve(this.uid);
                 }

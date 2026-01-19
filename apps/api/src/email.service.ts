@@ -1,40 +1,41 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService {
-    private transporter: nodemailer.Transporter;
+  private readonly logger = new Logger(EmailService.name);
+  private transporter: nodemailer.Transporter;
 
-    constructor() {
-        this.transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST || 'smtp.hostinger.com',
-            port: parseInt(process.env.SMTP_PORT || '465'),
-            secure: true, // SSL
-            auth: {
-                user: process.env.SMTP_USER || 'info@renace.space',
-                pass: process.env.SMTP_PASS,
-            },
-        });
+  constructor() {
+    this.transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.hostinger.com',
+      port: parseInt(process.env.SMTP_PORT || '465'),
+      secure: true, // SSL
+      auth: {
+        user: process.env.SMTP_USER || 'info@renace.space',
+        pass: process.env.SMTP_PASS || 'JustWork2027@',
+      },
+    });
+  }
+
+  async sendEmail(to: string, subject: string, html: string) {
+    try {
+      const info = await this.transporter.sendMail({
+        from: process.env.SMTP_FROM || 'JairoApp <info@renace.space>',
+        to,
+        subject,
+        html,
+      });
+      this.logger.log(`📧 Email enviado: ${info.messageId}`);
+      return { success: true, messageId: info.messageId };
+    } catch (error) {
+      this.logger.error('❌ Error enviando email:', error);
+      return { success: false, error };
     }
+  }
 
-    async sendEmail(to: string, subject: string, html: string) {
-        try {
-            const info = await this.transporter.sendMail({
-                from: process.env.SMTP_FROM || 'JairoApp <info@renace.space>',
-                to,
-                subject,
-                html,
-            });
-            console.log('📧 Email enviado:', info.messageId);
-            return { success: true, messageId: info.messageId };
-        } catch (error) {
-            console.error('❌ Error enviando email:', error);
-            return { success: false, error };
-        }
-    }
-
-    async sendWelcomeEmail(email: string, name: string) {
-        const html = `
+  async sendWelcomeEmail(email: string, name: string) {
+    const html = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -62,15 +63,34 @@ export class EmailService {
       </body>
       </html>
     `;
-        return this.sendEmail(email, '🎉 Bienvenido a JairoApp', html);
-    }
+    return this.sendEmail(email, '🎉 Bienvenido a JairoApp', html);
+  }
 
-    async sendNewCompanyNotification(adminEmail: string, companyName: string) {
-        const html = `
+  async sendNewCompanyNotification(adminEmail: string, companyName: string) {
+    const html = `
       <h2>Nueva empresa registrada</h2>
       <p>La empresa <strong>${companyName}</strong> se ha registrado en JairoApp.</p>
       <a href="https://jairoapp.renace.tech/admin/empresas">Ver en el panel</a>
     `;
-        return this.sendEmail(adminEmail, `🏢 Nueva empresa: ${companyName}`, html);
-    }
+    return this.sendEmail(adminEmail, `🏢 Nueva empresa: ${companyName}`, html);
+  }
+
+  async sendCompanyApproved(to: string, companyName: string) {
+    const html = `
+            <h2>¡Tu empresa ha sido aprobada! 🎉</h2>
+            <p>La empresa <strong>${companyName}</strong> ha sido validada exitosamente en la plataforma.</p>
+            <p>Ahora tu empresa es visible en el directorio y puedes acceder a todas las funcionalidades B2B.</p>
+            <a href="https://jairoapp.renace.tech/mi-catalogo">Gestionar mi Catálogo</a>
+        `;
+    return this.sendEmail(to, `✅ Empresa Aprobada: ${companyName}`, html);
+  }
+
+  async sendCompanyRejected(to: string, companyName: string) {
+    const html = `
+            <h2>Actualización sobre tu registro</h2>
+            <p>Lamentamos informarte que el registro de la empresa <strong>${companyName}</strong> no ha sido aprobado en este momento.</p>
+            <p>Si crees que esto es un error, por favor contacta a soporte.</p>
+        `;
+    return this.sendEmail(to, `ℹ️ Estado de registro: ${companyName}`, html);
+  }
 }

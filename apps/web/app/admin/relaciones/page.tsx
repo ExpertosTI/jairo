@@ -35,7 +35,7 @@ export default function RelacionesPage() {
     const [filtroTipo, setFiltroTipo] = useState("");
     const [filtroEstado, setFiltroEstado] = useState("");
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
 
     useEffect(() => {
         cargarDatos();
@@ -207,10 +207,10 @@ export default function RelacionesPage() {
                                     {/* Status & Actions */}
                                     <div className="flex items-center gap-3">
                                         <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${rel.status === "active"
-                                                ? "bg-green-100 text-green-700"
-                                                : rel.status === "pending"
-                                                    ? "bg-yellow-100 text-yellow-700"
-                                                    : "bg-red-100 text-red-700"
+                                            ? "bg-green-100 text-green-700"
+                                            : rel.status === "pending"
+                                                ? "bg-yellow-100 text-yellow-700"
+                                                : "bg-red-100 text-red-700"
                                             }`}>
                                             {rel.status === "active" ? "Activa" : rel.status === "pending" ? "Pendiente" : "Rechazada"}
                                         </span>

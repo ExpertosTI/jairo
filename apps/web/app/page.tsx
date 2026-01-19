@@ -17,7 +17,7 @@ export default function Home() {
     const cargarStats = async () => {
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
-        const res = await fetch(`${apiUrl}/dashboard/estadisticas`);
+        const res = await fetch(`${apiUrl}/analytics/public-stats`);
         if (res.ok) {
           const data = await res.json();
           setStats([
@@ -77,43 +77,15 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md z-50 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
-              <span className="text-white font-black text-lg">J</span>
-            </div>
-            <span className="text-2xl font-black">
-              <span className="text-primary">Jairo</span>
-              <span className="text-secondary">App</span>
-            </span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-8">
-            <Link href="/directorio" className="text-gray-600 hover:text-primary font-medium">Directorio</Link>
-            <Link href="#features" className="text-gray-600 hover:text-primary font-medium">Características</Link>
-            <Link href="#sectors" className="text-gray-600 hover:text-primary font-medium">Sectores</Link>
-          </nav>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-gray-600 hover:text-primary font-medium">
-              Iniciar Sesión
-            </Link>
-            <Link href="/registro" className="bg-primary text-white px-5 py-2.5 rounded-xl font-medium hover:bg-primary-600 transition-colors">
-              Registrar Empresa
-            </Link>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
-      <section className="pt-32 pb-20 bg-gradient-to-br from-primary via-primary-600 to-primary-700 text-white overflow-hidden relative">
+      <section className="pt-10 pb-20 bg-gradient-to-br from-primary via-primary-600 to-primary-700 text-white overflow-hidden relative">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-72 h-72 bg-secondary rounded-full blur-3xl" />
           <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <div className="max-w-3xl">
+        <div className="max-w-7xl mx-auto px-4 relative z-10 w-full flex flex-col md:flex-row items-center gap-12">
+          <div className="max-w-3xl flex-1">
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur px-4 py-2 rounded-full text-sm mb-6">
               <Star className="text-secondary" size={16} />
               <span>La red empresarial B2B líder de la región</span>
@@ -153,6 +125,26 @@ export default function Home() {
                 Buscar
               </button>
             </form>
+          </div>
+
+          {/* Hero Image / Dynamic Element */}
+          <div className="hidden md:block flex-1 relative">
+            <div className="relative z-10 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-500">
+              <div className="flex items-center gap-4 mb-4 border-b border-white/10 pb-4">
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-primary font-bold text-xl">
+                  J
+                </div>
+                <div>
+                  <div className="h-4 w-32 bg-white/20 rounded mb-2"></div>
+                  <div className="h-3 w-20 bg-white/10 rounded"></div>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="h-20 bg-white/5 rounded-xl"></div>
+                <div className="h-20 bg-white/5 rounded-xl"></div>
+                <div className="h-20 bg-white/5 rounded-xl"></div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -250,50 +242,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-12 mb-12">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
-                  <span className="text-white font-black text-lg">J</span>
-                </div>
-                <span className="text-2xl font-black">JairoApp</span>
-              </div>
-              <p className="text-gray-400">
-                Plataforma B2B líder para conectar empresas y expandir negocios.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Plataforma</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/directorio" className="hover:text-white">Directorio</Link></li>
-                <li><Link href="/registro" className="hover:text-white">Registrar Empresa</Link></li>
-                <li><Link href="/login" className="hover:text-white">Iniciar Sesión</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Legal</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/terms" className="hover:text-white">Términos de Uso</Link></li>
-                <li><Link href="/privacy" className="hover:text-white">Privacidad</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Contacto</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>info@jairoapp.com</li>
-                <li>Soporte 24/7</li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
-            © {new Date().getFullYear()} JairoApp. Todos los derechos reservados.
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
