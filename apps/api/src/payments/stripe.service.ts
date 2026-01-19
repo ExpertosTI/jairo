@@ -4,17 +4,18 @@ import { Pool } from 'pg';
 
 @Injectable()
 export class StripeService {
-    private stripe: Stripe;
+    private stripe: Stripe | null = null;
     private readonly logger = new Logger(StripeService.name);
     private pool: Pool;
 
     constructor() {
-        if (!process.env.STRIPE_SECRET_KEY) {
-            this.logger.warn('STRIPE_SECRET_KEY not set. Payments will fail.');
+        if (process.env.STRIPE_SECRET_KEY) {
+            this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+                apiVersion: '2024-12-18.acacia' as any,
+            });
+        } else {
+            this.logger.warn('STRIPE_SECRET_KEY not set. Payments will be disabled.');
         }
-        this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-            apiVersion: '2024-12-18.acacia' as any, // Use latest or what's installed
-        });
         this.pool = new Pool({ connectionString: process.env.DATABASE_URL });
     }
 
@@ -46,6 +47,7 @@ export class StripeService {
 
             // Create Customer if doesn't exist
             if (!customerId) {
+                if (!this.stripe) throw new Error('Stripe not initialized');
                 const customer = await this.stripe.customers.create({ email, metadata: { company_id } });
                 customerId = customer.id;
                 await client.query('UPDATE companies SET stripe_customer_id = $1 WHERE id = $2', [customerId, company_id]);
@@ -55,6 +57,7 @@ export class StripeService {
             if (!priceId) throw new Error(`Price ID not configured for plan: ${planKey}`);
 
             // Create Session
+            if (!this.stripe) throw new Error('Stripe not initialized');
             const session = await this.stripe.checkout.sessions.create({
                 customer: customerId,
                 payment_method_types: ['card'],
