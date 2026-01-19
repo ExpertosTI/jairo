@@ -30,7 +30,7 @@ export default function DirectorioPage() {
     const [busqueda, setBusqueda] = useState("");
     const [sectorFiltro, setSectorFiltro] = useState("");
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
 
     useEffect(() => {
         cargarDatos();
@@ -138,8 +138,8 @@ export default function DirectorioPage() {
                                 key={sector.id}
                                 onClick={() => setSectorFiltro(sector.name)}
                                 className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap flex items-center gap-1 transition-all ${sectorFiltro === sector.name
-                                        ? 'bg-primary text-white shadow-lg'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    ? 'bg-primary text-white shadow-lg'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                     }`}
                             >
                                 <span>{sector.icon}</span>

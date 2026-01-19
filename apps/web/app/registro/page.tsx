@@ -42,7 +42,8 @@ export default function RegistroEmpresa() {
 
     const cargarSectores = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sectores`);
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
+            const res = await fetch(`${apiUrl}/sectores`);
             const data = await res.json();
             setSectores(data.sectores || []);
         } catch (error) {
@@ -70,7 +71,8 @@ export default function RegistroEmpresa() {
     const handleSubmit = async () => {
         setCargando(true);
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/empresas`, {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
+            const res = await fetch(`${apiUrl}/empresas`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formulario),
@@ -234,8 +236,8 @@ export default function RegistroEmpresa() {
                                     key={sector.id}
                                     onClick={() => setFormulario({ ...formulario, sectorId: sector.id })}
                                     className={`p-4 rounded-xl border-2 text-center transition-all ${formulario.sectorId === sector.id
-                                            ? 'border-primary bg-primary/5 shadow-lg'
-                                            : 'border-gray-100 hover:border-primary/50'
+                                        ? 'border-primary bg-primary/5 shadow-lg'
+                                        : 'border-gray-100 hover:border-primary/50'
                                         }`}
                                 >
                                     <span className="text-2xl block mb-1">{sector.icon}</span>
@@ -247,8 +249,8 @@ export default function RegistroEmpresa() {
                                         key={i}
                                         onClick={() => setFormulario({ ...formulario, sectorId: String(i) })}
                                         className={`p-4 rounded-xl border-2 text-center transition-all ${formulario.sectorId === String(i)
-                                                ? 'border-primary bg-primary/5 shadow-lg'
-                                                : 'border-gray-100 hover:border-primary/50'
+                                            ? 'border-primary bg-primary/5 shadow-lg'
+                                            : 'border-gray-100 hover:border-primary/50'
                                             }`}
                                     >
                                         <span className="text-2xl block mb-1">{s.split(' ')[0]}</span>
@@ -265,8 +267,8 @@ export default function RegistroEmpresa() {
                                     key={tipo.id}
                                     onClick={() => setFormulario({ ...formulario, tipoId: tipo.id })}
                                     className={`p-3 rounded-xl border-2 text-left transition-all ${formulario.tipoId === tipo.id
-                                            ? 'border-secondary bg-secondary/5'
-                                            : 'border-gray-100 hover:border-secondary/50'
+                                        ? 'border-secondary bg-secondary/5'
+                                        : 'border-gray-100 hover:border-secondary/50'
                                         }`}
                                 >
                                     <span className="font-medium text-gray-900 text-sm">{tipo.name}</span>

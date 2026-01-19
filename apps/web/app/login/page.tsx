@@ -21,7 +21,8 @@ export default function LoginPage() {
         setCargando(true);
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/login`, {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
+            const res = await fetch(`${apiUrl}/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formulario),
@@ -77,14 +78,14 @@ export default function LoginPage() {
                     <p className="text-gray-500 mb-6">Accede a tu cuenta empresarial</p>
 
                     {error && (
-                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium">
                             {error}
                         </div>
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-bold text-gray-700 mb-1">
                                 Correo Electrónico
                             </label>
                             <div className="relative">
@@ -94,14 +95,14 @@ export default function LoginPage() {
                                     value={formulario.email}
                                     onChange={(e) => setFormulario({ ...formulario, email: e.target.value })}
                                     placeholder="tu@email.com"
-                                    className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                    className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 text-gray-900 placeholder:text-gray-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium"
                                     required
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-bold text-gray-700 mb-1">
                                 Contraseña
                             </label>
                             <div className="relative">
@@ -111,7 +112,7 @@ export default function LoginPage() {
                                     value={formulario.password}
                                     onChange={(e) => setFormulario({ ...formulario, password: e.target.value })}
                                     placeholder="••••••••"
-                                    className="w-full pl-12 pr-12 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                    className="w-full pl-12 pr-12 py-3.5 bg-white border border-gray-200 text-gray-900 placeholder:text-gray-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium"
                                     required
                                 />
                                 <button
