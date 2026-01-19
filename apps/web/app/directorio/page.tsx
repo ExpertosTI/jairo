@@ -92,7 +92,7 @@ export default function DirectorioPage() {
                     <div className="mt-12 mb-8 text-center">
                         <h1 className="text-4xl md:text-5xl font-black mb-4">Directorio Empresarial</h1>
                         <p className="text-xl text-white/80">
-                            Encuentra y conecta con empresas de República Dominicana
+                            Encuentra y conecta con empresas registradas
                         </p>
 
                         {/* Search */}
@@ -251,7 +251,7 @@ export default function DirectorioPage() {
                         </div>
                         <span className="text-2xl font-black">JairoApp</span>
                     </div>
-                    <p className="text-gray-400">Plataforma B2B de República Dominicana</p>
+                    <p className="text-gray-400">Plataforma B2B Empresarial</p>
                     <div className="flex justify-center gap-6 mt-6 text-sm text-gray-400">
                         <Link href="/terms" className="hover:text-white">Términos</Link>
                         <Link href="/privacy" className="hover:text-white">Privacidad</Link>

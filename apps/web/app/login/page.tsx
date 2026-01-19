@@ -69,7 +69,7 @@ export default function LoginPage() {
                         <span>Jairo</span>
                         <span className="text-secondary">App</span>
                     </h1>
-                    <p className="text-white/70 mt-2">Plataforma B2B de República Dominicana</p>
+                    <p className="text-white/70 mt-2">Plataforma B2B Empresarial</p>
                 </div>
 
                 {/* Card */}

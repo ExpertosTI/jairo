@@ -1,15 +1,44 @@
 "use client";
 
 import Link from "next/link";
-import { Building2, Users, Network, TrendingUp, Search, ArrowRight, ChevronRight, Star, Shield, Zap, Globe } from "lucide-react";
-import Image from "next/image";
+import { Building2, Network, Search, ArrowRight, ChevronRight, Star, Shield, Zap, Globe, TrendingUp } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function Home() {
+  const [stats, setStats] = useState([
+    { value: "—", label: "Empresas" },
+    { value: "—", label: "Sectores" },
+    { value: "—", label: "Conexiones" },
+    { value: "—", label: "Satisfacción" },
+  ]);
+  const [busqueda, setBusqueda] = useState("");
+
+  useEffect(() => {
+    const cargarStats = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
+        const res = await fetch(`${apiUrl}/dashboard/estadisticas`);
+        if (res.ok) {
+          const data = await res.json();
+          setStats([
+            { value: `${data.totalEmpresas || 0}+`, label: "Empresas" },
+            { value: `${data.totalSectores || 12}`, label: "Sectores" },
+            { value: `${data.totalConexiones || 0}+`, label: "Conexiones" },
+            { value: "98%", label: "Satisfacción" },
+          ]);
+        }
+      } catch (e) {
+        console.log("Stats no disponibles");
+      }
+    };
+    cargarStats();
+  }, []);
+
   const features = [
     {
       icon: Building2,
       title: "Directorio Empresarial",
-      description: "Encuentra y conecta con miles de empresas dominicanas verificadas por sector y ubicación.",
+      description: "Encuentra y conecta con empresas verificadas por sector y ubicación.",
     },
     {
       icon: Network,
@@ -28,13 +57,6 @@ export default function Home() {
     },
   ];
 
-  const stats = [
-    { value: "500+", label: "Empresas Registradas" },
-    { value: "12", label: "Sectores Activos" },
-    { value: "1,200+", label: "Conexiones Realizadas" },
-    { value: "98%", label: "Satisfacción" },
-  ];
-
   const sectors = [
     { icon: "💻", name: "Tecnología" },
     { icon: "🛒", name: "Comercio" },
@@ -45,6 +67,13 @@ export default function Home() {
     { icon: "🌾", name: "Agricultura" },
     { icon: "💰", name: "Finanzas" },
   ];
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (busqueda.trim()) {
+      window.location.href = `/directorio?busqueda=${encodeURIComponent(busqueda)}`;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -87,16 +116,16 @@ export default function Home() {
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur px-4 py-2 rounded-full text-sm mb-6">
               <Star className="text-secondary" size={16} />
-              <span>La red empresarial #1 de República Dominicana</span>
+              <span>La red empresarial B2B líder de la región</span>
             </div>
 
             <h1 className="text-5xl md:text-6xl font-black leading-tight mb-6">
-              Conecta tu empresa con el
-              <span className="text-secondary"> mercado dominicano</span>
+              Conecta tu empresa con
+              <span className="text-secondary"> nuevos mercados</span>
             </h1>
 
             <p className="text-xl text-white/80 mb-8 max-w-2xl">
-              JairoApp es la plataforma B2B que conecta proveedores, distribuidores y empresas en toda la República Dominicana. Encuentra socios comerciales, expande tu red y haz crecer tu negocio.
+              JairoApp es la plataforma B2B que conecta proveedores, distribuidores y empresas. Encuentra socios comerciales, expande tu red y haz crecer tu negocio.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-12">
@@ -108,25 +137,27 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Search Bar */}
-            <div className="bg-white rounded-2xl p-2 flex shadow-xl max-w-xl">
+            {/* Search Bar - Functional */}
+            <form onSubmit={handleSearch} className="bg-white rounded-2xl p-2 flex shadow-xl max-w-xl">
               <div className="flex-1 flex items-center gap-3 px-4">
                 <Search className="text-gray-400" size={20} />
                 <input
                   type="text"
                   placeholder="Buscar empresas, sectores..."
-                  className="flex-1 py-3 text-gray-700 focus:outline-none"
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  className="flex-1 py-3 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none"
                 />
               </div>
-              <button className="bg-primary text-white px-6 py-3 rounded-xl font-medium hover:bg-primary-600 transition-colors">
+              <button type="submit" className="bg-primary text-white px-6 py-3 rounded-xl font-medium hover:bg-primary-600 transition-colors">
                 Buscar
               </button>
-            </div>
+            </form>
           </div>
         </div>
       </section>
 
-      {/* Stats */}
+      {/* Stats - Dynamic */}
       <section className="py-12 bg-gray-50 border-b">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -148,7 +179,7 @@ export default function Home() {
               Todo lo que necesitas para <span className="text-primary">hacer negocios</span>
             </h2>
             <p className="text-xl text-gray-500 max-w-2xl mx-auto">
-              Herramientas diseñadas para conectar empresas dominicanas y facilitar el comercio B2B
+              Herramientas diseñadas para conectar empresas y facilitar el comercio B2B
             </p>
           </div>
 
@@ -207,7 +238,7 @@ export default function Home() {
             ¿Listo para hacer crecer tu negocio?
           </h2>
           <p className="text-xl text-white/80 mb-8">
-            Únete a cientos de empresas dominicanas que ya usan JairoApp para expandir su red comercial
+            Únete a cientos de empresas que ya usan JairoApp para expandir su red comercial
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/registro" className="bg-secondary text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-secondary-600 transition-all inline-flex items-center justify-center gap-2">
@@ -232,7 +263,7 @@ export default function Home() {
                 <span className="text-2xl font-black">JairoApp</span>
               </div>
               <p className="text-gray-400">
-                La plataforma B2B líder de República Dominicana para conectar empresas.
+                Plataforma B2B líder para conectar empresas y expandir negocios.
               </p>
             </div>
             <div>
@@ -254,12 +285,12 @@ export default function Home() {
               <h4 className="font-bold mb-4">Contacto</h4>
               <ul className="space-y-2 text-gray-400">
                 <li>info@jairoapp.com</li>
-                <li>Santo Domingo, RD</li>
+                <li>Soporte 24/7</li>
               </ul>
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
-            © 2026 JairoApp. Todos los derechos reservados.
+            © {new Date().getFullYear()} JairoApp. Todos los derechos reservados.
           </div>
         </div>
       </footer>

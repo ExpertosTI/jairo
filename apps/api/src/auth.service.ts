@@ -8,9 +8,14 @@ import { EmailService } from './email.service';
 export class AuthService {
     private readonly logger = new Logger(AuthService.name);
     private pool: Pool;
-    private readonly jwtSecret = process.env.JWT_SECRET || 'jairo_jwt_secret_2026';
+    private readonly jwtSecret: string;
 
     constructor(private readonly emailService: EmailService) {
+        const secret = process.env.JWT_SECRET;
+        if (!secret) {
+            throw new Error('JWT_SECRET environment variable is required');
+        }
+        this.jwtSecret = secret;
         this.pool = new Pool({
             connectionString: process.env.DATABASE_URL,
         });

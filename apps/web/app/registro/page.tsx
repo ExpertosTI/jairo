@@ -60,7 +60,7 @@ export default function RegistroEmpresa() {
                 { id: "4", name: "Mayorista", description: "Vende al por mayor" },
                 { id: "5", name: "Minorista", description: "Vende al consumidor final" },
                 { id: "6", name: "Importador", description: "Importa productos del exterior" },
-                { id: "7", name: "Exportador", description: "Exporta productos dominicanos" },
+                { id: "7", name: "Exportador", description: "Exporta productos internacionalmente" },
                 { id: "8", name: "Consultor", description: "Servicios de consultoría" },
             ]);
         } catch (error) {
@@ -138,7 +138,7 @@ export default function RegistroEmpresa() {
                     </div>
 
                     <h1 className="text-3xl font-black">Registra tu Empresa</h1>
-                    <p className="text-white/70 mt-2">Únete a la red empresarial de República Dominicana</p>
+                    <p className="text-white/70 mt-2">Únete a la red empresarial global</p>
                 </div>
             </div>
 
@@ -169,12 +169,12 @@ export default function RegistroEmpresa() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">RNC (opcional)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">ID Fiscal / RNC (opcional)</label>
                                 <input
                                     type="text"
                                     value={formulario.rnc}
                                     onChange={(e) => setFormulario({ ...formulario, rnc: e.target.value })}
-                                    placeholder="Ej: 101-12345-6"
+                                    placeholder="ID tributario de su país"
                                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                                 />
                             </div>
@@ -196,7 +196,7 @@ export default function RegistroEmpresa() {
                                         type="tel"
                                         value={formulario.telefono}
                                         onChange={(e) => setFormulario({ ...formulario, telefono: e.target.value })}
-                                        placeholder="809-555-0000"
+                                        placeholder="+1 (XXX) XXX-XXXX"
                                         className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                                     />
                                 </div>
