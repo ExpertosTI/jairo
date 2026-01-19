@@ -33,15 +33,13 @@ export default function LoginPage() {
                 throw new Error(data.message || "Error al iniciar sesión");
             }
 
-            // Guardar token y usuario
             localStorage.setItem("token", data.token);
             localStorage.setItem("usuario", JSON.stringify(data.usuario));
 
-            // Redirigir según rol
             if (data.usuario.rol === "super_admin" || data.usuario.rol === "admin") {
                 router.push("/admin");
             } else {
-                router.push("/");
+                router.push("/directorio");
             }
         } catch (err: any) {
             setError(err.message || "Credenciales inválidas");
@@ -51,22 +49,35 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-md">
+        <div className="min-h-screen bg-gradient-to-br from-primary via-primary-600 to-primary-700 flex items-center justify-center p-4">
+            {/* Background decorations */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-20 left-20 w-72 h-72 bg-secondary/20 rounded-full blur-3xl" />
+                <div className="absolute bottom-20 right-20 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
+            </div>
+
+            <div className="w-full max-w-md relative z-10">
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <Link href="/" className="inline-block">
-                        <h1 className="text-4xl font-black text-primary">JairoApp</h1>
+                    <Link href="/" className="inline-flex items-center gap-2 justify-center">
+                        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center">
+                            <span className="text-primary font-black text-2xl">J</span>
+                        </div>
                     </Link>
-                    <p className="text-gray-500 mt-2">Plataforma B2B de República Dominicana</p>
+                    <h1 className="text-3xl font-black text-white mt-4">
+                        <span>Jairo</span>
+                        <span className="text-secondary">App</span>
+                    </h1>
+                    <p className="text-white/70 mt-2">Plataforma B2B de República Dominicana</p>
                 </div>
 
                 {/* Card */}
-                <div className="bg-white rounded-2xl shadow-xl p-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Iniciar Sesión</h2>
+                <div className="bg-white rounded-3xl shadow-2xl p-8">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Iniciar Sesión</h2>
+                    <p className="text-gray-500 mb-6">Accede a tu cuenta empresarial</p>
 
                     {error && (
-                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
                             {error}
                         </div>
                     )}
@@ -77,13 +88,13 @@ export default function LoginPage() {
                                 Correo Electrónico
                             </label>
                             <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                                 <input
                                     type="email"
                                     value={formulario.email}
                                     onChange={(e) => setFormulario({ ...formulario, email: e.target.value })}
                                     placeholder="tu@email.com"
-                                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                    className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                                     required
                                 />
                             </div>
@@ -94,19 +105,19 @@ export default function LoginPage() {
                                 Contraseña
                             </label>
                             <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                                 <input
                                     type={mostrarPassword ? "text" : "password"}
                                     value={formulario.password}
                                     onChange={(e) => setFormulario({ ...formulario, password: e.target.value })}
                                     placeholder="••••••••"
-                                    className="w-full pl-10 pr-12 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                    className="w-full pl-12 pr-12 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                                     required
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setMostrarPassword(!mostrarPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                                 >
                                     {mostrarPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                 </button>
@@ -115,10 +126,10 @@ export default function LoginPage() {
 
                         <div className="flex items-center justify-between text-sm">
                             <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" className="rounded border-gray-300" />
+                                <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary" />
                                 <span className="text-gray-600">Recordarme</span>
                             </label>
-                            <Link href="/recuperar" className="text-primary hover:underline">
+                            <Link href="/recuperar" className="text-primary font-medium hover:underline">
                                 ¿Olvidaste tu contraseña?
                             </Link>
                         </div>
@@ -126,7 +137,7 @@ export default function LoginPage() {
                         <button
                             type="submit"
                             disabled={cargando}
-                            className="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-orange-600 disabled:bg-gray-400 flex items-center justify-center gap-2 transition-colors"
+                            className="w-full bg-gradient-to-r from-primary to-primary-600 text-white py-4 rounded-xl font-semibold hover:shadow-lg hover:shadow-primary/25 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
                         >
                             {cargando ? (
                                 <Loader2 className="animate-spin" size={20} />
@@ -139,9 +150,9 @@ export default function LoginPage() {
                     </form>
 
                     <div className="mt-6 text-center">
-                        <p className="text-gray-500 text-sm">
+                        <p className="text-gray-500">
                             ¿No tienes cuenta?{" "}
-                            <Link href="/registro" className="text-primary font-medium hover:underline">
+                            <Link href="/registro" className="text-primary font-semibold hover:underline">
                                 Registra tu empresa
                             </Link>
                         </p>
@@ -149,7 +160,7 @@ export default function LoginPage() {
                 </div>
 
                 {/* Footer */}
-                <p className="text-center text-gray-400 text-xs mt-6">
+                <p className="text-center text-white/50 text-xs mt-6">
                     © 2026 JairoApp. Todos los derechos reservados.
                 </p>
             </div>

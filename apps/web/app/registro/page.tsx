@@ -52,18 +52,18 @@ export default function RegistroEmpresa() {
 
     const cargarTipos = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sectores/tipos`);
-            const data = await res.json();
-            setTipos(data.tipos || []);
-        } catch (error) {
-            // Cargar tipos por defecto si falla
             setTipos([
                 { id: "1", name: "Proveedor", description: "Suministra productos o servicios" },
                 { id: "2", name: "Distribuidor", description: "Distribuye productos al mercado" },
                 { id: "3", name: "Fabricante", description: "Produce o manufactura bienes" },
                 { id: "4", name: "Mayorista", description: "Vende al por mayor" },
                 { id: "5", name: "Minorista", description: "Vende al consumidor final" },
+                { id: "6", name: "Importador", description: "Importa productos del exterior" },
+                { id: "7", name: "Exportador", description: "Exporta productos dominicanos" },
+                { id: "8", name: "Consultor", description: "Servicios de consultoría" },
             ]);
+        } catch (error) {
+            console.error("Error cargando tipos:", error);
         }
     };
 
@@ -88,18 +88,18 @@ export default function RegistroEmpresa() {
 
     if (exito) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl p-8 shadow-xl text-center max-w-md">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Check className="text-green-600" size={32} />
+            <div className="min-h-screen bg-gradient-to-br from-primary via-primary-600 to-primary-700 flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl p-8 shadow-2xl text-center max-w-md">
+                    <div className="w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Check className="text-white" size={40} />
                     </div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">¡Registro Exitoso!</h1>
+                    <h1 className="text-3xl font-black text-gray-900 mb-2">¡Registro Exitoso!</h1>
                     <p className="text-gray-500 mb-6">
                         Tu empresa ha sido registrada. Nuestro equipo revisará tu solicitud y te contactaremos pronto.
                     </p>
                     <Link
                         href="/"
-                        className="inline-block bg-primary text-white px-6 py-3 rounded-lg font-medium hover:bg-orange-600"
+                        className="inline-block bg-gradient-to-r from-primary to-primary-600 text-white px-8 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
                     >
                         Volver al Inicio
                     </Link>
@@ -109,32 +109,48 @@ export default function RegistroEmpresa() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
             {/* Header */}
-            <div className="bg-white border-b">
-                <div className="max-w-4xl mx-auto px-4 py-6 flex items-center justify-between">
-                    <Link href="/" className="text-2xl font-black text-primary">JairoApp</Link>
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <span className={`w-8 h-8 rounded-full flex items-center justify-center ${paso >= 1 ? 'bg-primary text-white' : 'bg-gray-200'}`}>1</span>
-                        <div className="w-8 h-0.5 bg-gray-200" />
-                        <span className={`w-8 h-8 rounded-full flex items-center justify-center ${paso >= 2 ? 'bg-primary text-white' : 'bg-gray-200'}`}>2</span>
-                        <div className="w-8 h-0.5 bg-gray-200" />
-                        <span className={`w-8 h-8 rounded-full flex items-center justify-center ${paso >= 3 ? 'bg-primary text-white' : 'bg-gray-200'}`}>3</span>
+            <div className="bg-gradient-to-r from-primary to-primary-700 text-white">
+                <div className="max-w-4xl mx-auto px-4 py-8">
+                    <div className="flex items-center justify-between mb-8">
+                        <Link href="/" className="flex items-center gap-2">
+                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
+                                <span className="text-primary font-black text-lg">J</span>
+                            </div>
+                            <span className="text-2xl font-black">JairoApp</span>
+                        </Link>
+
+                        {/* Steps */}
+                        <div className="hidden md:flex items-center gap-2">
+                            {[1, 2, 3].map((n) => (
+                                <div key={n} className="flex items-center">
+                                    <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${paso >= n ? 'bg-secondary text-white' : 'bg-white/20 text-white/60'
+                                        }`}>
+                                        {paso > n ? '✓' : n}
+                                    </span>
+                                    {n < 3 && <div className={`w-12 h-0.5 mx-1 ${paso > n ? 'bg-secondary' : 'bg-white/20'}`} />}
+                                </div>
+                            ))}
+                        </div>
                     </div>
+
+                    <h1 className="text-3xl font-black">Registra tu Empresa</h1>
+                    <p className="text-white/70 mt-2">Únete a la red empresarial de República Dominicana</p>
                 </div>
             </div>
 
-            <div className="max-w-2xl mx-auto px-4 py-12">
-                {/* Paso 1: Información Básica */}
+            <div className="max-w-2xl mx-auto px-4 py-8 -mt-4">
+                {/* Paso 1 */}
                 {paso === 1 && (
-                    <div className="bg-white rounded-2xl p-8 shadow-lg">
+                    <div className="bg-white rounded-3xl p-8 shadow-xl">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="p-3 bg-primary/10 rounded-xl">
-                                <Building2 className="text-primary" size={24} />
+                            <div className="p-3 bg-gradient-to-br from-primary to-primary-600 rounded-xl">
+                                <Building2 className="text-white" size={24} />
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-900">Registra tu Empresa</h1>
-                                <p className="text-gray-500">Únete a la red empresarial de República Dominicana</p>
+                                <h2 className="text-xl font-bold text-gray-900">Información Básica</h2>
+                                <p className="text-gray-500 text-sm">Datos de tu empresa</p>
                             </div>
                         </div>
 
@@ -146,7 +162,7 @@ export default function RegistroEmpresa() {
                                     value={formulario.nombre}
                                     onChange={(e) => setFormulario({ ...formulario, nombre: e.target.value })}
                                     placeholder="Ej: Distribuidora del Caribe"
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                                 />
                             </div>
 
@@ -157,7 +173,7 @@ export default function RegistroEmpresa() {
                                     value={formulario.rnc}
                                     onChange={(e) => setFormulario({ ...formulario, rnc: e.target.value })}
                                     placeholder="Ej: 101-12345-6"
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                                 />
                             </div>
 
@@ -169,7 +185,7 @@ export default function RegistroEmpresa() {
                                         value={formulario.email}
                                         onChange={(e) => setFormulario({ ...formulario, email: e.target.value })}
                                         placeholder="contacto@empresa.com"
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                                     />
                                 </div>
                                 <div>
@@ -179,7 +195,7 @@ export default function RegistroEmpresa() {
                                         value={formulario.telefono}
                                         onChange={(e) => setFormulario({ ...formulario, telefono: e.target.value })}
                                         placeholder="809-555-0000"
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                                     />
                                 </div>
                             </div>
@@ -191,14 +207,14 @@ export default function RegistroEmpresa() {
                                     value={formulario.direccion}
                                     onChange={(e) => setFormulario({ ...formulario, direccion: e.target.value })}
                                     placeholder="Calle, Sector, Ciudad"
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                                 />
                             </div>
 
                             <button
                                 onClick={() => setPaso(2)}
                                 disabled={!formulario.nombre || !formulario.email || !formulario.telefono}
-                                className="w-full mt-4 bg-primary text-white py-3 rounded-lg font-medium hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                className="w-full mt-4 bg-gradient-to-r from-primary to-primary-600 text-white py-4 rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
                             >
                                 Continuar <ArrowRight size={20} />
                             </button>
@@ -206,10 +222,10 @@ export default function RegistroEmpresa() {
                     </div>
                 )}
 
-                {/* Paso 2: Sector y Tipo */}
+                {/* Paso 2 */}
                 {paso === 2 && (
-                    <div className="bg-white rounded-2xl p-8 shadow-lg">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Selecciona tu Sector</h2>
+                    <div className="bg-white rounded-3xl p-8 shadow-xl">
+                        <h2 className="text-xl font-bold text-gray-900 mb-2">Selecciona tu Sector</h2>
                         <p className="text-gray-500 mb-6">¿En qué industria opera tu empresa?</p>
 
                         <div className="grid grid-cols-3 gap-3 mb-6">
@@ -218,7 +234,7 @@ export default function RegistroEmpresa() {
                                     key={sector.id}
                                     onClick={() => setFormulario({ ...formulario, sectorId: sector.id })}
                                     className={`p-4 rounded-xl border-2 text-center transition-all ${formulario.sectorId === sector.id
-                                            ? 'border-primary bg-primary/5'
+                                            ? 'border-primary bg-primary/5 shadow-lg'
                                             : 'border-gray-100 hover:border-primary/50'
                                         }`}
                                 >
@@ -226,13 +242,12 @@ export default function RegistroEmpresa() {
                                     <span className="text-sm font-medium text-gray-700">{sector.name}</span>
                                 </button>
                             )) : (
-                                // Sectores por defecto si no carga del API
                                 ['💻 Tecnología', '🛒 Comercio', '🏭 Manufactura', '🏗️ Construcción', '🏥 Salud', '🏖️ Turismo', '🌾 Agricultura', '💰 Finanzas', '📚 Educación'].map((s, i) => (
                                     <button
                                         key={i}
                                         onClick={() => setFormulario({ ...formulario, sectorId: String(i) })}
                                         className={`p-4 rounded-xl border-2 text-center transition-all ${formulario.sectorId === String(i)
-                                                ? 'border-primary bg-primary/5'
+                                                ? 'border-primary bg-primary/5 shadow-lg'
                                                 : 'border-gray-100 hover:border-primary/50'
                                             }`}
                                     >
@@ -244,30 +259,29 @@ export default function RegistroEmpresa() {
                         </div>
 
                         <h3 className="font-bold text-gray-900 mb-3">Tipo de Empresa</h3>
-                        <div className="space-y-2 mb-6">
+                        <div className="grid grid-cols-2 gap-2 mb-6">
                             {tipos.map((tipo) => (
                                 <button
                                     key={tipo.id}
                                     onClick={() => setFormulario({ ...formulario, tipoId: tipo.id })}
-                                    className={`w-full p-4 rounded-lg border-2 text-left transition-all ${formulario.tipoId === tipo.id
-                                            ? 'border-primary bg-primary/5'
-                                            : 'border-gray-100 hover:border-primary/50'
+                                    className={`p-3 rounded-xl border-2 text-left transition-all ${formulario.tipoId === tipo.id
+                                            ? 'border-secondary bg-secondary/5'
+                                            : 'border-gray-100 hover:border-secondary/50'
                                         }`}
                                 >
-                                    <span className="font-medium text-gray-900">{tipo.name}</span>
-                                    <span className="text-sm text-gray-500 block">{tipo.description}</span>
+                                    <span className="font-medium text-gray-900 text-sm">{tipo.name}</span>
                                 </button>
                             ))}
                         </div>
 
                         <div className="flex gap-3">
-                            <button onClick={() => setPaso(1)} className="flex-1 py-3 border border-gray-200 rounded-lg font-medium">
+                            <button onClick={() => setPaso(1)} className="flex-1 py-3 border-2 border-gray-200 rounded-xl font-medium hover:bg-gray-50">
                                 Atrás
                             </button>
                             <button
                                 onClick={() => setPaso(3)}
                                 disabled={!formulario.sectorId}
-                                className="flex-1 bg-primary text-white py-3 rounded-lg font-medium hover:bg-orange-600 disabled:bg-gray-300"
+                                className="flex-1 bg-gradient-to-r from-primary to-primary-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg disabled:opacity-50"
                             >
                                 Continuar
                             </button>
@@ -275,37 +289,36 @@ export default function RegistroEmpresa() {
                     </div>
                 )}
 
-                {/* Paso 3: Descripción y Enviar */}
+                {/* Paso 3 */}
                 {paso === 3 && (
-                    <div className="bg-white rounded-2xl p-8 shadow-lg">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Cuéntanos sobre tu empresa</h2>
+                    <div className="bg-white rounded-3xl p-8 shadow-xl">
+                        <h2 className="text-xl font-bold text-gray-900 mb-2">Cuéntanos sobre tu empresa</h2>
                         <p className="text-gray-500 mb-6">Esta información ayudará a otras empresas a conocerte</p>
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Sitio Web (opcional)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Sitio Web</label>
                                 <input
                                     type="url"
                                     value={formulario.website}
                                     onChange={(e) => setFormulario({ ...formulario, website: e.target.value })}
                                     placeholder="https://tuempresa.com"
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción de la Empresa</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                                 <textarea
                                     value={formulario.descripcion}
                                     onChange={(e) => setFormulario({ ...formulario, descripcion: e.target.value })}
-                                    placeholder="Describe los productos o servicios que ofrece tu empresa, tu experiencia en el mercado, etc."
+                                    placeholder="Describe los productos o servicios que ofrece tu empresa..."
                                     rows={4}
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
                                 />
                             </div>
 
-                            {/* Resumen */}
-                            <div className="bg-gray-50 rounded-lg p-4 mt-4">
+                            <div className="bg-gray-50 rounded-xl p-4">
                                 <h4 className="font-medium text-gray-700 mb-2">Resumen del Registro:</h4>
                                 <p className="text-sm text-gray-600"><strong>Empresa:</strong> {formulario.nombre}</p>
                                 <p className="text-sm text-gray-600"><strong>Email:</strong> {formulario.email}</p>
@@ -314,13 +327,13 @@ export default function RegistroEmpresa() {
                         </div>
 
                         <div className="flex gap-3 mt-6">
-                            <button onClick={() => setPaso(2)} className="flex-1 py-3 border border-gray-200 rounded-lg font-medium">
+                            <button onClick={() => setPaso(2)} className="flex-1 py-3 border-2 border-gray-200 rounded-xl font-medium hover:bg-gray-50">
                                 Atrás
                             </button>
                             <button
                                 onClick={handleSubmit}
                                 disabled={cargando}
-                                className="flex-1 bg-primary text-white py-3 rounded-lg font-medium hover:bg-orange-600 disabled:bg-gray-400 flex items-center justify-center gap-2"
+                                className="flex-1 bg-gradient-to-r from-secondary to-secondary-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
                             >
                                 {cargando ? <Loader2 className="animate-spin" size={20} /> : <Check size={20} />}
                                 {cargando ? 'Registrando...' : 'Registrar Empresa'}

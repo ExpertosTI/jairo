@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Building2, Search, Filter, MapPin, Globe, Phone, Mail, Network } from "lucide-react";
+import { Building2, Search, MapPin, Globe, Phone, Network, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 interface Empresa {
@@ -67,30 +67,36 @@ export default function DirectorioPage() {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
-            <div className="bg-gradient-to-r from-primary to-orange-500 text-white">
-                <div className="max-w-7xl mx-auto px-4 py-12">
+            <div className="bg-gradient-to-r from-primary via-primary-600 to-primary-700 text-white">
+                <div className="max-w-7xl mx-auto px-4 py-6">
                     <div className="flex items-center justify-between">
-                        <div>
-                            <Link href="/" className="text-2xl font-black">JairoApp</Link>
-                        </div>
-                        <div className="flex gap-4">
-                            <Link href="/login" className="px-4 py-2 border border-white/30 rounded-lg hover:bg-white/10">
+                        <Link href="/" className="flex items-center gap-2">
+                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
+                                <span className="text-primary font-black text-lg">J</span>
+                            </div>
+                            <span className="text-2xl font-black">
+                                <span className="text-white">Jairo</span>
+                                <span className="text-secondary">App</span>
+                            </span>
+                        </Link>
+                        <div className="flex gap-3">
+                            <Link href="/login" className="px-4 py-2 border border-white/30 rounded-xl hover:bg-white/10 font-medium">
                                 Iniciar Sesión
                             </Link>
-                            <Link href="/registro" className="px-4 py-2 bg-white text-primary rounded-lg font-medium hover:bg-gray-100">
+                            <Link href="/registro" className="px-4 py-2 bg-secondary text-white rounded-xl font-medium hover:bg-secondary-600">
                                 Registrar Empresa
                             </Link>
                         </div>
                     </div>
 
-                    <div className="mt-12 text-center">
+                    <div className="mt-12 mb-8 text-center">
                         <h1 className="text-4xl md:text-5xl font-black mb-4">Directorio Empresarial</h1>
-                        <p className="text-xl text-white/80 mb-8">
+                        <p className="text-xl text-white/80">
                             Encuentra y conecta con empresas de República Dominicana
                         </p>
 
                         {/* Search */}
-                        <div className="max-w-2xl mx-auto flex gap-2">
+                        <div className="max-w-2xl mx-auto mt-8 flex gap-2">
                             <div className="flex-1 relative">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                                 <input
@@ -104,7 +110,7 @@ export default function DirectorioPage() {
                             <select
                                 value={sectorFiltro}
                                 onChange={(e) => setSectorFiltro(e.target.value)}
-                                className="px-4 py-4 rounded-xl text-gray-900 focus:outline-none focus:ring-4 focus:ring-white/30"
+                                className="px-4 py-4 rounded-xl text-gray-900 focus:outline-none"
                             >
                                 <option value="">Todos los sectores</option>
                                 {sectores.map(s => (
@@ -116,13 +122,13 @@ export default function DirectorioPage() {
                 </div>
             </div>
 
-            {/* Sectors Quick Filter */}
-            <div className="border-b bg-white">
+            {/* Sectors Filter */}
+            <div className="border-b bg-white sticky top-0 z-10">
                 <div className="max-w-7xl mx-auto px-4 py-4">
                     <div className="flex gap-2 overflow-x-auto pb-2">
                         <button
                             onClick={() => setSectorFiltro("")}
-                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${!sectorFiltro ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${!sectorFiltro ? 'bg-primary text-white shadow-lg' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                         >
                             Todos
@@ -131,7 +137,9 @@ export default function DirectorioPage() {
                             <button
                                 key={sector.id}
                                 onClick={() => setSectorFiltro(sector.name)}
-                                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap flex items-center gap-1 ${sectorFiltro === sector.name ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap flex items-center gap-1 transition-all ${sectorFiltro === sector.name
+                                        ? 'bg-primary text-white shadow-lg'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                     }`}
                             >
                                 <span>{sector.icon}</span>
@@ -150,17 +158,19 @@ export default function DirectorioPage() {
                         <p className="text-gray-500">Cargando empresas...</p>
                     </div>
                 ) : empresas.length === 0 ? (
-                    <div className="text-center py-12">
-                        <Building2 className="mx-auto mb-4 text-gray-300" size={64} />
-                        <h3 className="text-xl font-medium text-gray-900 mb-2">No hay empresas</h3>
-                        <p className="text-gray-500 mb-4">
+                    <div className="text-center py-16">
+                        <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Building2 className="text-gray-400" size={40} />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">No hay empresas</h3>
+                        <p className="text-gray-500 mb-6">
                             {busqueda || sectorFiltro
                                 ? "No se encontraron empresas con esos filtros"
                                 : "Sé el primero en registrar tu empresa"}
                         </p>
                         <Link
                             href="/registro"
-                            className="inline-block bg-primary text-white px-6 py-3 rounded-lg font-medium hover:bg-orange-600"
+                            className="inline-block bg-gradient-to-r from-primary to-primary-600 text-white px-8 py-3 rounded-xl font-semibold hover:shadow-lg"
                         >
                             Registrar mi Empresa
                         </Link>
@@ -172,17 +182,17 @@ export default function DirectorioPage() {
                             {empresas.map((empresa) => (
                                 <div
                                     key={empresa.id}
-                                    className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-lg transition-shadow"
+                                    className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all"
                                 >
                                     <div className="flex items-start gap-4">
-                                        <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center">
+                                        <div className="w-14 h-14 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl flex items-center justify-center">
                                             <Building2 className="text-primary" size={28} />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <h3 className="font-bold text-gray-900 text-lg truncate">{empresa.name}</h3>
-                                            <p className="text-sm text-primary">{empresa.sector_nombre}</p>
+                                            <p className="text-sm text-primary font-medium">{empresa.sector_nombre}</p>
                                             {empresa.tipo_nombre && (
-                                                <span className="inline-block mt-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+                                                <span className="inline-block mt-1 px-2 py-0.5 bg-secondary/10 text-secondary text-xs rounded font-medium">
                                                     {empresa.tipo_nombre}
                                                 </span>
                                             )}
@@ -221,8 +231,8 @@ export default function DirectorioPage() {
                                             <Network size={14} />
                                             <span>{empresa.conexiones || 0} conexiones</span>
                                         </div>
-                                        <button className="text-primary font-medium text-sm hover:underline">
-                                            Ver perfil
+                                        <button className="text-primary font-medium text-sm hover:underline flex items-center gap-1">
+                                            Ver perfil <ChevronRight size={14} />
                                         </button>
                                     </div>
                                 </div>
@@ -235,7 +245,12 @@ export default function DirectorioPage() {
             {/* Footer */}
             <footer className="bg-gray-900 text-white py-12 mt-12">
                 <div className="max-w-7xl mx-auto px-4 text-center">
-                    <h2 className="text-2xl font-black text-primary mb-2">JairoApp</h2>
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                            <span className="text-white font-black text-lg">J</span>
+                        </div>
+                        <span className="text-2xl font-black">JairoApp</span>
+                    </div>
                     <p className="text-gray-400">Plataforma B2B de República Dominicana</p>
                     <div className="flex justify-center gap-6 mt-6 text-sm text-gray-400">
                         <Link href="/terms" className="hover:text-white">Términos</Link>

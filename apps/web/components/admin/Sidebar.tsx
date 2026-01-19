@@ -5,19 +5,18 @@ import { usePathname } from "next/navigation";
 import {
     LayoutDashboard,
     Building2,
-    Network,
     Tags,
+    Network,
     Users,
     Settings,
     LogOut,
-    Menu,
-    X
+    ChevronLeft,
+    Menu
 } from "lucide-react";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
 
 const menuItems = [
-    { href: "/admin", icon: LayoutDashboard, label: "Panel Principal" },
+    { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/admin/empresas", icon: Building2, label: "Empresas" },
     { href: "/admin/sectores", icon: Tags, label: "Sectores" },
     { href: "/admin/relaciones", icon: Network, label: "Engranajes" },
@@ -25,59 +24,96 @@ const menuItems = [
     { href: "/admin/configuracion", icon: Settings, label: "Configuración" },
 ];
 
-export function AdminSidebar() {
+export default function AdminSidebar() {
     const pathname = usePathname();
-    const [isOpen, setIsOpen] = useState(false);
+    const [collapsed, setCollapsed] = useState(false);
 
     return (
         <>
-            {/* Mobile Toggle */}
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-primary text-white rounded-lg"
-            >
-                {isOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
+            {/* Mobile Header */}
+            <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b z-50 px-4 py-3 flex items-center justify-between">
+                <Link href="/admin" className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
+                        <span className="text-white font-black text-sm">J</span>
+                    </div>
+                    <span className="font-black text-lg">
+                        <span className="text-primary">Jairo</span>
+                        <span className="text-secondary">App</span>
+                    </span>
+                </Link>
+                <button className="p-2 hover:bg-gray-100 rounded-lg">
+                    <Menu size={20} />
+                </button>
+            </div>
 
-            {/* Sidebar */}
-            <aside className={cn(
-                "fixed left-0 top-0 h-full w-64 bg-gray-900 text-white z-40 transition-transform duration-300",
-                isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-            )}>
+            {/* Desktop Sidebar */}
+            <aside className={`hidden lg:flex flex-col fixed left-0 top-0 h-screen bg-white border-r transition-all duration-300 z-50 ${collapsed ? "w-20" : "w-64"
+                }`}>
                 {/* Logo */}
-                <div className="p-6 border-b border-gray-800">
-                    <h1 className="text-2xl font-black text-primary">JairoApp</h1>
-                    <p className="text-xs text-gray-400 mt-1">Panel de Administración</p>
+                <div className="p-4 border-b flex items-center justify-between">
+                    <Link href="/admin" className="flex items-center gap-2">
+                        <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                            <span className="text-white font-black text-lg">J</span>
+                        </div>
+                        {!collapsed && (
+                            <span className="font-black text-xl">
+                                <span className="text-primary">Jairo</span>
+                                <span className="text-secondary">App</span>
+                            </span>
+                        )}
+                    </Link>
+                    <button
+                        onClick={() => setCollapsed(!collapsed)}
+                        className="p-1.5 hover:bg-gray-100 rounded-lg"
+                    >
+                        <ChevronLeft className={`transition-transform ${collapsed ? "rotate-180" : ""}`} size={18} />
+                    </button>
                 </div>
 
                 {/* Navigation */}
-                <nav className="p-4 space-y-2">
-                    {menuItems.map((item) => {
-                        const isActive = pathname === item.href;
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={cn(
-                                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-                                    isActive
-                                        ? "bg-primary text-white"
-                                        : "text-gray-400 hover:bg-gray-800 hover:text-white"
-                                )}
-                            >
-                                <item.icon size={20} />
-                                <span className="font-medium">{item.label}</span>
-                            </Link>
-                        );
-                    })}
+                <nav className="flex-1 p-4">
+                    <ul className="space-y-1">
+                        {menuItems.map((item) => {
+                            const isActive = pathname === item.href;
+                            return (
+                                <li key={item.href}>
+                                    <Link
+                                        href={item.href}
+                                        className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
+                                                ? "bg-gradient-to-r from-primary to-primary-600 text-white shadow-lg shadow-primary/25"
+                                                : "text-gray-600 hover:bg-gray-100"
+                                            }`}
+                                    >
+                                        <item.icon size={20} />
+                                        {!collapsed && <span className="font-medium">{item.label}</span>}
+                                    </Link>
+                                </li>
+                            );
+                        })}
+                    </ul>
                 </nav>
 
-                {/* Footer */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-800">
-                    <button className="flex items-center gap-3 px-4 py-3 w-full text-gray-400 hover:text-red-400 transition-colors">
-                        <LogOut size={20} />
-                        <span>Cerrar Sesión</span>
-                    </button>
+                {/* User Section */}
+                <div className="p-4 border-t">
+                    <div className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}>
+                        <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-bold">
+                            AD
+                        </div>
+                        {!collapsed && (
+                            <div className="flex-1 min-w-0">
+                                <p className="font-medium text-gray-900 truncate">Admin</p>
+                                <p className="text-xs text-gray-500 truncate">Super Admin</p>
+                            </div>
+                        )}
+                    </div>
+                    <Link
+                        href="/"
+                        className={`flex items-center gap-3 mt-3 px-4 py-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors ${collapsed ? "justify-center" : ""
+                            }`}
+                    >
+                        <LogOut size={18} />
+                        {!collapsed && <span className="text-sm font-medium">Cerrar Sesión</span>}
+                    </Link>
                 </div>
             </aside>
         </>
