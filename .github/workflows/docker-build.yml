@@ -7,8 +7,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME_WEB: ${{ github.repository }}-web
-  IMAGE_NAME_API: ${{ github.repository }}-api
+  IMAGE_NAME_WEB: expertosti/jairo-web
+  IMAGE_NAME_API: expertosti/jairo-api
 
 jobs:
   build-and-push:
