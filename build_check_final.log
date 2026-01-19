@@ -1,0 +1,36 @@
+ WARNING  --no-cache is deprecated and will be removed in a future major version. Use --cache=local:r,remote:r
+• turbo 2.7.5
+• Packages in scope: web
+• Running build in 1 packages
+• Remote caching disabled
+web:build: cache miss, executing 36292a4450e75337
+web:build: 
+web:build: > web@0.1.0 build C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\apps\web
+web:build: > next build
+web:build: 
+web:build: node:internal/modules/cjs/loader:1228
+web:build:   throw err;
+web:build:   ^
+web:build: 
+web:build: Error: Cannot find module 'C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\apps\web\node_modules\next\dist\bin\next'
+web:build:     at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+web:build:     at Function._load (node:internal/modules/cjs/loader:1055:27)
+web:build:     at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+web:build:     at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+web:build:     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5)
+web:build:     at node:internal/main/run_main_module:36:49 {
+web:build:   code: 'MODULE_NOT_FOUND',
+web:build:   requireStack: []
+web:build: }
+web:build: 
+web:build: Node.js v22.14.0
+web:build:  ELIFECYCLE  Command failed with exit code 1.
+web:build: ERROR: command finished with error: command (C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\apps\web) C:\Users\adder\AppData\Roaming\npm\pnpm.cmd run build exited (1)
+web#build: command (C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\apps\web) C:\Users\adder\AppData\Roaming\npm\pnpm.cmd run build exited (1)
+
+ Tasks:    0 successful, 1 total
+Cached:    0 cached, 1 total
+  Time:    1.412s 
+Failed:    web#build
+
+ ERROR  run failed: command  exited (1)

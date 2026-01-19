@@ -1,0 +1,49 @@
+ WARNING  --no-cache is deprecated and will be removed in a future major version. Use --cache=local:r,remote:r
+• turbo 2.7.5
+• Packages in scope: web
+• Running build in 1 packages
+• Remote caching disabled
+web:build: cache miss, executing 36292a4450e75337
+web:build: 
+web:build: > web@0.1.0 build C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\apps\web
+web:build: > next build
+web:build: 
+web:build:   ▲ Next.js 14.2.3
+web:build: 
+web:build:    Creating an optimized production build ...
+web:build:  ✓ Compiled successfully
+web:build:    Skipping validation of types
+web:build:    Skipping linting
+web:build:    Collecting page data ...
+web:build:    Generating static pages (0/26) ...
+web:build:    Generating static pages (6/26) 
+web:build:    Generating static pages (12/26) 
+web:build:    Generating static pages (19/26) 
+web:build:  ⨯ useSearchParams() should be wrapped in a suspense boundary at page "/planes". Read more: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+web:build:     at o (C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\apps\web\.next\server\chunks\659.js:101:11247)
+web:build:     at s (C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\apps\web\.next\server\chunks\659.js:101:22109)
+web:build:     at p (C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\apps\web\.next\server\app\planes\page.js:1:2596)
+web:build:     at nj (C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\node_modules\.pnpm\next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:46251)
+web:build:     at nM (C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\node_modules\.pnpm\next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47571)
+web:build:     at nN (C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\node_modules\.pnpm\next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+web:build:     at nI (C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\node_modules\.pnpm\next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47010)
+web:build:     at nM (C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\node_modules\.pnpm\next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47717)
+web:build:     at nM (C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\node_modules\.pnpm\next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61546)
+web:build:     at nN (C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\node_modules\.pnpm\next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+web:build: 
+web:build: Error occurred prerendering page "/planes". Read more: https://nextjs.org/docs/messages/prerender-error
+web:build: 
+web:build:  ✓ Generating static pages (26/26)
+web:build: 
+web:build: > Export encountered errors on following paths:
+web:build: 	/planes/page: /planes
+web:build:  ELIFECYCLE  Command failed with exit code 1.
+web:build: ERROR: command finished with error: command (C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\apps\web) C:\Users\adder\AppData\Roaming\npm\pnpm.cmd run build exited (1)
+web#build: command (C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\apps\web) C:\Users\adder\AppData\Roaming\npm\pnpm.cmd run build exited (1)
+
+ Tasks:    0 successful, 1 total
+Cached:    0 cached, 1 total
+  Time:    19.678s 
+Failed:    web#build
+
+ ERROR  run failed: command  exited (1)

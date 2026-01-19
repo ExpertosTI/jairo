@@ -7,16 +7,20 @@ settings:
 importers:
 
   .:
+    dependencies:
+      client-only:
+        specifier: ^0.0.1
+        version: 0.0.1
     devDependencies:
       prettier:
-        specifier: ^3.7.4
+        specifier: ^3.2.5
         version: 3.7.4
       turbo:
         specifier: ^2.7.5
         version: 2.7.5
       typescript:
-        specifier: 5.9.2
-        version: 5.9.2
+        specifier: 5.4.5
+        version: 5.4.5
 
   apps/api:
     dependencies:
