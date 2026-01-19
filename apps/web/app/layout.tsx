@@ -1,9 +1,18 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ToastProvider } from "@/components/ui/Toast";
 
 export const metadata: Metadata = {
-  title: "B2B SaaS Platform",
-  description: "Multi-tenant B2B SaaS Platform",
+  title: "JairoApp - Plataforma B2B Empresarial",
+  description: "Conecta tu empresa con nuevos mercados. La red empresarial B2B líder para proveedores, distribuidores y socios comerciales.",
+  keywords: "B2B, networking, empresas, directorio empresarial, proveedores, distribuidores",
+  authors: [{ name: "JairoApp" }],
+  openGraph: {
+    title: "JairoApp - Plataforma B2B Empresarial",
+    description: "Conecta tu empresa con nuevos mercados",
+    type: "website",
+    locale: "es_LA",
+  },
 };
 
 export default function RootLayout({
@@ -12,9 +21,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="es">
       <body>
-        {children}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );
