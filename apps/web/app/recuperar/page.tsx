@@ -1,14 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Lock, Eye, EyeOff, CheckCircle, AlertCircle } from "lucide-react";
+import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 export default function RecuperarPage() {
+    return (
+        <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>}>
+            <RecuperarContent />
+        </React.Suspense>
+    );
+}
+
+function RecuperarContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [token, setToken] = useState<string | null>(null);
+    // ... resto del componente igual
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
