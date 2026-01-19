@@ -1,0 +1,15 @@
+ WARNING  --no-cache is deprecated and will be removed in a future major version. Use --cache=local:r,remote:r
+• turbo 2.7.5
+• Packages in scope: api
+• Running build in 1 packages
+• Remote caching disabled
+api:build: cache miss, executing c75e692457c28624
+api:build: 
+api:build: > api@0.0.1 build C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\apps\api
+api:build: > nest build
+api:build: 
+
+ Tasks:    1 successful, 1 total
+Cached:    0 cached, 1 total
+  Time:    10.564s 
+

@@ -1,0 +1,31 @@
+ WARNING  --no-cache is deprecated and will be removed in a future major version. Use --cache=local:r,remote:r
+• turbo 2.7.5
+• Packages in scope: api
+• Running build in 1 packages
+• Remote caching disabled
+api:build: cache miss, executing ea049189c30c4062
+api:build: 
+api:build: > api@0.0.1 build C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\apps\api
+api:build: > nest build
+api:build: 
+api:build: [96msrc/odoo.service.ts[0m:[93m30[0m:[93m26[0m - [91merror[0m[90m TS2339: [0mProperty 'logger' does not exist on type 'OdooService'.
+api:build: 
+api:build: [7m30[0m                     this.logger.log(`Odoo Auth Success, UID: ${uid}`);
+api:build: [7m  [0m [91m                         ~~~~~~[0m
+api:build: Found 2 error(s).
+api:build: 
+api:build: [96msrc/payments/stripe.service.ts[0m:[93m2[0m:[93m20[0m - [91merror[0m[90m TS2307: [0mCannot find module 'stripe' or its corresponding type declarations.
+api:build: 
+api:build: [7m2[0m import Stripe from 'stripe';
+api:build: [7m [0m [91m                   ~~~~~~~~[0m
+api:build: 
+api:build:  ELIFECYCLE  Command failed with exit code 1.
+api:build: ERROR: command finished with error: command (C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\apps\api) C:\Users\adder\AppData\Roaming\npm\pnpm.cmd run build exited (1)
+api#build: command (C:\Users\adder\OneDrive\Documentos\renace\AngelD\b2b-platform\apps\api) C:\Users\adder\AppData\Roaming\npm\pnpm.cmd run build exited (1)
+
+ Tasks:    0 successful, 1 total
+Cached:    0 cached, 1 total
+  Time:    10.742s 
+Failed:    api#build
+
+ ERROR  run failed: command  exited (1)

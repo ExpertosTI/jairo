@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Client } from 'xmlrpc';
 import * as xmlrpc from 'xmlrpc';
 
 @Injectable()
 export class OdooService {
+    private readonly logger = new Logger(OdooService.name);
     private url: string;
     private db: string;
     private username: string;
