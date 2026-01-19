@@ -56,6 +56,8 @@ services:
       - SMTP_USER=info@renace.space
       - SMTP_PASS=JustWork2027@
       - SMTP_FROM=JairoApp <info@renace.space>
+      # JWT
+      - JWT_SECRET=jairo_jwt_super_secret_2026_rd
       # Odoo Integration
       - ODOO_URL=
       - ODOO_DB=

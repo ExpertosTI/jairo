@@ -1,58 +1,142 @@
-import { Building2, Users, Network, TrendingUp, ArrowUpRight, ArrowDownRight } from "lucide-react";
+"use client";
 
-// Datos de ejemplo (después vendrán del API)
-const stats = [
-    {
-        label: "Total Empresas",
-        value: "127",
-        change: "+12%",
-        trend: "up",
-        icon: Building2,
-        color: "bg-blue-500"
-    },
-    {
-        label: "Usuarios Activos",
-        value: "1,429",
-        change: "+8%",
-        trend: "up",
-        icon: Users,
-        color: "bg-green-500"
-    },
-    {
-        label: "Conexiones",
-        value: "89",
-        change: "+23%",
-        trend: "up",
-        icon: Network,
-        color: "bg-purple-500"
-    },
-    {
-        label: "Transacciones",
-        value: "$45,231",
-        change: "-3%",
-        trend: "down",
-        icon: TrendingUp,
-        color: "bg-orange-500"
-    },
-];
+import { useEffect, useState } from "react";
+import { Building2, Users, Network, TrendingUp, ArrowUpRight, Clock, Activity } from "lucide-react";
+import Link from "next/link";
 
-const recentCompanies = [
-    { name: "Distribuidora del Caribe", sector: "Retail", status: "Activa", date: "Hoy" },
-    { name: "Tech Solutions RD", sector: "Tecnología", status: "Pendiente", date: "Ayer" },
-    { name: "Constructora Marte", sector: "Construcción", status: "Activa", date: "Hace 2 días" },
-    { name: "Farmacia Central", sector: "Salud", status: "Activa", date: "Hace 3 días" },
-];
+interface Estadisticas {
+    empresas: { total: number; activas: number; pendientes: number; nuevas_semana: number };
+    usuarios: { total: number; super_admins: number; admins: number; nuevos_semana: number };
+    conexiones: { total: number; activas: number; pendientes: number };
+    sectores: { total: number };
+}
 
-const sectors = [
-    { name: "Tecnología", count: 34, color: "bg-blue-500" },
-    { name: "Retail", count: 28, color: "bg-green-500" },
-    { name: "Manufactura", count: 22, color: "bg-yellow-500" },
-    { name: "Servicios", count: 19, color: "bg-purple-500" },
-    { name: "Construcción", count: 15, color: "bg-red-500" },
-    { name: "Otros", count: 9, color: "bg-gray-500" },
-];
+interface EmpresaReciente {
+    id: string;
+    name: string;
+    email: string;
+    status: string;
+    created_at: string;
+    sector_nombre: string;
+    sector_icono: string;
+}
+
+interface Actividad {
+    id: string;
+    type: string;
+    description: string;
+    created_at: string;
+    empresa_nombre: string;
+}
+
+interface SectorDistribucion {
+    id: string;
+    name: string;
+    icon: string;
+    color: string;
+    total_empresas: number;
+}
 
 export default function AdminDashboard() {
+    const [cargando, setCargando] = useState(true);
+    const [stats, setStats] = useState<Estadisticas | null>(null);
+    const [empresasRecientes, setEmpresasRecientes] = useState<EmpresaReciente[]>([]);
+    const [actividades, setActividades] = useState<Actividad[]>([]);
+    const [sectores, setSectores] = useState<SectorDistribucion[]>([]);
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+    useEffect(() => {
+        cargarDatos();
+    }, []);
+
+    const cargarDatos = async () => {
+        try {
+            const [statsRes, empresasRes, actividadesRes, sectoresRes] = await Promise.all([
+                fetch(`${API_URL}/dashboard/estadisticas`),
+                fetch(`${API_URL}/dashboard/empresas-recientes`),
+                fetch(`${API_URL}/dashboard/actividades-recientes`),
+                fetch(`${API_URL}/dashboard/sectores-distribucion`),
+            ]);
+
+            if (statsRes.ok) setStats(await statsRes.json());
+            if (empresasRes.ok) {
+                const data = await empresasRes.json();
+                setEmpresasRecientes(data.empresas || []);
+            }
+            if (actividadesRes.ok) {
+                const data = await actividadesRes.json();
+                setActividades(data.actividades || []);
+            }
+            if (sectoresRes.ok) {
+                const data = await sectoresRes.json();
+                setSectores(data.sectores || []);
+            }
+        } catch (error) {
+            console.error("Error cargando datos:", error);
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    const formatearFecha = (fecha: string) => {
+        const date = new Date(fecha);
+        const ahora = new Date();
+        const diff = ahora.getTime() - date.getTime();
+        const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+        if (dias === 0) return "Hoy";
+        if (dias === 1) return "Ayer";
+        if (dias < 7) return `Hace ${dias} días`;
+        return date.toLocaleDateString('es-DO');
+    };
+
+    const statsCards = [
+        {
+            label: "Total Empresas",
+            value: stats?.empresas.total || 0,
+            subValue: `+${stats?.empresas.nuevas_semana || 0} esta semana`,
+            icon: Building2,
+            color: "bg-blue-500",
+            href: "/admin/empresas"
+        },
+        {
+            label: "Usuarios Activos",
+            value: stats?.usuarios.total || 0,
+            subValue: `${stats?.usuarios.admins || 0} administradores`,
+            icon: Users,
+            color: "bg-green-500",
+            href: "/admin/usuarios"
+        },
+        {
+            label: "Conexiones",
+            value: stats?.conexiones.activas || 0,
+            subValue: `${stats?.conexiones.pendientes || 0} pendientes`,
+            icon: Network,
+            color: "bg-purple-500",
+            href: "/admin/relaciones"
+        },
+        {
+            label: "Sectores",
+            value: stats?.sectores.total || 0,
+            subValue: "categorías activas",
+            icon: TrendingUp,
+            color: "bg-orange-500",
+            href: "/admin/sectores"
+        },
+    ];
+
+    if (cargando) {
+        return (
+            <div className="flex items-center justify-center min-h-[50vh]">
+                <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-gray-500">Cargando panel...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-8">
             {/* Header */}
@@ -63,23 +147,24 @@ export default function AdminDashboard() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {stats.map((stat) => (
-                    <div key={stat.label} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                {statsCards.map((stat) => (
+                    <Link
+                        key={stat.label}
+                        href={stat.href}
+                        className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                    >
                         <div className="flex items-center justify-between">
                             <div className={`${stat.color} p-3 rounded-lg`}>
                                 <stat.icon className="text-white" size={24} />
                             </div>
-                            <span className={`flex items-center text-sm font-medium ${stat.trend === "up" ? "text-green-600" : "text-red-600"
-                                }`}>
-                                {stat.change}
-                                {stat.trend === "up" ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
-                            </span>
+                            <ArrowUpRight className="text-gray-300" size={20} />
                         </div>
                         <div className="mt-4">
                             <h3 className="text-2xl font-bold text-gray-900">{stat.value}</h3>
                             <p className="text-sm text-gray-500">{stat.label}</p>
+                            <p className="text-xs text-gray-400 mt-1">{stat.subValue}</p>
                         </div>
-                    </div>
+                    </Link>
                 ))}
             </div>
 
@@ -87,37 +172,43 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Recent Companies */}
                 <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100">
-                    <div className="p-6 border-b border-gray-100">
+                    <div className="p-6 border-b border-gray-100 flex items-center justify-between">
                         <h2 className="text-lg font-bold text-gray-900">Empresas Recientes</h2>
+                        <Link href="/admin/empresas" className="text-primary text-sm font-medium hover:underline">
+                            Ver todas
+                        </Link>
                     </div>
                     <div className="divide-y divide-gray-100">
-                        {recentCompanies.map((company) => (
-                            <div key={company.name} className="p-4 flex items-center justify-between hover:bg-gray-50">
+                        {empresasRecientes.length > 0 ? empresasRecientes.slice(0, 5).map((empresa) => (
+                            <div key={empresa.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                                        <Building2 className="text-primary" size={20} />
+                                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-lg">
+                                        {empresa.sector_icono || "🏢"}
                                     </div>
                                     <div>
-                                        <h4 className="font-semibold text-gray-900">{company.name}</h4>
-                                        <p className="text-sm text-gray-500">{company.sector}</p>
+                                        <h4 className="font-semibold text-gray-900">{empresa.name}</h4>
+                                        <p className="text-sm text-gray-500">{empresa.sector_nombre || "Sin sector"}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${company.status === "Activa"
+                                    <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${empresa.status === "active"
                                             ? "bg-green-100 text-green-700"
                                             : "bg-yellow-100 text-yellow-700"
                                         }`}>
-                                        {company.status}
+                                        {empresa.status === "active" ? "Activa" : "Pendiente"}
                                     </span>
-                                    <p className="text-xs text-gray-400 mt-1">{company.date}</p>
+                                    <p className="text-xs text-gray-400 mt-1">{formatearFecha(empresa.created_at)}</p>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                    <div className="p-4 border-t border-gray-100">
-                        <a href="/admin/empresas" className="text-primary font-medium text-sm hover:underline">
-                            Ver todas las empresas →
-                        </a>
+                        )) : (
+                            <div className="p-8 text-center text-gray-400">
+                                <Building2 className="mx-auto mb-2 opacity-50" size={32} />
+                                <p>No hay empresas registradas</p>
+                                <Link href="/registro" className="text-primary text-sm hover:underline">
+                                    Registrar primera empresa
+                                </Link>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -127,14 +218,46 @@ export default function AdminDashboard() {
                         <h2 className="text-lg font-bold text-gray-900">Distribución por Sector</h2>
                     </div>
                     <div className="p-6 space-y-4">
-                        {sectors.map((sector) => (
-                            <div key={sector.name} className="flex items-center gap-3">
-                                <div className={`w-3 h-3 rounded-full ${sector.color}`} />
+                        {sectores.length > 0 ? sectores.slice(0, 8).map((sector) => (
+                            <div key={sector.id} className="flex items-center gap-3">
+                                <span className="text-xl">{sector.icon}</span>
                                 <span className="flex-1 text-sm text-gray-700">{sector.name}</span>
-                                <span className="text-sm font-medium text-gray-900">{sector.count}</span>
+                                <span className="text-sm font-medium text-gray-900">{sector.total_empresas}</span>
                             </div>
-                        ))}
+                        )) : (
+                            <p className="text-gray-400 text-center py-4">Cargando sectores...</p>
+                        )}
                     </div>
+                </div>
+            </div>
+
+            {/* Activity Feed */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+                <div className="p-6 border-b border-gray-100 flex items-center gap-2">
+                    <Activity className="text-primary" size={20} />
+                    <h2 className="text-lg font-bold text-gray-900">Actividad Reciente</h2>
+                </div>
+                <div className="divide-y divide-gray-100">
+                    {actividades.length > 0 ? actividades.slice(0, 8).map((actividad) => (
+                        <div key={actividad.id} className="p-4 flex items-center gap-4">
+                            <div className="w-2 h-2 bg-primary rounded-full" />
+                            <div className="flex-1">
+                                <p className="text-sm text-gray-700">{actividad.description}</p>
+                                {actividad.empresa_nombre && (
+                                    <p className="text-xs text-gray-400">{actividad.empresa_nombre}</p>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-gray-400">
+                                <Clock size={12} />
+                                {formatearFecha(actividad.created_at)}
+                            </div>
+                        </div>
+                    )) : (
+                        <div className="p-8 text-center text-gray-400">
+                            <Activity className="mx-auto mb-2 opacity-50" size={32} />
+                            <p>No hay actividad reciente</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
