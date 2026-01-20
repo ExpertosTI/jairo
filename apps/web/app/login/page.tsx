@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [mostrarPassword, setMostrarPassword] = useState(false);
     const [cargando, setCargando] = useState(false);
     const [error, setError] = useState("");
@@ -14,6 +15,40 @@ export default function LoginPage() {
         email: "",
         password: "",
     });
+
+    // Handle Google OAuth callback
+    useEffect(() => {
+        const token = searchParams.get('token');
+        const googleAuth = searchParams.get('google');
+        const errorParam = searchParams.get('error');
+
+        if (errorParam) {
+            setError('Error al iniciar sesión con Google. Intenta de nuevo.');
+            return;
+        }
+
+        if (token && googleAuth) {
+            // Decode token to get user info
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                localStorage.setItem("token", token);
+                localStorage.setItem("usuario", JSON.stringify({
+                    id: payload.id,
+                    email: payload.email,
+                    nombre: payload.email.split('@')[0],
+                    rol: payload.role
+                }));
+
+                if (payload.role === "super_admin" || payload.role === "admin") {
+                    router.push("/admin");
+                } else {
+                    router.push("/directorio");
+                }
+            } catch (e) {
+                setError('Error procesando autenticación');
+            }
+        }
+    }, [searchParams, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

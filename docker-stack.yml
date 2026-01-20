@@ -58,8 +58,9 @@ services:
       - SMTP_FROM=JairoApp <info@renace.space>
       # JWT
       - JWT_SECRET=jairo_jwt_super_secret_2026_rd
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      # Google OAuth - Set these on server: export GOOGLE_CLIENT_ID=xxx GOOGLE_CLIENT_SECRET=xxx
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-not_set}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-not_set}
     networks:
       - jairo_internal
       - RenaceNet
