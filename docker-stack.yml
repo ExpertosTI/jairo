@@ -71,6 +71,7 @@ services:
       labels:
         - "traefik.enable=true"
         - "traefik.http.routers.jairo-api.rule=Host(`jairoapp.renace.tech`) && PathPrefix(`/api`)"
+        - "traefik.http.routers.jairo-api.priority=100"
         - "traefik.http.routers.jairo-api.entrypoints=websecure"
         - "traefik.http.routers.jairo-api.tls=true"
         - "traefik.http.routers.jairo-api.tls.certresolver=letsencryptresolver"
@@ -101,6 +102,7 @@ services:
       labels:
         - "traefik.enable=true"
         - "traefik.http.routers.jairoapp.rule=Host(`jairoapp.renace.tech`)"
+        - "traefik.http.routers.jairoapp.priority=1"
         - "traefik.http.routers.jairoapp.entrypoints=websecure"
         - "traefik.http.routers.jairoapp.tls=true"
         - "traefik.http.routers.jairoapp.tls.certresolver=letsencryptresolver"
