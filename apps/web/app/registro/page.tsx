@@ -135,9 +135,6 @@ export default function RegistroEmpresa() {
                 <div className="max-w-4xl mx-auto px-4 py-8">
                     <div className="flex items-center justify-between mb-8">
                         <Link href="/" className="flex items-center gap-2">
-// <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
-                                //     <span className="text-primary font-black text-lg">J</span>
-                                // </div>
                             <img src="/logo.svg" alt="JairoApp" className="w-12 h-12 object-contain bg-white rounded-xl p-1" />
                             <span className="text-2xl font-black">JairoApp</span>
                         </Link>

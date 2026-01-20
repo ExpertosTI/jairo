@@ -1,5 +1,4 @@
-import { Controller, Post, Body, Get, UseGuards, Request, HttpException, HttpStatus, Res } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Post, Body, Get, Request, HttpException, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -47,14 +46,5 @@ export class AuthController {
         return { mensaje: 'Sesión cerrada exitosamente' };
     }
 
-    @Get('google')
-    @UseGuards(AuthGuard('google'))
-    async googleAuth(@Request() req: any) { }
-
-    @Get('google/callback')
-    @UseGuards(AuthGuard('google'))
-    async googleAuthRedirect(@Request() req: any, @Res() res: any) {
-        const { token } = await this.authService.loginGoogle(req.user);
-        return res.redirect(`https://jairoapp.renace.tech/auth/callback?token=${token}`);
-    }
+    // Google OAuth routes removed - not needed for basic functionality
 }

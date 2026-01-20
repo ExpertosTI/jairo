@@ -60,14 +60,11 @@ import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { PaymentsController } from './payments/payments.controller';
 import { StripeService } from './payments/stripe.service';
-import { PassportModule } from '@nestjs/passport';
-import { GoogleStrategy } from './auth/google.strategy';
 import { DatabaseModule } from './database/database.module';
 
 @Module({
   imports: [
     DatabaseModule,
-    PassportModule.register({ defaultStrategy: 'google' }),
     // Rate Limiting: 100 requests per minute per IP
     ThrottlerModule.forRoot([{
       ttl: 60000,
@@ -112,7 +109,6 @@ import { DatabaseModule } from './database/database.module';
     EmailService,
     AdminService,
     StripeService,
-    GoogleStrategy,
 
     // Global Rate Limiting Guard
     {

@@ -53,9 +53,6 @@ export default function AdminSidebar() {
                 {/* Logo */}
                 <div className="p-4 border-b flex items-center justify-between">
                     <Link href="/admin" className="flex items-center gap-2">
-// <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
-                        //     <span className="text-white font-black text-lg">J</span>
-                        // </div>
                         <img src="/logo.svg" alt="JairoApp" className="w-10 h-10 object-contain" />
                         {!collapsed && (
                             <span className="font-black text-xl">
