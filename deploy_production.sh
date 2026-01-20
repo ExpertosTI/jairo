@@ -29,7 +29,7 @@ docker service ls
 
 echo "📜 Checking Logs (API & Postgres)..."
 echo "--- POSTGRES LOGS ---"
-docker service logs jairo_postgres --tail 10
+docker service logs jairo_jairo_db --tail 10
 echo "--- API LOGS ---"
 docker service logs jairo_api --tail 10
 
