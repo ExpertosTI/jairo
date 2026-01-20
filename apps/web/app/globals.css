@@ -186,3 +186,178 @@ textarea::placeholder {
 .spinner {
   @apply w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin;
 }
+
+/* =================================
+   MOBILE RESPONSIVE IMPROVEMENTS
+   ================================= */
+
+/* Safe area for PWA on notch devices */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Touch-friendly tap targets */
+@media (max-width: 768px) {
+
+  button,
+  a,
+  .btn-primary,
+  .btn-secondary,
+  .btn-outline,
+  input[type="submit"] {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  /* Larger touch inputs */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+    /* Prevents iOS zoom on focus */
+    padding: 14px 16px !important;
+    min-height: 52px;
+  }
+
+  /* Better card spacing */
+  .card {
+    margin: 8px;
+    padding: 16px;
+  }
+
+  /* Full-width buttons on mobile */
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    justify-content: center;
+    padding: 16px 24px;
+  }
+
+  /* Mobile typography */
+  h1 {
+    font-size: 1.875rem !important;
+    line-height: 2.25rem !important;
+  }
+
+  h2 {
+    font-size: 1.5rem !important;
+    line-height: 2rem !important;
+  }
+
+  h3 {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+  }
+
+  /* Improve readability on mobile */
+  p,
+  .text-base {
+    font-size: 1rem;
+    line-height: 1.75;
+  }
+
+  /* Better form layout */
+  form {
+    gap: 16px;
+  }
+
+  /* Prevent horizontal scroll */
+  .container,
+  .max-w-7xl,
+  .max-w-6xl {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    overflow-x: hidden;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 380px) {
+  h1 {
+    font-size: 1.5rem !important;
+  }
+
+  h2 {
+    font-size: 1.25rem !important;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 14px 16px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Landscape phone */
+@media (max-width: 768px) and (orientation: landscape) {
+  .min-h-screen {
+    min-height: auto;
+    padding: 24px 0;
+  }
+}
+
+/* PWA standalone mode styling */
+@media (display-mode: standalone) {
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Hide browser UI elements in PWA */
+  .browser-only {
+    display: none !important;
+  }
+}
+
+/* Smooth transitions for all interactive elements */
+button,
+a,
+input,
+select,
+textarea,
+.card {
+  transition: all 0.2s ease;
+}
+
+/* Active states for touch feedback */
+@media (hover: none) {
+
+  button:active,
+  .btn-primary:active,
+  .btn-secondary:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+
+  .card:active {
+    transform: scale(0.99);
+  }
+}
+
+/* Focus visible for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--jairo-green);
+  outline-offset: 2px;
+}
+
+/* Better mobile navigation */
+@media (max-width: 768px) {
+  nav {
+    padding: 12px 16px !important;
+  }
+
+  /* Mobile menu improvements */
+  .mobile-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(10px);
+    z-index: 50;
+  }
+}
