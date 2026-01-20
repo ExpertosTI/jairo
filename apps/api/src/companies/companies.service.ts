@@ -12,6 +12,13 @@ export class CompaniesService {
         private readonly emailService: EmailService
     ) { }
 
+    // Helper to validate UUID format
+    private isValidUUID(str: string | undefined | null): boolean {
+        if (!str) return false;
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        return uuidRegex.test(str);
+    }
+
     async findAll(filters: { sector?: string; tipo?: string; estado?: string; busqueda?: string }) {
         let query = `
             SELECT 
@@ -78,6 +85,10 @@ export class CompaniesService {
 
             const slug = data.nombre.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
+            // Validate UUIDs - if not valid UUID format, set to null
+            const validSectorId = this.isValidUUID(data.sectorId) ? data.sectorId : null;
+            const validTypeId = this.isValidUUID(data.tipoId) ? data.tipoId : null;
+
             const companyResult = await client.query(`
                 INSERT INTO companies (name, slug, email, phone, address, website, sector_id, type_id, logo, descripcion, status)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending')
@@ -89,8 +100,8 @@ export class CompaniesService {
                 data.telefono,
                 data.direccion,
                 data.website,
-                data.sectorId || null,
-                data.tipoId || null,
+                validSectorId,
+                validTypeId,
                 data.logo || null,
                 data.descripcion || null
             ]);
