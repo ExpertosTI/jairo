@@ -58,8 +58,6 @@ import { SeedService } from './seed.service';
 import { EmailService } from './email.service';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
-import { PaymentsController } from './payments/payments.controller';
-import { StripeService } from './payments/stripe.service';
 import { DatabaseModule } from './database/database.module';
 
 @Module({
@@ -87,7 +85,6 @@ import { DatabaseModule } from './database/database.module';
     ActivitiesController,
     OdooController,
     AdminController,
-    PaymentsController,
   ],
   providers: [
     // Services
@@ -108,7 +105,6 @@ import { DatabaseModule } from './database/database.module';
     SeedService,
     EmailService,
     AdminService,
-    StripeService,
 
     // Global Rate Limiting Guard
     {
