@@ -1,17 +1,12 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
-import { Pool } from 'pg';
 import * as bcrypt from 'bcrypt';
+import { DatabaseService } from './database/database.service';
 
 @Injectable()
 export class SeedService implements OnModuleInit {
     private readonly logger = new Logger(SeedService.name);
-    private pool: Pool;
 
-    constructor() {
-        this.pool = new Pool({
-            connectionString: process.env.DATABASE_URL,
-        });
-    }
+    constructor(private readonly db: DatabaseService) { }
 
     async onModuleInit() {
         await this.initDatabase();
@@ -19,31 +14,30 @@ export class SeedService implements OnModuleInit {
     }
 
     async initDatabase() {
-        const client = await this.pool.connect();
         try {
             // Crear enums si no existen
-            await client.query(`
+            await this.db.query(`
                 DO $$ BEGIN
                     CREATE TYPE user_role AS ENUM ('super_admin', 'admin', 'manager', 'user');
                 EXCEPTION WHEN duplicate_object THEN null;
                 END $$;
             `);
 
-            await client.query(`
+            await this.db.query(`
                 DO $$ BEGIN
                     CREATE TYPE company_status AS ENUM ('active', 'pending', 'suspended');
                 EXCEPTION WHEN duplicate_object THEN null;
                 END $$;
             `);
 
-            await client.query(`
+            await this.db.query(`
                 DO $$ BEGIN
                     CREATE TYPE relationship_type AS ENUM ('proveedor', 'cliente', 'socio', 'distribuidor');
                 EXCEPTION WHEN duplicate_object THEN null;
                 END $$;
             `);
 
-            await client.query(`
+            await this.db.query(`
                 DO $$ BEGIN
                     CREATE TYPE relationship_status AS ENUM ('active', 'pending', 'rejected');
                 EXCEPTION WHEN duplicate_object THEN null;
@@ -51,7 +45,7 @@ export class SeedService implements OnModuleInit {
             `);
 
             // Tabla de usuarios
-            await client.query(`
+            await this.db.query(`
                 CREATE TABLE IF NOT EXISTS users (
                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                     email VARCHAR(255) UNIQUE NOT NULL,
@@ -67,13 +61,13 @@ export class SeedService implements OnModuleInit {
             `);
 
             // Migration for existing tables
-            await client.query(`
+            await this.db.query(`
                 DO $$ BEGIN
                     ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20);
                 EXCEPTION WHEN duplicate_column THEN null;
                 END $$;
             `);
-            await client.query(`
+            await this.db.query(`
                 DO $$ BEGIN
                     ALTER TABLE users ADD COLUMN IF NOT EXISTS job_title VARCHAR(100);
                 EXCEPTION WHEN duplicate_column THEN null;
@@ -81,7 +75,7 @@ export class SeedService implements OnModuleInit {
             `);
 
             // Tabla de sectores
-            await client.query(`
+            await this.db.query(`
                 CREATE TABLE IF NOT EXISTS sectors (
                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                     name VARCHAR(100) NOT NULL,
@@ -93,7 +87,7 @@ export class SeedService implements OnModuleInit {
             `);
 
             // Tabla de tipos de empresa
-            await client.query(`
+            await this.db.query(`
                 CREATE TABLE IF NOT EXISTS company_types (
                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                     name VARCHAR(100) NOT NULL,
@@ -104,7 +98,7 @@ export class SeedService implements OnModuleInit {
             `);
 
             // Tabla de empresas
-            await client.query(`
+            await this.db.query(`
                 CREATE TABLE IF NOT EXISTS companies (
                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                     name VARCHAR(200) NOT NULL,
@@ -129,25 +123,25 @@ export class SeedService implements OnModuleInit {
             `);
 
             // Migration for existing tables
-            await client.query(`
+            await this.db.query(`
                 DO $$ BEGIN
                     ALTER TABLE companies ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(255);
                 EXCEPTION WHEN duplicate_column THEN null;
                 END $$;
             `);
-            await client.query(`
+            await this.db.query(`
                 DO $$ BEGIN
                     ALTER TABLE companies ADD COLUMN IF NOT EXISTS subscription_id VARCHAR(255);
                 EXCEPTION WHEN duplicate_column THEN null;
                 END $$;
             `);
-            await client.query(`
+            await this.db.query(`
                 DO $$ BEGIN
                     ALTER TABLE companies ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(50) DEFAULT 'free';
                 EXCEPTION WHEN duplicate_column THEN null;
                 END $$;
             `);
-            await client.query(`
+            await this.db.query(`
                 DO $$ BEGIN
                     ALTER TABLE companies ADD COLUMN IF NOT EXISTS plan VARCHAR(50) DEFAULT 'free';
                 EXCEPTION WHEN duplicate_column THEN null;
@@ -155,7 +149,7 @@ export class SeedService implements OnModuleInit {
             `);
 
             // Tabla de relaciones entre empresas
-            await client.query(`
+            await this.db.query(`
                 CREATE TABLE IF NOT EXISTS company_relationships (
                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                     company_a_id UUID REFERENCES companies(id) ON DELETE CASCADE,
@@ -168,7 +162,7 @@ export class SeedService implements OnModuleInit {
             `);
 
             // Tabla de actividades (feed)
-            await client.query(`
+            await this.db.query(`
                 CREATE TABLE IF NOT EXISTS activities (
                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                     type VARCHAR(50) NOT NULL,
@@ -183,16 +177,14 @@ export class SeedService implements OnModuleInit {
             this.logger.log('✅ Base de datos inicializada');
 
             // Seed de sectores de República Dominicana
-            await this.seedSectoresRD(client);
+            await this.seedSectoresRD();
 
         } catch (error) {
             this.logger.error('❌ Error inicializando base de datos:', error);
-        } finally {
-            client.release();
         }
     }
 
-    async seedSectoresRD(client: any) {
+    async seedSectoresRD() {
         const sectores = [
             { nombre: 'Tecnología', descripcion: 'Software, hardware, telecomunicaciones y servicios TI', icono: '💻', color: '#3B82F6' },
             { nombre: 'Comercio', descripcion: 'Retail, mayoristas, distribuidores y comercio general', icono: '🛒', color: '#10B981' },
@@ -209,9 +201,9 @@ export class SeedService implements OnModuleInit {
         ];
 
         for (const sector of sectores) {
-            const existing = await client.query('SELECT id FROM sectors WHERE name = $1', [sector.nombre]);
+            const existing = await this.db.query('SELECT id FROM sectors WHERE name = $1', [sector.nombre]);
             if (existing.rows.length === 0) {
-                await client.query(
+                await this.db.query(
                     'INSERT INTO sectors (name, description, icon, color) VALUES ($1, $2, $3, $4)',
                     [sector.nombre, sector.descripcion, sector.icono, sector.color]
                 );
@@ -232,9 +224,9 @@ export class SeedService implements OnModuleInit {
         ];
 
         for (const tipo of tipos) {
-            const existing = await client.query('SELECT id FROM company_types WHERE name = $1', [tipo.nombre]);
+            const existing = await this.db.query('SELECT id FROM company_types WHERE name = $1', [tipo.nombre]);
             if (existing.rows.length === 0) {
-                await client.query(
+                await this.db.query(
                     'INSERT INTO company_types (name, description) VALUES ($1, $2)',
                     [tipo.nombre, tipo.descripcion]
                 );
@@ -255,10 +247,9 @@ export class SeedService implements OnModuleInit {
             },
         ];
 
-        const client = await this.pool.connect();
         try {
             for (const admin of superAdmins) {
-                const existing = await client.query(
+                const existing = await this.db.query(
                     'SELECT id FROM users WHERE email = $1',
                     [admin.email]
                 );
@@ -266,7 +257,7 @@ export class SeedService implements OnModuleInit {
                 if (existing.rows.length === 0) {
                     const hashedPassword = await bcrypt.hash('JairoApp2026!', 10);
 
-                    await client.query(
+                    await this.db.query(
                         `INSERT INTO users (email, name, password, role) VALUES ($1, $2, $3, 'super_admin')`,
                         [admin.email, admin.name, hashedPassword]
                     );
@@ -278,8 +269,6 @@ export class SeedService implements OnModuleInit {
             }
         } catch (error) {
             this.logger.error('❌ Error creando super admins:', error);
-        } finally {
-            client.release();
         }
     }
 }

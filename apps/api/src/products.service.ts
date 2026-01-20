@@ -206,7 +206,7 @@ export class ProductsService {
         }
     }
 
-    async updateProduct(token: string, id: string, data: any) {
+    async updateProduct(id: string, token: string, data: any) {
         const user = this.getUserFromToken(token);
 
         // Verificar propiedad
@@ -255,7 +255,7 @@ export class ProductsService {
         }
     }
 
-    async deleteProduct(token: string, id: string) {
+    async deleteProduct(id: string, token: string) {
         const user = this.getUserFromToken(token);
 
         const check = await this.db.query('SELECT company_id FROM products WHERE id = $1', [id]);
@@ -270,8 +270,64 @@ export class ProductsService {
         return { message: 'Producto eliminado' };
     }
 
+    async getMyCatalog(token: string) {
+        const user = this.getUserFromToken(token);
+        const userCheck = await this.db.query('SELECT company_id FROM users WHERE id = $1', [user.id]);
+
+        if (!userCheck.rows[0]?.company_id) {
+            return { data: [], meta: { total: 0 } };
+        }
+
+        const companyId = userCheck.rows[0].company_id;
+        const result = await this.db.query(`
+            SELECT p.*, cat.name as category_name
+            FROM products p
+            LEFT JOIN product_categories cat ON p.category_id = cat.id
+            WHERE p.company_id = $1
+            ORDER BY p.created_at DESC
+        `, [companyId]);
+
+        return { data: result.rows, meta: { total: result.rowCount } };
+    }
+
+    async importProducts(token: string, products: any[]) {
+        const user = this.getUserFromToken(token);
+        const userCheck = await this.db.query('SELECT company_id FROM users WHERE id = $1', [user.id]);
+
+        if (!userCheck.rows[0]?.company_id) {
+            throw new HttpException('Debes pertenecer a una empresa para importar productos', HttpStatus.FORBIDDEN);
+        }
+
+        const companyId = userCheck.rows[0].company_id;
+        const imported: any[] = [];
+        const errors: any[] = [];
+
+        for (const product of products) {
+            try {
+                const result = await this.db.query(`
+                    INSERT INTO products (company_id, name, description, sku, price, min_order_qty, status)
+                    VALUES ($1, $2, $3, $4, $5, $6, 'active')
+                    RETURNING id, name
+                `, [
+                    companyId,
+                    product.name || product.nombre,
+                    product.description || product.descripcion,
+                    product.sku,
+                    product.price || product.precio,
+                    product.minOrderQty || product.cantidad_minima || 1
+                ]);
+                imported.push(result.rows[0]);
+            } catch (error) {
+                errors.push({ product: product.name || product.nombre, error: 'Error al importar' });
+            }
+        }
+
+        return { imported: imported.length, errors: errors.length, details: { imported, errors } };
+    }
+
     async getCategories() {
         const result = await this.db.query('SELECT * FROM product_categories ORDER BY name ASC');
         return result.rows;
     }
 }
+

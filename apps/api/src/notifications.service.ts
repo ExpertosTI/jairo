@@ -1,7 +1,7 @@
-import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
-import { Pool } from 'pg';
+import { Injectable, Logger, HttpException, HttpStatus, OnModuleInit } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
 import { EmailService } from './email.service';
+import { DatabaseService } from './database/database.service';
 
 export type NotificationType =
     | 'connection_request'
@@ -14,20 +14,22 @@ export type NotificationType =
     | 'system';
 
 @Injectable()
-export class NotificationsService {
+export class NotificationsService implements OnModuleInit {
     private readonly logger = new Logger(NotificationsService.name);
-    private pool: Pool;
     private readonly jwtSecret = process.env.JWT_SECRET;
 
-    constructor(private readonly emailService: EmailService) {
-        this.pool = new Pool({ connectionString: process.env.DATABASE_URL });
-        this.initTables();
+    constructor(
+        private readonly emailService: EmailService,
+        private readonly db: DatabaseService
+    ) { }
+
+    async onModuleInit() {
+        await this.initTables();
     }
 
     private async initTables() {
-        const client = await this.pool.connect();
         try {
-            await client.query(`
+            await this.db.query(`
                 CREATE TABLE IF NOT EXISTS notifications (
                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                     user_id UUID NOT NULL,
@@ -55,8 +57,6 @@ export class NotificationsService {
             this.logger.log('✅ Notifications tables initialized');
         } catch (error) {
             this.logger.warn('Notifications tables may already exist');
-        } finally {
-            client.release();
         }
     }
 
@@ -72,17 +72,14 @@ export class NotificationsService {
     }
 
     async create(userId: string, type: NotificationType, title: string, message?: string, link?: string, data?: any) {
-        const client = await this.pool.connect();
-
         try {
-            const result = await client.query(`
+            const result = await this.db.query(`
                 INSERT INTO notifications (user_id, type, title, message, link, data)
                 VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING *
             `, [userId, type, title, message, link, data ? JSON.stringify(data) : null]);
 
-            // Check if should send email
-            const prefs = await client.query(
+            const prefs = await this.db.query(
                 'SELECT * FROM notification_preferences WHERE user_id = $1',
                 [userId]
             );
@@ -96,7 +93,7 @@ export class NotificationsService {
                 if (type.includes('rfq') && p.email_rfqs) shouldEmail = true;
 
                 if (shouldEmail) {
-                    const user = await client.query('SELECT email, name FROM users WHERE id = $1', [userId]);
+                    const user = await this.db.query('SELECT email, name FROM users WHERE id = $1', [userId]);
                     if (user.rows.length > 0) {
                         await this.emailService.sendEmail(
                             user.rows[0].email,
@@ -108,100 +105,76 @@ export class NotificationsService {
             }
 
             return result.rows[0];
-        } finally {
-            client.release();
+        } catch (error) {
+            this.logger.error('Error creating notification', error);
+            throw error;
         }
     }
 
     async getNotifications(token: string) {
         const user = this.getUserFromToken(token);
-        const client = await this.pool.connect();
 
-        try {
-            const result = await client.query(`
-                SELECT *
-                FROM notifications
-                WHERE user_id = $1
-                ORDER BY created_at DESC
-                LIMIT 100
-            `, [user.id]);
+        const result = await this.db.query(`
+            SELECT *
+            FROM notifications
+            WHERE user_id = $1
+            ORDER BY created_at DESC
+            LIMIT 100
+        `, [user.id]);
 
-            return { notificaciones: result.rows };
-        } finally {
-            client.release();
-        }
+        return { notificaciones: result.rows };
     }
 
     async markAsRead(id: string, token: string) {
         const user = this.getUserFromToken(token);
-        const client = await this.pool.connect();
 
-        try {
-            await client.query(
-                'UPDATE notifications SET read_at = NOW() WHERE id = $1 AND user_id = $2',
-                [id, user.id]
-            );
-            return { success: true };
-        } finally {
-            client.release();
-        }
+        await this.db.query(
+            'UPDATE notifications SET read_at = NOW() WHERE id = $1 AND user_id = $2',
+            [id, user.id]
+        );
+        return { success: true };
     }
 
     async markAllAsRead(token: string) {
         const user = this.getUserFromToken(token);
-        const client = await this.pool.connect();
 
-        try {
-            await client.query(
-                'UPDATE notifications SET read_at = NOW() WHERE user_id = $1 AND read_at IS NULL',
-                [user.id]
-            );
-            return { success: true };
-        } finally {
-            client.release();
-        }
+        await this.db.query(
+            'UPDATE notifications SET read_at = NOW() WHERE user_id = $1 AND read_at IS NULL',
+            [user.id]
+        );
+        return { success: true };
     }
 
     async getUnreadCount(token: string) {
         const user = this.getUserFromToken(token);
-        const client = await this.pool.connect();
 
-        try {
-            const result = await client.query(
-                'SELECT COUNT(*) as count FROM notifications WHERE user_id = $1 AND read_at IS NULL',
-                [user.id]
-            );
-            return { unread: parseInt(result.rows[0].count) };
-        } finally {
-            client.release();
-        }
+        const result = await this.db.query(
+            'SELECT COUNT(*) as count FROM notifications WHERE user_id = $1 AND read_at IS NULL',
+            [user.id]
+        );
+        return { unread: parseInt(result.rows[0].count) };
     }
 
     async updatePreferences(token: string, prefs: any) {
         const user = this.getUserFromToken(token);
-        const client = await this.pool.connect();
 
-        try {
-            await client.query(`
-                INSERT INTO notification_preferences (user_id, email_connections, email_messages, email_rfqs, push_enabled)
-                VALUES ($1, $2, $3, $4, $5)
-                ON CONFLICT (user_id) DO UPDATE SET
-                    email_connections = COALESCE($2, notification_preferences.email_connections),
-                    email_messages = COALESCE($3, notification_preferences.email_messages),
-                    email_rfqs = COALESCE($4, notification_preferences.email_rfqs),
-                    push_enabled = COALESCE($5, notification_preferences.push_enabled),
-                    updated_at = NOW()
-            `, [
-                user.id,
-                prefs.emailConnections ?? true,
-                prefs.emailMessages ?? true,
-                prefs.emailRfqs ?? true,
-                prefs.pushEnabled ?? true
-            ]);
+        await this.db.query(`
+            INSERT INTO notification_preferences (user_id, email_connections, email_messages, email_rfqs, push_enabled)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (user_id) DO UPDATE SET
+                email_connections = COALESCE($2, notification_preferences.email_connections),
+                email_messages = COALESCE($3, notification_preferences.email_messages),
+                email_rfqs = COALESCE($4, notification_preferences.email_rfqs),
+                push_enabled = COALESCE($5, notification_preferences.push_enabled),
+                updated_at = NOW()
+        `, [
+            user.id,
+            prefs.emailConnections ?? true,
+            prefs.emailMessages ?? true,
+            prefs.emailRfqs ?? true,
+            prefs.pushEnabled ?? true
+        ]);
 
-            return { mensaje: 'Preferencias actualizadas' };
-        } finally {
-            client.release();
-        }
+        return { mensaje: 'Preferencias actualizadas' };
     }
 }

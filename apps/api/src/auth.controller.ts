@@ -1,7 +1,6 @@
 import { Controller, Post, Body, Get, UseGuards, Request, HttpException, HttpStatus, Res } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
-import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -50,11 +49,11 @@ export class AuthController {
 
     @Get('google')
     @UseGuards(AuthGuard('google'))
-    async googleAuth(@Request() req) { }
+    async googleAuth(@Request() req: any) { }
 
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
-    async googleAuthRedirect(@Request() req, @Res() res: Response) {
+    async googleAuthRedirect(@Request() req: any, @Res() res: any) {
         const { token } = await this.authService.loginGoogle(req.user);
         return res.redirect(`https://jairoapp.renace.tech/auth/callback?token=${token}`);
     }

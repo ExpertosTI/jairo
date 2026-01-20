@@ -67,6 +67,7 @@ import { DatabaseModule } from './database/database.module';
 @Module({
   imports: [
     DatabaseModule,
+    PassportModule.register({ defaultStrategy: 'google' }),
     // Rate Limiting: 100 requests per minute per IP
     ThrottlerModule.forRoot([{
       ttl: 60000,
