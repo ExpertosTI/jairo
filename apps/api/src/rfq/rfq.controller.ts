@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Param, Query, Headers } from '@nestjs/common';
 import { RfqService } from './rfq.service';
-import { CreateRfqDto } from './dtos/create-rfq.dto';
+import { CreateRfqDto } from '../dto/create-rfq.dto';
 
 @Controller('rfq')
 export class RfqController {

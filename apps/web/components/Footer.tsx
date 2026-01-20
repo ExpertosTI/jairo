@@ -19,16 +19,17 @@ export function Footer() {
             { href: "/registro", label: "Registrar Empresa" },
             { href: "/login", label: "Iniciar Sesión" }
         ],
-        resources: [
-            { href: "/ayuda", label: "Centro de Ayuda" },
-            { href: "/blog", label: "Blog" },
-            { href: "/api-docs", label: "API" },
-            { href: "/partners", label: "Partners" }
-        ],
+        resources: [] as { href: string; label: string }[],
+        // resources: [
+        //     { href: "/ayuda", label: "Centro de Ayuda" },
+        //     { href: "/blog", label: "Blog" },
+        //     { href: "/api-docs", label: "API" },
+        //     { href: "/partners", label: "Partners" }
+        // ],
         legal: [
             { href: "/terms", label: "Términos de Uso" },
             { href: "/privacy", label: "Privacidad" },
-            { href: "/cookies", label: "Cookies" }
+            // { href: "/cookies", label: "Cookies" }
         ]
     };
 

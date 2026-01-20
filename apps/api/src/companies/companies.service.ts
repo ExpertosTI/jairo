@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { EmailService } from './email.service';
-import { DatabaseService } from './database/database.service';
+import { EmailService } from '../core/email/email.service';
+import { DatabaseService } from '../database/database.service';
 
 @Injectable()
 export class CompaniesService {

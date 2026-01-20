@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { DatabaseService } from './database/database.service';
+import { DatabaseService } from '../database/database.service';
 
 @Injectable()
 export class SeedService implements OnModuleInit {

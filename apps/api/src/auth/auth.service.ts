@@ -1,8 +1,8 @@
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
-import { EmailService } from './email.service';
-import { DatabaseService } from './database/database.service';
+import { EmailService } from '../core/email/email.service';
+import { DatabaseService } from '../database/database.service';
 
 @Injectable()
 export class AuthService {

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { EmailService } from './email.service';
-import { DatabaseService } from './database/database.service';
+import { EmailService } from '../core/email/email.service';
+import { DatabaseService } from '../database/database.service';
 
 @Injectable()
 export class AdminService {

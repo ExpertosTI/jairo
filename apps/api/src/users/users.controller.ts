@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Body, Param, Query, Delete, Headers, HttpException, HttpStatus } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CompleteOnboardingDto } from './dtos/complete-onboarding.dto';
+import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
 
 @Controller('usuarios')
 export class UsersController {

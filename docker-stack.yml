@@ -5,10 +5,10 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: jairo
-      POSTGRES_PASSWORD: jairo_secure_pass_2026
+      POSTGRES_PASSWORD: jairo_simple_pass_2026
       POSTGRES_DB: jairo_db
     volumes:
-      - jairo_db_data_v4:/var/lib/postgresql/data
+      - jairo_db_data_v6:/var/lib/postgresql/data
     networks:
       - jairo_internal
     deploy:
@@ -41,7 +41,7 @@ services:
   api:
     image: ghcr.io/expertosti/jairo-api:latest
     environment:
-      - DATABASE_URL=postgresql://jairo:jairo_secure_pass_2026@postgres:5432/jairo_db
+      - DATABASE_URL=postgresql://jairo:jairo_simple_pass_2026@postgres:5432/jairo_db
       - REDIS_URL=redis://redis:6379
       - MEILISEARCH_HOST=http://meilisearch:7700
       - MEILISEARCH_API_KEY=jairo_meili_key_2026
@@ -60,14 +60,7 @@ services:
       - JWT_SECRET=jairo_jwt_super_secret_2026_rd
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      # Odoo Integration
-      - ODOO_URL=
-      - ODOO_DB=
-      - ODOO_USERNAME=
-      - ODOO_API_KEY=
-      # Stripe
-      - STRIPE_SECRET_KEY=
-    networks:
+     networks:
       - jairo_internal
       - RenaceNet
     deploy:
@@ -122,5 +115,5 @@ networks:
     external: true
 
 volumes:
-  jairo_db_data_v4:
+  jairo_db_data_v6:
   jairo_meili_data:

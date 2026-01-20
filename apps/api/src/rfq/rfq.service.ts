@@ -1,7 +1,7 @@
 
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
-import { DatabaseService } from './database/database.service';
+import { DatabaseService } from '../database/database.service';
 
 @Injectable()
 export class RfqService {

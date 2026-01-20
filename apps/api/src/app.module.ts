@@ -3,66 +3,43 @@ import { APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ValidationPipe } from '@nestjs/common';
 
-// Core
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
-// Auth & Users
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { UsersController } from './users.controller';
-import { UsersService } from './users.service';
-
-// Companies & Relationships
-import { CompaniesController } from './companies.controller';
-import { CompaniesService } from './companies.service';
-import { RelationshipsController } from './relationships.controller';
-import { RelationshipsService } from './relationships.service';
-
-// Sectors & Categories
-import { SectorsController } from './sectors.controller';
-import { SectorsService } from './sectors.service';
-
-// Products
-import { ProductsController } from './products.controller';
-import { ProductsService } from './products.service';
-
-// Messaging
-import { MessagesController } from './messages.controller';
-import { MessagesService } from './messages.service';
-
-// RFQ (Request for Quote)
-import { RfqController } from './rfq.controller';
-import { RfqService } from './rfq.service';
-
-// Analytics & Dashboard
-import { DashboardController } from './dashboard.controller';
-import { DashboardService } from './dashboard.service';
-import { AnalyticsController } from './analytics.controller';
-import { AnalyticsService } from './analytics.service';
-
-// Notifications
-import { NotificationsController } from './notifications.controller';
-import { NotificationsService } from './notifications.service';
-
-// Activities
-import { ActivitiesController } from './activities.controller';
-import { ActivitiesService } from './activities.service';
-
-// External Integrations
-import { OdooController } from './odoo.controller';
-import { OdooService } from './odoo.service';
-
-// Support Services
-import { SeedService } from './seed.service';
-import { EmailService } from './email.service';
-import { AdminController } from './admin.controller';
-import { AdminService } from './admin.service';
-import { DatabaseModule } from './database/database.module';
+// Modules
+import { CoreModule } from './core/core.module';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { CompaniesModule } from './companies/companies.module';
+import { RelationshipsModule } from './relationships/relationships.module';
+import { SectorsModule } from './sectors/sectors.module';
+import { ProductsModule } from './products/products.module';
+import { MessagingModule } from './messaging/messaging.module';
+import { RfqModule } from './rfq/rfq.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { ActivitiesModule } from './activities/activities.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
-    DatabaseModule,
+    // Core & Shared
+    CoreModule,
+
+    // Feature Modules
+    AuthModule,
+    UsersModule,
+    CompaniesModule,
+    RelationshipsModule,
+    SectorsModule,
+    ProductsModule,
+    RfqModule,
+    MessagingModule,
+    AnalyticsModule,
+    NotificationsModule,
+    ActivitiesModule,
+    AdminModule,
+
     // Rate Limiting: 100 requests per minute per IP
     ThrottlerModule.forRoot([{
       ttl: 60000,
@@ -71,41 +48,9 @@ import { DatabaseModule } from './database/database.module';
   ],
   controllers: [
     AppController,
-    AuthController,
-    UsersController,
-    CompaniesController,
-    RelationshipsController,
-    SectorsController,
-    ProductsController,
-    MessagesController,
-    RfqController,
-    DashboardController,
-    AnalyticsController,
-    NotificationsController,
-    ActivitiesController,
-    OdooController,
-    AdminController,
   ],
   providers: [
-    // Services
     AppService,
-    AuthService,
-    UsersService,
-    CompaniesService,
-    RelationshipsService,
-    SectorsService,
-    ProductsService,
-    MessagesService,
-    RfqService,
-    DashboardService,
-    AnalyticsService,
-    NotificationsService,
-    ActivitiesService,
-    OdooService,
-    SeedService,
-    EmailService,
-    AdminService,
-
     // Global Rate Limiting Guard
     {
       provide: APP_GUARD,

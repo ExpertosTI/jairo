@@ -1,6 +1,6 @@
 import { Injectable, Logger, HttpException, HttpStatus, OnModuleInit } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
-import { DatabaseService } from './database/database.service';
+import { DatabaseService } from '../database/database.service';
 
 @Injectable()
 export class AnalyticsService implements OnModuleInit {

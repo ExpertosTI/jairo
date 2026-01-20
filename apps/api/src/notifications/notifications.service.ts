@@ -1,7 +1,7 @@
 import { Injectable, Logger, HttpException, HttpStatus, OnModuleInit } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
-import { EmailService } from './email.service';
-import { DatabaseService } from './database/database.service';
+import { EmailService } from '../core/email/email.service';
+import { DatabaseService } from '../database/database.service';
 
 export type NotificationType =
     | 'connection_request'
