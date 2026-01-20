@@ -1,8 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { Building2, Network, Search, ArrowRight, ChevronRight, Star, Shield, Zap, Globe, TrendingUp } from "lucide-react";
+import { Building2, Network, Search, ArrowRight, ChevronRight, Star, Shield, Zap, Globe, TrendingUp, Package, Eye } from "lucide-react";
 import { useState, useEffect } from "react";
+
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  images: string[];
+  company_name: string;
+  views: number;
+}
 
 export default function Home() {
   const [stats, setStats] = useState([
@@ -12,14 +22,17 @@ export default function Home() {
     { value: "—", label: "Satisfacción" },
   ]);
   const [busqueda, setBusqueda] = useState("");
+  const [latestProducts, setLatestProducts] = useState<Product[]>([]);
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
 
   useEffect(() => {
-    const cargarStats = async () => {
+    const cargarDatos = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
-        const res = await fetch(`${apiUrl}/analytics/public-stats`);
-        if (res.ok) {
-          const data = await res.json();
+        // Fetch stats
+        const statsRes = await fetch(`${apiUrl}/analytics/public-stats`);
+        if (statsRes.ok) {
+          const data = await statsRes.json();
           setStats([
             { value: `${data.totalEmpresas || 0}+`, label: "Empresas" },
             { value: `${data.totalSectores || 12}`, label: "Sectores" },
@@ -27,11 +40,18 @@ export default function Home() {
             { value: "98%", label: "Satisfacción" },
           ]);
         }
+
+        // Fetch latest products
+        const productsRes = await fetch(`${apiUrl}/products?page=1`);
+        if (productsRes.ok) {
+          const data = await productsRes.json();
+          setLatestProducts((data.productos || []).slice(0, 8));
+        }
       } catch (e) {
-        console.log("Stats no disponibles");
+        console.log("Error cargando datos");
       }
     };
-    cargarStats();
+    cargarDatos();
   }, []);
 
   const features = [
@@ -166,6 +186,80 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Latest Products */}
+      {latestProducts.length > 0 && (
+        <section className="py-16 bg-white">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex items-center justify-between mb-10">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-black text-gray-900">
+                  Productos <span className="text-secondary">Recientes</span>
+                </h2>
+                <p className="text-gray-500 mt-2">Descubre los últimos productos agregados por nuestras empresas</p>
+              </div>
+              <Link
+                href="/directorio"
+                className="hidden md:flex items-center gap-2 text-primary font-medium hover:underline"
+              >
+                Ver todos <ArrowRight size={16} />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+              {latestProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all group"
+                >
+                  <div className="h-40 bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center">
+                    {product.images && product.images[0] ? (
+                      <img
+                        src={product.images[0]}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Package className="text-gray-300" size={48} />
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-gray-900 truncate group-hover:text-primary transition-colors">
+                      {product.name}
+                    </h3>
+                    {product.company_name && (
+                      <p className="text-sm text-gray-500 truncate mt-1">
+                        {product.company_name}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="text-lg font-bold text-primary">
+                        {product.price
+                          ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.price)
+                          : '—'
+                        }
+                      </span>
+                      <div className="flex items-center gap-1 text-sm text-gray-400">
+                        <Eye size={14} />
+                        {product.views || 0}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center mt-8 md:hidden">
+              <Link
+                href="/directorio"
+                className="inline-flex items-center gap-2 text-primary font-medium hover:underline"
+              >
+                Ver todos los productos <ArrowRight size={16} />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Features */}
       <section id="features" className="py-20">
