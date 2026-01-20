@@ -181,6 +181,7 @@ export class SeedService implements OnModuleInit {
 
         } catch (error) {
             this.logger.error('❌ Error inicializando base de datos:', error);
+            throw error; // Force crash so Docker restarts the service
         }
     }
 
