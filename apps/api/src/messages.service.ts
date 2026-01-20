@@ -1,22 +1,22 @@
+
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
-import { Pool } from 'pg';
 import * as jwt from 'jsonwebtoken';
+import { DatabaseService } from './database/database.service';
 
 @Injectable()
 export class MessagesService {
     private readonly logger = new Logger(MessagesService.name);
-    private pool: Pool;
     private readonly jwtSecret = process.env.JWT_SECRET;
+    private initialized = false;
 
-    constructor() {
-        this.pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    constructor(private readonly db: DatabaseService) {
         this.initTables();
     }
 
     private async initTables() {
-        const client = await this.pool.connect();
+        if (this.initialized) return;
         try {
-            await client.query(`
+            await this.db.query(`
                 CREATE TABLE IF NOT EXISTS conversations (
                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                     participant1_id UUID NOT NULL,
@@ -39,10 +39,9 @@ export class MessagesService {
                 CREATE INDEX IF NOT EXISTS idx_conversations_participants ON conversations(participant1_id, participant2_id);
             `);
             this.logger.log('✅ Messages tables initialized');
+            this.initialized = true;
         } catch (error) {
-            this.logger.warn('Messages tables may already exist');
-        } finally {
-            client.release();
+            this.logger.warn('Messages tables check failed (safe to ignore if concurrent)', error);
         }
     }
 
@@ -59,9 +58,9 @@ export class MessagesService {
 
     async getConversations(token: string) {
         const user = this.getUserFromToken(token);
-        const client = await this.pool.connect();
+
         try {
-            const result = await client.query(`
+            const result = await this.db.query(`
                 SELECT 
                     c.id,
                     c.last_message_at,
@@ -82,20 +81,20 @@ export class MessagesService {
             `, [user.id]);
 
             return { conversaciones: result.rows };
-        } finally {
-            client.release();
+        } catch (error) {
+            this.logger.error('Error getting conversations', error);
+            throw new HttpException('Error al obtener conversaciones', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     async getMessages(conversationId: string, token: string, page: number = 1) {
         const user = this.getUserFromToken(token);
-        const client = await this.pool.connect();
         const limit = 50;
         const offset = (page - 1) * limit;
 
         try {
             // Verify user is participant
-            const conv = await client.query(
+            const conv = await this.db.query(
                 'SELECT * FROM conversations WHERE id = $1 AND (participant1_id = $2 OR participant2_id = $2)',
                 [conversationId, user.id]
             );
@@ -103,7 +102,7 @@ export class MessagesService {
                 throw new HttpException('Conversación no encontrada', HttpStatus.NOT_FOUND);
             }
 
-            const result = await client.query(`
+            const result = await this.db.query(`
                 SELECT 
                     m.*,
                     u.name as sender_name,
@@ -120,14 +119,16 @@ export class MessagesService {
                 pagina: page,
                 limite: limit
             };
-        } finally {
-            client.release();
+        } catch (error) {
+            if (error instanceof HttpException) throw error;
+            this.logger.error('Error getting messages', error);
+            throw new HttpException('Error al obtener mensajes', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     async sendMessage(token: string, content: string, recipientId?: string, conversationId?: string) {
         const user = this.getUserFromToken(token);
-        const client = await this.pool.connect();
+        const client = await this.db.getPool().connect();
 
         try {
             await client.query('BEGIN');
@@ -177,7 +178,9 @@ export class MessagesService {
             };
         } catch (error) {
             await client.query('ROLLBACK');
-            throw error;
+            if (error instanceof HttpException) throw error;
+            this.logger.error('Error sending message', error);
+            throw new HttpException('Error al enviar mensaje', HttpStatus.INTERNAL_SERVER_ERROR);
         } finally {
             client.release();
         }
@@ -185,27 +188,26 @@ export class MessagesService {
 
     async markAsRead(conversationId: string, token: string) {
         const user = this.getUserFromToken(token);
-        const client = await this.pool.connect();
 
         try {
-            await client.query(`
+            await this.db.query(`
                 UPDATE messages 
                 SET read_at = NOW() 
                 WHERE conversation_id = $1 AND sender_id != $2 AND read_at IS NULL
             `, [conversationId, user.id]);
 
             return { success: true };
-        } finally {
-            client.release();
+        } catch (error) {
+            this.logger.error('Error marking as read', error);
+            throw new HttpException('Error al marcar leído', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     async getUnreadCount(token: string) {
         const user = this.getUserFromToken(token);
-        const client = await this.pool.connect();
 
         try {
-            const result = await client.query(`
+            const result = await this.db.query(`
                 SELECT COUNT(*) as count
                 FROM messages m
                 JOIN conversations c ON m.conversation_id = c.id
@@ -215,8 +217,9 @@ export class MessagesService {
             `, [user.id]);
 
             return { unread: parseInt(result.rows[0].count) };
-        } finally {
-            client.release();
+        } catch (error) {
+            this.logger.error('Error getting unread count', error);
+            throw new HttpException('Error al obtener no leídos', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

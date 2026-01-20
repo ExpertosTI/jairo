@@ -33,9 +33,10 @@ export default function AdminSidebar() {
             {/* Mobile Header */}
             <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b z-50 px-4 py-3 flex items-center justify-between">
                 <Link href="/admin" className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
-                        <span className="text-white font-black text-sm">J</span>
-                    </div>
+// <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
+                    //     <span className="text-white font-black text-sm">J</span>
+                    // </div>
+                    <img src="/logo.svg" alt="JairoApp" className="w-8 h-8 object-contain" />
                     <span className="font-black text-lg">
                         <span className="text-primary">Jairo</span>
                         <span className="text-secondary">App</span>
@@ -52,9 +53,10 @@ export default function AdminSidebar() {
                 {/* Logo */}
                 <div className="p-4 border-b flex items-center justify-between">
                     <Link href="/admin" className="flex items-center gap-2">
-                        <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
-                            <span className="text-white font-black text-lg">J</span>
-                        </div>
+// <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                        //     <span className="text-white font-black text-lg">J</span>
+                        // </div>
+                        <img src="/logo.svg" alt="JairoApp" className="w-10 h-10 object-contain" />
                         {!collapsed && (
                             <span className="font-black text-xl">
                                 <span className="text-primary">Jairo</span>
@@ -80,8 +82,8 @@ export default function AdminSidebar() {
                                     <Link
                                         href={item.href}
                                         className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
-                                                ? "bg-gradient-to-r from-primary to-primary-600 text-white shadow-lg shadow-primary/25"
-                                                : "text-gray-600 hover:bg-gray-100"
+                                            ? "bg-gradient-to-r from-primary to-primary-600 text-white shadow-lg shadow-primary/25"
+                                            : "text-gray-600 hover:bg-gray-100"
                                             }`}
                                     >
                                         <item.icon size={20} />

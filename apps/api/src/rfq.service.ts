@@ -1,22 +1,22 @@
+
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
-import { Pool } from 'pg';
 import * as jwt from 'jsonwebtoken';
+import { DatabaseService } from './database/database.service';
 
 @Injectable()
 export class RfqService {
     private readonly logger = new Logger(RfqService.name);
-    private pool: Pool;
     private readonly jwtSecret = process.env.JWT_SECRET;
+    private initialized = false;
 
-    constructor() {
-        this.pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    constructor(private readonly db: DatabaseService) {
         this.initTables();
     }
 
     private async initTables() {
-        const client = await this.pool.connect();
+        if (this.initialized) return;
         try {
-            await client.query(`
+            await this.db.query(`
                 CREATE TABLE IF NOT EXISTS rfqs (
                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                     requester_id UUID NOT NULL,
@@ -55,10 +55,9 @@ export class RfqService {
                 CREATE INDEX IF NOT EXISTS idx_rfq_quotes_rfq ON rfq_quotes(rfq_id);
             `);
             this.logger.log('✅ RFQ tables initialized');
+            this.initialized = true;
         } catch (error) {
-            this.logger.warn('RFQ tables may already exist');
-        } finally {
-            client.release();
+            this.logger.warn('RFQ tables check failed (safe to ignore if concurrent)', error);
         }
     }
 
@@ -75,7 +74,12 @@ export class RfqService {
 
     async createRfq(token: string, data: any) {
         const user = this.getUserFromToken(token);
-        const client = await this.pool.connect();
+
+        // Transaction logic using shared pool directly if needed, or simple queries
+        // Since DatabaseService doesn't expose transaction helper easily yet, we can use getPool or just sequence if safe.
+        // For robustness in this refactor, I will use single queries where possible or get a client from the pool for transactions.
+
+        const client = await this.db.getPool().connect();
 
         try {
             await client.query('BEGIN');
@@ -115,6 +119,7 @@ export class RfqService {
             return { rfq, mensaje: 'Solicitud de cotización creada exitosamente' };
         } catch (error) {
             await client.query('ROLLBACK');
+            this.logger.error('Error creating RFQ', error);
             throw error;
         } finally {
             client.release();
@@ -122,7 +127,6 @@ export class RfqService {
     }
 
     async listPublicRfqs(sector?: string, page: number = 1) {
-        const client = await this.pool.connect();
         const limit = 20;
         const offset = (page - 1) * limit;
 
@@ -150,9 +154,9 @@ export class RfqService {
             query += ` ORDER BY r.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
             params.push(limit, offset);
 
-            const result = await client.query(query, params);
+            const result = await this.db.query(query, params);
 
-            const countResult = await client.query(
+            const countResult = await this.db.query(
                 'SELECT COUNT(*) FROM rfqs WHERE is_public = true AND status = $1',
                 ['open']
             );
@@ -163,17 +167,17 @@ export class RfqService {
                 pagina: page,
                 totalPaginas: Math.ceil(parseInt(countResult.rows[0].count) / limit)
             };
-        } finally {
-            client.release();
+        } catch (error) {
+            this.logger.error('Error listing public RFQs', error);
+            throw new HttpException('Error al listar RFQs', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     async getMyRfqs(token: string) {
         const user = this.getUserFromToken(token);
-        const client = await this.pool.connect();
 
         try {
-            const result = await client.query(`
+            const result = await this.db.query(`
                 SELECT 
                     r.*,
                     s.name as sector_name,
@@ -185,17 +189,17 @@ export class RfqService {
             `, [user.id]);
 
             return { rfqs: result.rows };
-        } finally {
-            client.release();
+        } catch (error) {
+            this.logger.error('Error getting my RFQs', error);
+            throw new HttpException('Error al obtener mis RFQs', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     async getReceivedRfqs(token: string) {
         const user = this.getUserFromToken(token);
-        const client = await this.pool.connect();
 
         try {
-            const result = await client.query(`
+            const result = await this.db.query(`
                 SELECT 
                     r.*,
                     u.name as requester_name,
@@ -215,16 +219,15 @@ export class RfqService {
             `, [user.id, user.companyId || null]);
 
             return { rfqs: result.rows };
-        } finally {
-            client.release();
+        } catch (error) {
+            this.logger.error('Error getting received RFQs', error);
+            throw new HttpException('Error al obtener RFQs recibidas', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     async getRfqDetail(id: string) {
-        const client = await this.pool.connect();
-
         try {
-            const rfq = await client.query(`
+            const rfq = await this.db.query(`
                 SELECT 
                     r.*,
                     u.name as requester_name,
@@ -242,7 +245,7 @@ export class RfqService {
                 throw new HttpException('RFQ no encontrado', HttpStatus.NOT_FOUND);
             }
 
-            const quotes = await client.query(`
+            const quotes = await this.db.query(`
                 SELECT 
                     q.*,
                     u.name as quoter_name,
@@ -258,17 +261,18 @@ export class RfqService {
                 rfq: rfq.rows[0],
                 cotizaciones: quotes.rows
             };
-        } finally {
-            client.release();
+        } catch (error) {
+            if (error instanceof HttpException) throw error;
+            this.logger.error(`Error getting RFQ detail ${id}`, error);
+            throw new HttpException('Error al obtener detalle del RFQ', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     async submitQuote(rfqId: string, token: string, data: any) {
         const user = this.getUserFromToken(token);
-        const client = await this.pool.connect();
 
         try {
-            const result = await client.query(`
+            const result = await this.db.query(`
                 INSERT INTO rfq_quotes (rfq_id, company_id, user_id, price, delivery_days, notes)
                 VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING *
@@ -277,14 +281,15 @@ export class RfqService {
             this.logger.log(`💰 Cotización enviada para RFQ ${rfqId}`);
 
             return { cotizacion: result.rows[0], mensaje: 'Cotización enviada exitosamente' };
-        } finally {
-            client.release();
+        } catch (error) {
+            this.logger.error('Error submitting quote', error);
+            throw new HttpException('Error al enviar cotización', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     async acceptQuote(rfqId: string, quoteId: string, token: string) {
         const user = this.getUserFromToken(token);
-        const client = await this.pool.connect();
+        const client = await this.db.getPool().connect();
 
         try {
             await client.query('BEGIN');
@@ -322,7 +327,9 @@ export class RfqService {
             return { mensaje: 'Cotización aceptada exitosamente' };
         } catch (error) {
             await client.query('ROLLBACK');
-            throw error;
+            if (error instanceof HttpException) throw error;
+            this.logger.error('Error accepting quote', error);
+            throw new HttpException('Error al aceptar cotización', HttpStatus.INTERNAL_SERVER_ERROR);
         } finally {
             client.release();
         }

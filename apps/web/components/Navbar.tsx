@@ -69,9 +69,10 @@ export function Navbar() {
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2">
-                        <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
-                            <span className="text-white font-black text-lg">J</span>
-                        </div>
+// <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                    //     <span className="text-white font-black text-lg">J</span>
+                    // </div>
+                        <img src="/logo.svg" alt="JairoApp" className="w-10 h-10 object-contain" />
                         <span className="text-2xl font-black hidden sm:block">
                             <span className="text-primary">Jairo</span>
                             <span className="text-secondary">App</span>
