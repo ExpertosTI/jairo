@@ -137,44 +137,52 @@ export function Navbar() {
                                 <div className="relative">
                                     <button
                                         onClick={() => setShowUserMenu(!showUserMenu)}
-                                        className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-100 transition-colors"
+                                        className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
+                                        type="button"
                                     >
-                                        <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
+                                        <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center pointer-events-none">
                                             <span className="text-white font-bold text-sm">
                                                 {user.nombre?.charAt(0) || 'U'}
                                             </span>
                                         </div>
-                                        <span className="hidden sm:block text-sm font-medium text-gray-700">
+                                        <span className="hidden sm:block text-sm font-medium text-gray-700 pointer-events-none">
                                             {user.nombre?.split(' ')[0]}
                                         </span>
                                     </button>
 
                                     {showUserMenu && (
-                                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border py-2 z-50">
-                                            <div className="px-4 py-3 border-b">
-                                                <p className="font-medium text-gray-900">{user.nombre}</p>
-                                                <p className="text-sm text-gray-500">{user.email}</p>
-                                            </div>
-                                            {userMenuItems.map((item) => (
-                                                <Link
-                                                    key={item.href}
-                                                    href={item.href}
-                                                    onClick={() => setShowUserMenu(false)}
-                                                    className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-gray-700"
+                                        <>
+                                            {/* Backdrop to close on click outside */}
+                                            <div
+                                                className="fixed inset-0 z-40"
+                                                onClick={() => setShowUserMenu(false)}
+                                            />
+                                            <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border py-2 z-50">
+                                                <div className="px-4 py-3 border-b">
+                                                    <p className="font-medium text-gray-900">{user.nombre}</p>
+                                                    <p className="text-sm text-gray-500">{user.email}</p>
+                                                </div>
+                                                {userMenuItems.map((item) => (
+                                                    <Link
+                                                        key={item.href}
+                                                        href={item.href}
+                                                        onClick={() => setShowUserMenu(false)}
+                                                        className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-gray-700"
+                                                    >
+                                                        <item.icon size={18} />
+                                                        {item.label}
+                                                    </Link>
+                                                ))}
+                                                <hr className="my-2" />
+                                                <button
+                                                    onClick={logout}
+                                                    className="flex items-center gap-3 px-4 py-2 hover:bg-red-50 text-red-600 w-full"
                                                 >
-                                                    <item.icon size={18} />
-                                                    {item.label}
-                                                </Link>
-                                            ))}
-                                            <hr className="my-2" />
-                                            <button
-                                                onClick={logout}
-                                                className="flex items-center gap-3 px-4 py-2 hover:bg-red-50 text-red-600 w-full"
-                                            >
-                                                <LogOut size={18} />
-                                                Cerrar Sesión
-                                            </button>
-                                        </div>
+                                                    <LogOut size={18} />
+                                                    Cerrar Sesión
+                                                </button>
+                                            </div>
+                                        </>
                                     )}
                                 </div>
                             </>
