@@ -83,6 +83,26 @@ export default function LoginPage() {
                         </div>
                     )}
 
+                    <div className="space-y-4 mb-6">
+                        <button
+                            type="button"
+                            onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api'}/auth/google`}
+                            className="w-full bg-white border border-gray-200 text-gray-700 py-3.5 rounded-xl font-semibold hover:bg-gray-50 flex items-center justify-center gap-3 transition-all"
+                        >
+                            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-6 h-6" />
+                            Continuar con Google
+                        </button>
+
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-gray-200" />
+                            </div>
+                            <div className="relative flex justify-center text-sm">
+                                <span className="bg-white px-4 text-gray-500">O usa tu correo</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-1">
