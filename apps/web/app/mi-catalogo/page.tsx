@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Package, Plus, Edit, Trash2, Upload, Search, Grid, List, Eye, DollarSign } from "lucide-react";
+import { Package, Plus, Edit, Trash2, Upload, Search, Grid, List, Eye, DollarSign, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 interface Product {
@@ -10,6 +10,8 @@ interface Product {
     description: string;
     sku: string;
     price: number;
+    price_dop?: number;
+    currency: 'USD' | 'DOP';
     min_order_qty: number;
     images: string[];
     views: number;
@@ -18,17 +20,23 @@ interface Product {
     created_at: string;
 }
 
+type Currency = 'USD' | 'DOP';
+
 export default function MiCatalogoPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [showCreate, setShowCreate] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [displayCurrency, setDisplayCurrency] = useState<Currency>('DOP');
+    const [exchangeRate, setExchangeRate] = useState<number>(59.50); // Default DOP/USD rate
+    const [rateLoading, setRateLoading] = useState(false);
     const [newProduct, setNewProduct] = useState({
         name: '',
         description: '',
         sku: '',
         price: 0,
+        currency: 'DOP' as Currency,
         minOrderQty: 1
     });
 
@@ -36,9 +44,28 @@ export default function MiCatalogoPage() {
 
     useEffect(() => {
         loadProducts();
+        fetchExchangeRate();
     }, []);
 
     const getToken = () => localStorage.getItem("token");
+
+    // Fetch current DOP/USD exchange rate
+    const fetchExchangeRate = async () => {
+        setRateLoading(true);
+        try {
+            // Using a free exchange rate API
+            const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+            const data = await res.json();
+            if (data.rates?.DOP) {
+                setExchangeRate(data.rates.DOP);
+            }
+        } catch (error) {
+            console.error("Error fetching exchange rate, using default:", error);
+            // Keep default rate of 59.50
+        } finally {
+            setRateLoading(false);
+        }
+    };
 
     const loadProducts = async () => {
         try {
@@ -56,16 +83,27 @@ export default function MiCatalogoPage() {
 
     const createProduct = async () => {
         try {
+            const priceData = {
+                ...newProduct,
+                // Always store in USD for consistency, convert if entered in DOP
+                price: newProduct.currency === 'DOP'
+                    ? newProduct.price / exchangeRate
+                    : newProduct.price,
+                price_dop: newProduct.currency === 'DOP'
+                    ? newProduct.price
+                    : newProduct.price * exchangeRate
+            };
+
             await fetch(`${API_URL}/products`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${getToken()}`
                 },
-                body: JSON.stringify(newProduct)
+                body: JSON.stringify(priceData)
             });
             setShowCreate(false);
-            setNewProduct({ name: '', description: '', sku: '', price: 0, minOrderQty: 1 });
+            setNewProduct({ name: '', description: '', sku: '', price: 0, currency: 'DOP', minOrderQty: 1 });
             loadProducts();
         } catch (error) {
             console.error("Error creating product:", error);
@@ -86,9 +124,45 @@ export default function MiCatalogoPage() {
         }
     };
 
-    const formatCurrency = (value: number) => {
-        if (!value) return '—';
-        return new Intl.NumberFormat('es', { style: 'currency', currency: 'USD' }).format(value);
+    // Format currency based on selected display currency
+    const formatPrice = (usdPrice: number) => {
+        if (!usdPrice) return '—';
+
+        if (displayCurrency === 'USD') {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2
+            }).format(usdPrice);
+        } else {
+            const dopPrice = usdPrice * exchangeRate;
+            return new Intl.NumberFormat('es-DO', {
+                style: 'currency',
+                currency: 'DOP',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(dopPrice);
+        }
+    };
+
+    // Format both currencies
+    const formatDualPrice = (usdPrice: number) => {
+        if (!usdPrice) return { usd: '—', dop: '—' };
+
+        const usd = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2
+        }).format(usdPrice);
+
+        const dop = new Intl.NumberFormat('es-DO', {
+            style: 'currency',
+            currency: 'DOP',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(usdPrice * exchangeRate);
+
+        return { usd, dop };
     };
 
     const filteredProducts = products.filter(p =>
@@ -117,9 +191,9 @@ export default function MiCatalogoPage() {
                         </div>
                     </div>
 
-                    {/* Search & View Toggle */}
-                    <div className="flex items-center gap-4 mt-4">
-                        <div className="flex-1 relative">
+                    {/* Search, Currency Toggle & View Toggle */}
+                    <div className="flex items-center gap-4 mt-4 flex-wrap">
+                        <div className="flex-1 relative min-w-[200px]">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                             <input
                                 type="text"
@@ -129,6 +203,40 @@ export default function MiCatalogoPage() {
                                 className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
                             />
                         </div>
+
+                        {/* Currency Toggle */}
+                        <div className="flex items-center gap-2">
+                            <div className="flex bg-gradient-to-r from-gray-100 to-gray-50 rounded-xl p-1 border border-gray-200">
+                                <button
+                                    onClick={() => setDisplayCurrency('DOP')}
+                                    className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${displayCurrency === 'DOP'
+                                        ? 'bg-primary text-white shadow-md'
+                                        : 'text-gray-600 hover:text-gray-900'
+                                        }`}
+                                >
+                                    🇩🇴 RD$
+                                </button>
+                                <button
+                                    onClick={() => setDisplayCurrency('USD')}
+                                    className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${displayCurrency === 'USD'
+                                        ? 'bg-green-600 text-white shadow-md'
+                                        : 'text-gray-600 hover:text-gray-900'
+                                        }`}
+                                >
+                                    🇺🇸 US$
+                                </button>
+                            </div>
+                            <button
+                                onClick={fetchExchangeRate}
+                                disabled={rateLoading}
+                                className="p-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg transition-all"
+                                title={`Tasa: 1 USD = ${exchangeRate.toFixed(2)} DOP`}
+                            >
+                                <RefreshCw size={16} className={rateLoading ? 'animate-spin' : ''} />
+                            </button>
+                        </div>
+
+                        {/* View Mode Toggle */}
                         <div className="flex bg-gray-100 rounded-xl p-1">
                             <button
                                 onClick={() => setViewMode('grid')}
@@ -143,6 +251,13 @@ export default function MiCatalogoPage() {
                                 <List size={20} className={viewMode === 'list' ? 'text-primary' : 'text-gray-500'} />
                             </button>
                         </div>
+                    </div>
+
+                    {/* Exchange Rate Info */}
+                    <div className="mt-2 text-xs text-gray-500 flex items-center gap-1">
+                        <DollarSign size={12} />
+                        <span>Tasa de cambio: 1 USD = {exchangeRate.toFixed(2)} DOP</span>
+                        {rateLoading && <span className="text-primary">(actualizando...)</span>}
                     </div>
                 </div>
             </header>
@@ -185,7 +300,7 @@ export default function MiCatalogoPage() {
                                     <h3 className="font-semibold text-gray-900 truncate">{product.name}</h3>
                                     {product.sku && <p className="text-sm text-gray-500">SKU: {product.sku}</p>}
                                     <div className="flex items-center justify-between mt-3">
-                                        <span className="text-lg font-bold text-primary">{formatCurrency(product.price)}</span>
+                                        <span className="text-lg font-bold text-primary">{formatPrice(product.price)}</span>
                                         <div className="flex items-center gap-1 text-sm text-gray-500">
                                             <Eye size={14} /> {product.views || 0}
                                         </div>
@@ -232,7 +347,7 @@ export default function MiCatalogoPage() {
                                             </div>
                                         </td>
                                         <td className="py-3 px-4 text-gray-600">{product.sku || '—'}</td>
-                                        <td className="py-3 px-4 font-medium text-primary">{formatCurrency(product.price)}</td>
+                                        <td className="py-3 px-4 font-medium text-primary">{formatPrice(product.price)}</td>
                                         <td className="py-3 px-4 text-gray-600">{product.views || 0}</td>
                                         <td className="py-3 px-4">
                                             <div className="flex justify-end gap-2">
