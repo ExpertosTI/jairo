@@ -1,14 +1,14 @@
 version: '3.8'
 
 services:
-  postgres:
+  jairo_db:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: jairo
-      POSTGRES_PASSWORD: jairo_pass_v7
+      POSTGRES_PASSWORD: jairo_pass_v8
       POSTGRES_DB: jairo_db
     volumes:
-      - jairo_db_data_v7:/var/lib/postgresql/data
+      - jairo_db_data_v8:/var/lib/postgresql/data
     networks:
       - jairo_internal
     deploy:
@@ -41,7 +41,7 @@ services:
   api:
     image: ghcr.io/expertosti/jairo-api:latest
     environment:
-      - DATABASE_URL=postgresql://jairo:jairo_pass_v7@postgres:5432/jairo_db
+      - DATABASE_URL=postgresql://jairo:jairo_pass_v8@jairo_db:5432/jairo_db
       - REDIS_URL=redis://redis:6379
       - MEILISEARCH_HOST=http://meilisearch:7700
       - MEILISEARCH_API_KEY=jairo_meili_key_2026
@@ -81,7 +81,7 @@ services:
         - "traefik.http.services.jairo-api.loadbalancer.server.port=3001"
         - "traefik.docker.network=RenaceNet"
     depends_on:
-      - postgres
+      - jairo_db
       - redis
       - meilisearch
 
@@ -115,5 +115,5 @@ networks:
     external: true
 
 volumes:
-  jairo_db_data_v7:
+  jairo_db_data_v8:
   jairo_meili_data:
