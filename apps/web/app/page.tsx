@@ -131,8 +131,12 @@ export default function Home() {
           <div className="hidden md:block flex-1 relative">
             <div className="relative z-10 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-500">
               <div className="flex items-center gap-4 mb-4 border-b border-white/10 pb-4">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-primary font-bold text-xl">
-                  J
+// <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-primary font-bold text-xl">
+                //   J
+                // </div>
+                <div className="relative group-hover:scale-110 transition-transform duration-500">
+                  <div className="absolute inset-0 bg-white/50 blur-xl rounded-full jairo-glow"></div>
+                  <img src="/logo.svg" alt="JairoApp" className="w-16 h-16 object-contain relative z-10 drop-shadow-xl" />
                 </div>
                 <div>
                   <div className="h-4 w-32 bg-white/20 rounded mb-2"></div>
