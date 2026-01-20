@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Param, UseGuards } from '@nestjs/common';
 import { AdminService } from './admin.service';
-import { RolesGuard } from './auth/guards/roles.guard';
-import { Roles, Role } from './auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles, Role } from '../auth/decorators/roles.decorator';
 
 @Controller('admin')
 @UseGuards(RolesGuard)

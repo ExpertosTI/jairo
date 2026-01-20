@@ -60,7 +60,7 @@ services:
       - JWT_SECRET=jairo_jwt_super_secret_2026_rd
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-     networks:
+    networks:
       - jairo_internal
       - RenaceNet
     deploy:
