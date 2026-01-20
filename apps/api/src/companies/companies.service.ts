@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, HttpException, HttpStatus } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { EmailService } from '../core/email/email.service';
 import { DatabaseService } from '../database/database.service';
@@ -122,10 +122,17 @@ export class CompaniesService {
                 ...company,
                 mensaje: 'Empresa registrada exitosamente. Recibirás un email cuando sea aprobada.'
             };
-        } catch (error) {
+        } catch (error: any) {
             await client.query('ROLLBACK');
             this.logger.error('Error creando empresa:', error);
-            throw error;
+            // Rethrow with proper HTTP exception for better frontend handling
+            if (error.code === '23505') {
+                throw new HttpException('Esta empresa ya está registrada', HttpStatus.CONFLICT);
+            }
+            throw new HttpException(
+                error.message || 'Error al registrar empresa',
+                error.status || HttpStatus.INTERNAL_SERVER_ERROR
+            );
         } finally {
             client.release();
         }

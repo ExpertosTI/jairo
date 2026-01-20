@@ -10,6 +10,7 @@ import {
 
 export function Navbar() {
     const pathname = usePathname();
+    const [mounted, setMounted] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [user, setUser] = useState<any>(null);
     const [unreadMessages, setUnreadMessages] = useState(0);
@@ -17,15 +18,25 @@ export function Navbar() {
     const [showUserMenu, setShowUserMenu] = useState(false);
 
     const isAuthPage = ["/login", "/registro", "/recuperar", "/onboarding"].includes(pathname);
-    if (isAuthPage) return null;
 
+    // ALL hooks must be called BEFORE any conditional returns (React Rules of Hooks)
     useEffect(() => {
+        setMounted(true);
         const storedUser = localStorage.getItem("usuario");
         if (storedUser) {
             setUser(JSON.parse(storedUser));
-            loadUnreadCounts();
         }
     }, []);
+
+    // Load unread counts only when mounted and user exists
+    useEffect(() => {
+        if (mounted && user) {
+            loadUnreadCounts();
+        }
+    }, [mounted, user]);
+
+    // Conditional returns AFTER all hooks
+    if (!mounted || isAuthPage) return null;
 
     const loadUnreadCounts = async () => {
         const token = localStorage.getItem("token");
