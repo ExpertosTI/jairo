@@ -112,9 +112,7 @@ export default function CotizacionesPage() {
                 <div className="max-w-7xl mx-auto px-4 py-8">
                     <div className="flex items-center justify-between mb-6">
                         <Link href="/directorio" className="flex items-center gap-2">
-                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
-                                <span className="text-primary font-black text-lg">J</span>
-                            </div>
+                            <img src="/logo.svg" alt="JairoApp" className="w-10 h-10 object-contain bg-white rounded-xl p-1" />
                             <span className="text-2xl font-black">JairoApp</span>
                         </Link>
                         <button
@@ -143,8 +141,8 @@ export default function CotizacionesPage() {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as any)}
                                 className={`py-4 border-b-2 font-medium transition-colors ${activeTab === tab.id
-                                        ? 'border-primary text-primary'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                    ? 'border-primary text-primary'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
                                     }`}
                             >
                                 {tab.label}

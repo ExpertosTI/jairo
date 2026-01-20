@@ -86,9 +86,7 @@ export default function AnalyticsPage() {
                 <div className="max-w-7xl mx-auto px-4 py-8">
                     <div className="flex items-center gap-4 mb-6">
                         <Link href="/directorio" className="flex items-center gap-2">
-                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
-                                <span className="text-primary font-black text-lg">J</span>
-                            </div>
+                            <img src="/logo.svg" alt="JairoApp" className="w-10 h-10 object-contain bg-white rounded-xl p-1" />
                             <span className="text-2xl font-black">JairoApp</span>
                         </Link>
                     </div>
@@ -140,8 +138,8 @@ export default function AnalyticsPage() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
                             className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === tab.id
-                                    ? 'bg-primary text-white'
-                                    : 'text-gray-600 hover:bg-gray-100'
+                                ? 'bg-primary text-white'
+                                : 'text-gray-600 hover:bg-gray-100'
                                 }`}
                         >
                             {tab.label}

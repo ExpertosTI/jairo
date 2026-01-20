@@ -110,9 +110,7 @@ export default function OnboardingPage() {
                 {/* Header */}
                 <div className="text-center mb-8">
                     <Link href="/" className="inline-flex items-center gap-2 mb-6">
-                        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center">
-                            <span className="text-primary font-black text-xl">J</span>
-                        </div>
+                        <img src="/logo.svg" alt="JairoApp" className="w-12 h-12 object-contain bg-white rounded-xl p-1" />
                         <span className="text-3xl font-black text-white">JairoApp</span>
                     </Link>
                     <h1 className="text-2xl font-bold text-white mb-2">¡Bienvenido a JairoApp!</h1>

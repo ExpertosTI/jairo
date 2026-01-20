@@ -33,9 +33,6 @@ export default function AdminSidebar() {
             {/* Mobile Header */}
             <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b z-50 px-4 py-3 flex items-center justify-between">
                 <Link href="/admin" className="flex items-center gap-2">
-// <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
-                    //     <span className="text-white font-black text-sm">J</span>
-                    // </div>
                     <img src="/logo.svg" alt="JairoApp" className="w-8 h-8 object-contain" />
                     <span className="font-black text-lg">
                         <span className="text-primary">Jairo</span>
