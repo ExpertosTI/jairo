@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, Plus, Edit, Trash2, Shield, Mail, Building2, Loader2, Search } from "lucide-react";
+import { Users, Plus, Edit, Trash2, Shield, Mail, Building2, Loader2, Search, Link as LinkIcon, X } from "lucide-react";
 
 interface Usuario {
     id: string;
@@ -11,6 +11,12 @@ interface Usuario {
     avatar: string | null;
     empresa_nombre: string | null;
     created_at: string;
+    company_id?: string;
+}
+
+interface Empresa {
+    id: string;
+    name: string;
 }
 
 const roles = [
@@ -26,12 +32,28 @@ export default function UsuariosPage() {
     const [busqueda, setBusqueda] = useState("");
     const [filtroRol, setFiltroRol] = useState("");
     const [total, setTotal] = useState(0);
+    const [empresas, setEmpresas] = useState<Empresa[]>([]);
+    const [linkingUser, setLinkingUser] = useState<Usuario | null>(null);
+    const [selectedEmpresa, setSelectedEmpresa] = useState("");
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
 
     useEffect(() => {
         cargarUsuarios();
+        cargarEmpresas();
     }, [busqueda, filtroRol]);
+
+    const cargarEmpresas = async () => {
+        try {
+            const res = await fetch(`${API_URL}/empresas`);
+            if (res.ok) {
+                const data = await res.json();
+                setEmpresas(data.empresas || []);
+            }
+        } catch {
+            // Silent fail
+        }
+    };
 
     const cargarUsuarios = async () => {
         setCargando(true);
@@ -70,6 +92,22 @@ export default function UsuariosPage() {
         if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
         try {
             await fetch(`${API_URL}/usuarios/${id}`, { method: 'DELETE' });
+            cargarUsuarios();
+        } catch {
+            // Silent fail
+        }
+    };
+
+    const vincularEmpresa = async () => {
+        if (!linkingUser || !selectedEmpresa) return;
+        try {
+            await fetch(`${API_URL}/usuarios/${linkingUser.id}/invitar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ empresaId: selectedEmpresa })
+            });
+            setLinkingUser(null);
+            setSelectedEmpresa("");
             cargarUsuarios();
         } catch {
             // Silent fail
@@ -186,10 +224,16 @@ export default function UsuariosPage() {
                                             {usuario.empresa_nombre ? (
                                                 <div className="flex items-center gap-2 text-slate-300">
                                                     <Building2 size={16} className="text-slate-500" />
-                                                    {usuario.empresa_nombre}
+                                                    <span className="truncate max-w-[150px]">{usuario.empresa_nombre}</span>
                                                 </div>
                                             ) : (
-                                                <span className="text-slate-600">-</span>
+                                                <button
+                                                    onClick={() => setLinkingUser(usuario)}
+                                                    className="flex items-center gap-1 text-primary hover:text-orange-400 text-sm font-medium"
+                                                >
+                                                    <LinkIcon size={14} />
+                                                    Vincular
+                                                </button>
                                             )}
                                         </td>
                                         <td className="px-6 py-4">
@@ -227,6 +271,56 @@ export default function UsuariosPage() {
                     </div>
                 )}
             </div>
+
+            {/* Modal para vincular empresa */}
+            {linkingUser && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] p-4">
+                    <div className="bg-slate-900 rounded-2xl w-full max-w-md border border-slate-700 shadow-2xl">
+                        <div className="p-6 border-b border-slate-700 flex items-center justify-between">
+                            <h3 className="text-lg font-bold text-white">Vincular Usuario a Empresa</h3>
+                            <button onClick={() => setLinkingUser(null)} className="text-slate-400 hover:text-white">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="p-4 bg-slate-800 rounded-xl">
+                                <p className="text-sm text-slate-400">Usuario:</p>
+                                <p className="font-semibold text-white">{linkingUser.name || linkingUser.email}</p>
+                                <p className="text-sm text-slate-500">{linkingUser.email}</p>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-2">Seleccionar Empresa</label>
+                                <select
+                                    value={selectedEmpresa}
+                                    onChange={(e) => setSelectedEmpresa(e.target.value)}
+                                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-primary focus:border-transparent"
+                                >
+                                    <option value="">-- Seleccionar --</option>
+                                    {empresas.map((e) => (
+                                        <option key={e.id} value={e.id}>{e.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <div className="p-6 border-t border-slate-700 flex gap-3">
+                            <button
+                                onClick={() => setLinkingUser(null)}
+                                className="flex-1 py-3 bg-slate-700 text-white rounded-xl font-medium hover:bg-slate-600"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={vincularEmpresa}
+                                disabled={!selectedEmpresa}
+                                className="flex-1 py-3 bg-primary text-white rounded-xl font-medium hover:bg-orange-600 disabled:opacity-50"
+                            >
+                                Vincular
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

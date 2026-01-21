@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/Toast";
 import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
+import { ConditionalFooter } from "@/components/ConditionalFooter";
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -60,7 +60,7 @@ export default function RootLayout({
             <main className="flex-1">
               {children}
             </main>
-            <Footer />
+            <ConditionalFooter />
           </div>
         </ToastProvider>
         <script
