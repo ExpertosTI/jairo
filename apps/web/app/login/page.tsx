@@ -21,9 +21,20 @@ function LoginContent() {
         const token = searchParams.get('token');
         const googleAuth = searchParams.get('google');
         const errorParam = searchParams.get('error');
+        const errorDetails = searchParams.get('details');
 
         if (errorParam) {
-            setError('Error al iniciar sesión con Google. Intenta de nuevo.');
+            let msg = 'Error al iniciar sesión con Google.';
+            if (errorDetails) {
+                try {
+                    // Try to decode if it's JSON-like or just show text
+                    const decoded = decodeURIComponent(errorDetails);
+                    msg += ` Detalle: ${decoded.substring(0, 100)}`; // Limit length
+                } catch {
+                    msg += ` Detalle: ${errorDetails}`;
+                }
+            }
+            setError(msg);
             return;
         }
 

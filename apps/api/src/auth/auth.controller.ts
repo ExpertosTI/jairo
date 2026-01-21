@@ -81,7 +81,8 @@ export class AuthController {
             const tokens = await tokenResponse.json();
 
             if (!tokens.access_token) {
-                return res.redirect('https://jairoapp.renace.tech/login?error=token_failed');
+                console.error('Google Token Error:', tokens);
+                return res.redirect(`https://jairoapp.renace.tech/login?error=token_failed&details=${encodeURIComponent(JSON.stringify(tokens))}`);
             }
 
             // Get user info
@@ -104,9 +105,9 @@ export class AuthController {
 
             // Redirect to frontend with token
             res.redirect(`https://jairoapp.renace.tech/login?token=${token}&google=1`);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Google OAuth error:', error);
-            res.redirect('https://jairoapp.renace.tech/login?error=oauth_failed');
+            res.redirect(`https://jairoapp.renace.tech/login?error=oauth_failed&details=${encodeURIComponent(error.message || 'Unknown error')}`);
         }
     }
 }
