@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
+
 function PlanesContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -36,7 +38,7 @@ function PlanesContent() {
             // Determine user ID from token (simple decode)
             const payload = JSON.parse(atob(token.split('.')[1] || ""));
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/pagos/checkout`, {
+            const res = await fetch(`${API_URL}/pagos/checkout`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -58,8 +60,7 @@ function PlanesContent() {
             } else {
                 alert("Error al iniciar suscripción");
             }
-        } catch (error) {
-            console.error(error);
+        } catch {
             alert("Error de conexión");
         } finally {
             setLoading(false);

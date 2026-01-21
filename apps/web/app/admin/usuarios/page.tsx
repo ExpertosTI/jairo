@@ -46,8 +46,8 @@ export default function UsuariosPage() {
                 setUsuarios(data.usuarios || []);
                 setTotal(data.total || 0);
             }
-        } catch (error) {
-            console.error("Error cargando usuarios:", error);
+        } catch {
+            // Silent fail
         } finally {
             setCargando(false);
         }
@@ -61,8 +61,8 @@ export default function UsuariosPage() {
                 body: JSON.stringify({ rol: nuevoRol })
             });
             cargarUsuarios();
-        } catch (error) {
-            console.error("Error cambiando rol:", error);
+        } catch {
+            // Silent fail
         }
     };
 
@@ -71,8 +71,8 @@ export default function UsuariosPage() {
         try {
             await fetch(`${API_URL}/usuarios/${id}`, { method: 'DELETE' });
             cargarUsuarios();
-        } catch (error) {
-            console.error("Error eliminando usuario:", error);
+        } catch {
+            // Silent fail
         }
     };
 
@@ -89,8 +89,8 @@ export default function UsuariosPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-900">Usuarios</h1>
-                    <p className="text-gray-500 mt-1">{total} usuarios registrados en la plataforma</p>
+                    <h1 className="text-3xl font-black text-white">Usuarios</h1>
+                    <p className="text-slate-400 mt-1">{total} usuarios registrados en la plataforma</p>
                 </div>
                 <button className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium">
                     <Plus size={20} />
@@ -103,33 +103,33 @@ export default function UsuariosPage() {
                 {roles.map((rol) => {
                     const count = usuarios.filter(u => u.role === rol.valor).length;
                     return (
-                        <div key={rol.valor} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                        <div key={rol.valor} className="bg-slate-900 rounded-xl p-4 border border-slate-800">
                             <div className="flex items-center gap-2">
                                 <span className="text-xl">{rol.icono}</span>
-                                <span className="font-medium text-gray-700">{rol.etiqueta}</span>
+                                <span className="font-medium text-slate-300">{rol.etiqueta}</span>
                             </div>
-                            <p className="text-2xl font-bold text-gray-900 mt-2">{count}</p>
+                            <p className="text-2xl font-bold text-white mt-2">{count}</p>
                         </div>
                     );
                 })}
             </div>
 
             {/* Filters */}
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex flex-wrap gap-4">
+            <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 flex flex-wrap gap-4">
                 <div className="flex-1 relative min-w-[200px]">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                     <input
                         type="text"
                         placeholder="Buscar usuario..."
                         value={busqueda}
                         onChange={(e) => setBusqueda(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm"
+                        className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-500"
                     />
                 </div>
                 <select
                     value={filtroRol}
                     onChange={(e) => setFiltroRol(e.target.value)}
-                    className="px-4 py-2 border border-gray-200 rounded-lg text-sm"
+                    className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white"
                 >
                     <option value="">Todos los roles</option>
                     {roles.map(r => (
@@ -139,43 +139,43 @@ export default function UsuariosPage() {
             </div>
 
             {/* Users Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
                 {cargando ? (
                     <div className="p-12 text-center">
                         <Loader2 className="animate-spin mx-auto mb-4 text-primary" size={32} />
-                        <p className="text-gray-500">Cargando usuarios...</p>
+                        <p className="text-slate-400">Cargando usuarios...</p>
                     </div>
                 ) : usuarios.length === 0 ? (
                     <div className="p-12 text-center">
-                        <Users className="mx-auto mb-4 text-gray-300" size={48} />
-                        <h3 className="text-lg font-medium text-gray-900 mb-1">No hay usuarios</h3>
-                        <p className="text-gray-500">
+                        <Users className="mx-auto mb-4 text-slate-600" size={48} />
+                        <h3 className="text-lg font-medium text-white mb-1">No hay usuarios</h3>
+                        <p className="text-slate-400">
                             {busqueda || filtroRol ? "No se encontraron usuarios con esos filtros" : "Aún no hay usuarios registrados"}
                         </p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-50 border-b border-gray-100">
+                            <thead className="bg-slate-800 border-b border-slate-700">
                                 <tr>
-                                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Usuario</th>
-                                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Empresa</th>
-                                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Rol</th>
-                                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Registrado</th>
-                                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Acciones</th>
+                                    <th className="text-left px-6 py-4 text-sm font-semibold text-slate-300">Usuario</th>
+                                    <th className="text-left px-6 py-4 text-sm font-semibold text-slate-300">Empresa</th>
+                                    <th className="text-left px-6 py-4 text-sm font-semibold text-slate-300">Rol</th>
+                                    <th className="text-left px-6 py-4 text-sm font-semibold text-slate-300">Registrado</th>
+                                    <th className="text-left px-6 py-4 text-sm font-semibold text-slate-300">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-slate-800">
                                 {usuarios.map((usuario) => (
-                                    <tr key={usuario.id} className="hover:bg-gray-50">
+                                    <tr key={usuario.id} className="hover:bg-slate-800/50">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 bg-gradient-to-br from-primary to-orange-400 rounded-full flex items-center justify-center text-white font-bold">
                                                     {usuario.name ? usuario.name.split(' ').map(n => n[0]).join('').slice(0, 2) : '?'}
                                                 </div>
                                                 <div>
-                                                    <h4 className="font-semibold text-gray-900">{usuario.name || 'Sin nombre'}</h4>
-                                                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                                                    <h4 className="font-semibold text-white">{usuario.name || 'Sin nombre'}</h4>
+                                                    <p className="text-sm text-slate-500 flex items-center gap-1">
                                                         <Mail size={12} />
                                                         {usuario.email}
                                                     </p>
@@ -184,12 +184,12 @@ export default function UsuariosPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             {usuario.empresa_nombre ? (
-                                                <div className="flex items-center gap-2 text-gray-700">
-                                                    <Building2 size={16} className="text-gray-400" />
+                                                <div className="flex items-center gap-2 text-slate-300">
+                                                    <Building2 size={16} className="text-slate-500" />
                                                     {usuario.empresa_nombre}
                                                 </div>
                                             ) : (
-                                                <span className="text-gray-400">-</span>
+                                                <span className="text-slate-600">-</span>
                                             )}
                                         </td>
                                         <td className="px-6 py-4">
@@ -204,17 +204,17 @@ export default function UsuariosPage() {
                                                 ))}
                                             </select>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-500">
+                                        <td className="px-6 py-4 text-sm text-slate-400">
                                             {formatearFecha(usuario.created_at)}
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
-                                                <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-blue-500">
+                                                <button className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-blue-400">
                                                     <Edit size={18} />
                                                 </button>
                                                 <button
                                                     onClick={() => eliminarUsuario(usuario.id)}
-                                                    className="p-2 hover:bg-red-50 rounded-lg text-gray-500 hover:text-red-500"
+                                                    className="p-2 hover:bg-red-500/20 rounded-lg text-slate-400 hover:text-red-400"
                                                 >
                                                     <Trash2 size={18} />
                                                 </button>

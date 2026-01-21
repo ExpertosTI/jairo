@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Package, Plus, Edit, Trash2, Upload, Search, Grid, List, Eye, DollarSign, RefreshCw } from "lucide-react";
-import Link from "next/link";
+import { useState, useEffect, useRef } from "react";
+import { Package, Plus, Edit, Trash2, Upload, Search, Grid, List, Eye, DollarSign, RefreshCw, FileSpreadsheet, X, Check, AlertCircle, Download } from "lucide-react";
 
 interface Product {
     id: string;
@@ -20,6 +19,16 @@ interface Product {
     created_at: string;
 }
 
+interface CsvProduct {
+    name: string;
+    description?: string;
+    sku?: string;
+    price: number;
+    minOrderQty?: number;
+    valid?: boolean;
+    error?: string;
+}
+
 type Currency = 'USD' | 'DOP';
 
 export default function MiCatalogoPage() {
@@ -27,9 +36,10 @@ export default function MiCatalogoPage() {
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [showCreate, setShowCreate] = useState(false);
+    const [showImport, setShowImport] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [displayCurrency, setDisplayCurrency] = useState<Currency>('DOP');
-    const [exchangeRate, setExchangeRate] = useState<number>(59.50); // Default DOP/USD rate
+    const [exchangeRate, setExchangeRate] = useState<number>(59.50);
     const [rateLoading, setRateLoading] = useState(false);
     const [newProduct, setNewProduct] = useState({
         name: '',
@@ -40,14 +50,122 @@ export default function MiCatalogoPage() {
         minOrderQty: 1
     });
 
+    // CSV Import state
+    const [csvProducts, setCsvProducts] = useState<CsvProduct[]>([]);
+    const [csvFileName, setCsvFileName] = useState('');
+    const [importing, setImporting] = useState(false);
+    const [importResult, setImportResult] = useState<{ success: number; failed: number } | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
+    const getToken = () => localStorage.getItem("token");
+
+    // Parse CSV file
+    const parseCSV = (text: string): CsvProduct[] => {
+        const lines = text.split('\n').filter(line => line.trim());
+        if (lines.length < 2) return [];
+
+        const headerLine = lines[0]!;
+        const headers = headerLine.toLowerCase().split(',').map(h => h.trim().replace(/"/g, ''));
+        const products: CsvProduct[] = [];
+
+        for (let i = 1; i < lines.length; i++) {
+            const dataLine = lines[i]!;
+            const values = dataLine.split(',').map(v => v.trim().replace(/"/g, ''));
+            const product: CsvProduct = {
+                name: '',
+                price: 0,
+                valid: true
+            };
+
+            headers.forEach((header, idx) => {
+                const value = values[idx] || '';
+                if (header.includes('nombre') || header === 'name') product.name = value;
+                else if (header.includes('descripcion') || header === 'description') product.description = value;
+                else if (header === 'sku' || header.includes('codigo')) product.sku = value;
+                else if (header.includes('precio') || header === 'price') product.price = parseFloat(value) || 0;
+                else if (header.includes('cantidad') || header.includes('min') || header === 'qty') product.minOrderQty = parseInt(value) || 1;
+            });
+
+            // Validate
+            if (!product.name) {
+                product.valid = false;
+                product.error = 'Nombre requerido';
+            } else if (product.price <= 0) {
+                product.valid = false;
+                product.error = 'Precio inválido';
+            }
+
+            products.push(product);
+        }
+
+        return products;
+    };
+
+    // Handle file upload
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setCsvFileName(file.name);
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const text = event.target?.result as string;
+            const parsed = parseCSV(text);
+            setCsvProducts(parsed);
+        };
+        reader.readAsText(file);
+    };
+
+    // Import products to backend
+    const importProducts = async () => {
+        const validProducts = csvProducts.filter(p => p.valid);
+        if (validProducts.length === 0) return;
+
+        setImporting(true);
+        setImportResult(null);
+
+        try {
+            const res = await fetch(`${API_URL}/products/import`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${getToken()}`
+                },
+                body: JSON.stringify({ products: validProducts })
+            });
+
+            const data = await res.json();
+            setImportResult({
+                success: data.imported || validProducts.length,
+                failed: data.failed || 0
+            });
+
+            // Reload products after successful import
+            loadProducts();
+        } catch {
+            setImportResult({ success: 0, failed: validProducts.length });
+        } finally {
+            setImporting(false);
+        }
+    };
+
+    // Download CSV template
+    const downloadTemplate = () => {
+        const template = 'nombre,descripcion,sku,precio,cantidad_minima\nProducto Ejemplo,Descripción del producto,SKU-001,100.00,1';
+        const blob = new Blob([template], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'plantilla_productos.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    };
 
     useEffect(() => {
         loadProducts();
         fetchExchangeRate();
     }, []);
-
-    const getToken = () => localStorage.getItem("token");
 
     // Fetch current DOP/USD exchange rate
     const fetchExchangeRate = async () => {
@@ -59,8 +177,7 @@ export default function MiCatalogoPage() {
             if (data.rates?.DOP) {
                 setExchangeRate(data.rates.DOP);
             }
-        } catch (error) {
-            console.error("Error fetching exchange rate, using default:", error);
+        } catch {
             // Keep default rate of 59.50
         } finally {
             setRateLoading(false);
@@ -74,9 +191,7 @@ export default function MiCatalogoPage() {
             });
             const data = await res.json();
             setProducts(data.productos || []);
-        } catch (error) {
-            console.error("Error loading products:", error);
-        } finally {
+        } catch {
             setLoading(false);
         }
     };
@@ -105,8 +220,8 @@ export default function MiCatalogoPage() {
             setShowCreate(false);
             setNewProduct({ name: '', description: '', sku: '', price: 0, currency: 'DOP', minOrderQty: 1 });
             loadProducts();
-        } catch (error) {
-            console.error("Error creating product:", error);
+        } catch {
+            // Silent fail
         }
     };
 
@@ -119,8 +234,8 @@ export default function MiCatalogoPage() {
                 headers: { Authorization: `Bearer ${getToken()}` }
             });
             loadProducts();
-        } catch (error) {
-            console.error("Error deleting product:", error);
+        } catch {
+            // Silent fail
         }
     };
 
@@ -143,26 +258,6 @@ export default function MiCatalogoPage() {
                 maximumFractionDigits: 0
             }).format(dopPrice);
         }
-    };
-
-    // Format both currencies
-    const formatDualPrice = (usdPrice: number) => {
-        if (!usdPrice) return { usd: '—', dop: '—' };
-
-        const usd = new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2
-        }).format(usdPrice);
-
-        const dop = new Intl.NumberFormat('es-DO', {
-            style: 'currency',
-            currency: 'DOP',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(usdPrice * exchangeRate);
-
-        return { usd, dop };
     };
 
     const filteredProducts = products.filter(p =>
@@ -280,7 +375,10 @@ export default function MiCatalogoPage() {
                             >
                                 <Plus size={20} /> Agregar Producto
                             </button>
-                            <button className="border border-gray-200 px-6 py-3 rounded-xl font-medium flex items-center gap-2 hover:bg-gray-50">
+                            <button
+                                onClick={() => setShowImport(true)}
+                                className="border border-gray-200 px-6 py-3 rounded-xl font-medium flex items-center gap-2 hover:bg-gray-50"
+                            >
                                 <Upload size={20} /> Importar CSV
                             </button>
                         </div>
@@ -447,6 +545,178 @@ export default function MiCatalogoPage() {
                                 className="flex-1 py-3 bg-primary text-white rounded-xl font-medium disabled:opacity-50"
                             >
                                 Agregar Producto
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* CSV Import Modal */}
+            {showImport && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+                        {/* Header */}
+                        <div className="p-6 border-b flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary/10 rounded-xl">
+                                    <FileSpreadsheet className="text-primary" size={24} />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-gray-900">Importar Productos</h2>
+                                    <p className="text-sm text-gray-500">Carga múltiples productos desde un archivo CSV</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setShowImport(false);
+                                    setCsvProducts([]);
+                                    setCsvFileName('');
+                                    setImportResult(null);
+                                }}
+                                className="p-2 hover:bg-gray-100 rounded-lg"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-6 overflow-y-auto max-h-[60vh]">
+                            {/* Template Download */}
+                            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6">
+                                <div className="flex items-start gap-3">
+                                    <Download className="text-blue-600 mt-0.5" size={20} />
+                                    <div className="flex-1">
+                                        <h3 className="font-medium text-blue-900">Plantilla CSV</h3>
+                                        <p className="text-sm text-blue-700 mb-2">Descarga la plantilla para asegurar el formato correcto</p>
+                                        <button
+                                            onClick={downloadTemplate}
+                                            className="text-sm font-medium text-blue-600 hover:text-blue-800 underline"
+                                        >
+                                            Descargar plantilla
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* File Upload */}
+                            <div className="mb-6">
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept=".csv"
+                                    onChange={handleFileUpload}
+                                    className="hidden"
+                                />
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="w-full border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-primary hover:bg-primary/5 transition-all"
+                                >
+                                    <Upload className="mx-auto text-gray-400 mb-2" size={32} />
+                                    <p className="font-medium text-gray-700">
+                                        {csvFileName || 'Haz clic para seleccionar un archivo CSV'}
+                                    </p>
+                                    <p className="text-sm text-gray-500 mt-1">o arrastra y suelta aquí</p>
+                                </button>
+                            </div>
+
+                            {/* Preview Table */}
+                            {csvProducts.length > 0 && (
+                                <div className="border rounded-xl overflow-hidden">
+                                    <div className="bg-gray-50 px-4 py-3 border-b flex items-center justify-between">
+                                        <span className="font-medium text-gray-900">
+                                            Vista previa ({csvProducts.length} productos)
+                                        </span>
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <span className="flex items-center gap-1 text-green-600">
+                                                <Check size={14} /> {csvProducts.filter(p => p.valid).length} válidos
+                                            </span>
+                                            {csvProducts.filter(p => !p.valid).length > 0 && (
+                                                <span className="flex items-center gap-1 text-red-600">
+                                                    <AlertCircle size={14} /> {csvProducts.filter(p => !p.valid).length} errores
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="max-h-64 overflow-y-auto">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-gray-50 sticky top-0">
+                                                <tr>
+                                                    <th className="px-4 py-2 text-left">Estado</th>
+                                                    <th className="px-4 py-2 text-left">Nombre</th>
+                                                    <th className="px-4 py-2 text-left">SKU</th>
+                                                    <th className="px-4 py-2 text-right">Precio</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {csvProducts.map((product, idx) => (
+                                                    <tr key={idx} className={`border-t ${!product.valid ? 'bg-red-50' : ''}`}>
+                                                        <td className="px-4 py-2">
+                                                            {product.valid ? (
+                                                                <Check className="text-green-500" size={16} />
+                                                            ) : (
+                                                                <span className="flex items-center gap-1 text-red-500 text-xs">
+                                                                    <AlertCircle size={14} /> {product.error}
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-2 font-medium">{product.name || '-'}</td>
+                                                        <td className="px-4 py-2 text-gray-500">{product.sku || '-'}</td>
+                                                        <td className="px-4 py-2 text-right">${product.price.toFixed(2)}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Import Result */}
+                            {importResult && (
+                                <div className={`mt-4 p-4 rounded-xl ${importResult.failed > 0 ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200'}`}>
+                                    <div className="flex items-center gap-2">
+                                        {importResult.failed === 0 ? (
+                                            <Check className="text-green-600" size={20} />
+                                        ) : (
+                                            <AlertCircle className="text-yellow-600" size={20} />
+                                        )}
+                                        <span className={importResult.failed === 0 ? 'text-green-800' : 'text-yellow-800'}>
+                                            {importResult.success} productos importados correctamente
+                                            {importResult.failed > 0 && `, ${importResult.failed} fallaron`}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-6 border-t flex gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowImport(false);
+                                    setCsvProducts([]);
+                                    setCsvFileName('');
+                                    setImportResult(null);
+                                }}
+                                className="flex-1 py-3 border rounded-xl font-medium hover:bg-gray-50"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={importProducts}
+                                disabled={importing || csvProducts.filter(p => p.valid).length === 0}
+                                className="flex-1 py-3 bg-primary text-white rounded-xl font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {importing ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        Importando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload size={18} />
+                                        Importar {csvProducts.filter(p => p.valid).length} Productos
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>

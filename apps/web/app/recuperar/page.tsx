@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
+
 export default function RecuperarPage() {
     return (
         <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>}>
@@ -48,7 +50,7 @@ function RecuperarContent() {
 
         setLoading(true);
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/cambiar-password`, {
+            const res = await fetch(`${API_URL}/auth/cambiar-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token, nuevaPassword: password })
@@ -154,7 +156,7 @@ function SolicitarRecuperacion() {
         setLoading(true);
 
         try {
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/recuperar`, {
+            await fetch(`${API_URL}/auth/recuperar`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
