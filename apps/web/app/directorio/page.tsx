@@ -59,8 +59,8 @@ export default function DirectorioPage() {
                 const data = await sectoresRes.json();
                 setSectores(data.sectores || []);
             }
-        } catch (error) {
-            console.error("Error cargando directorio:", error);
+        } catch {
+            // Silent fail
         } finally {
             setCargando(false);
         }
@@ -77,38 +77,42 @@ export default function DirectorioPage() {
                     </p>
 
                     {/* Search */}
-                    <div className="max-w-2xl mx-auto mt-8 flex gap-2">
-                        <div className="flex-1 relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                            <input
-                                type="text"
-                                placeholder="Buscar empresas..."
-                                value={busqueda}
-                                onChange={(e) => setBusqueda(e.target.value)}
-                                className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-900 focus:outline-none focus:ring-4 focus:ring-white/30"
-                            />
+                    <div className="max-w-2xl mx-auto mt-8">
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <div className="flex-1 relative">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar empresas..."
+                                    value={busqueda}
+                                    onChange={(e) => setBusqueda(e.target.value)}
+                                    className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-900 focus:outline-none focus:ring-4 focus:ring-white/30"
+                                />
+                            </div>
+                            <div className="flex gap-2">
+                                <select
+                                    value={sectorFiltro}
+                                    onChange={(e) => setSectorFiltro(e.target.value)}
+                                    className="flex-1 sm:flex-none px-4 py-4 rounded-xl text-gray-900 focus:outline-none text-sm"
+                                >
+                                    <option value="">Todos los sectores</option>
+                                    {sectores.map(s => (
+                                        <option key={s.id} value={s.name}>{s.icon} {s.name}</option>
+                                    ))}
+                                </select>
+                                <select
+                                    value={tipoFiltro}
+                                    onChange={(e) => setTipoFiltro(e.target.value)}
+                                    className="flex-1 sm:flex-none px-4 py-4 rounded-xl text-gray-900 focus:outline-none text-sm"
+                                >
+                                    <option value="">Todos los tipos</option>
+                                    <option value="proveedor">Proveedor</option>
+                                    <option value="distribuidor">Distribuidor</option>
+                                    <option value="fabricante">Fabricante</option>
+                                    <option value="servicio">Servicios</option>
+                                </select>
+                            </div>
                         </div>
-                        <select
-                            value={sectorFiltro}
-                            onChange={(e) => setSectorFiltro(e.target.value)}
-                            className="px-4 py-4 rounded-xl text-gray-900 focus:outline-none"
-                        >
-                            <option value="">Todos los sectores</option>
-                            {sectores.map(s => (
-                                <option key={s.id} value={s.name}>{s.icon} {s.name}</option>
-                            ))}
-                        </select>
-                        <select
-                            value={tipoFiltro}
-                            onChange={(e) => setTipoFiltro(e.target.value)}
-                            className="px-4 py-4 rounded-xl text-gray-900 focus:outline-none"
-                        >
-                            <option value="">Todos los tipos</option>
-                            <option value="proveedor">Proveedor</option>
-                            <option value="distribuidor">Distribuidor</option>
-                            <option value="fabricante">Fabricante</option>
-                            <option value="servicio">Servicios</option>
-                        </select>
                     </div>
                 </div>
             </div>
@@ -116,25 +120,25 @@ export default function DirectorioPage() {
             {/* Sectors Filter */}
             <div className="border-b bg-white sticky top-16 z-10 shadow-sm mb-6">
                 <div className="max-w-7xl mx-auto px-4 py-4">
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                    <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
                         <button
                             onClick={() => setSectorFiltro("")}
-                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${!sectorFiltro ? 'bg-primary text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 ${!sectorFiltro ? 'bg-primary text-white shadow-md' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                         >
-                            Todos
+                            ⚡ Todos
                         </button>
                         {sectores.slice(0, 10).map((sector) => (
                             <button
                                 key={sector.id}
                                 onClick={() => setSectorFiltro(sector.name)}
-                                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap flex items-center gap-1 transition-all ${sectorFiltro === sector.name
+                                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap flex items-center gap-1 transition-all flex-shrink-0 ${sectorFiltro === sector.name
                                     ? 'bg-primary text-white shadow-md'
                                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                     }`}
                             >
                                 <span>{sector.icon}</span>
-                                {sector.name}
+                                <span className="hidden sm:inline">{sector.name}</span>
                             </button>
                         ))}
                     </div>
@@ -222,9 +226,12 @@ export default function DirectorioPage() {
                                             <Network size={14} />
                                             <span>{empresa.conexiones || 0} conexiones</span>
                                         </div>
-                                        <button className="text-primary font-medium text-sm hover:underline flex items-center gap-1">
+                                        <Link
+                                            href={`/empresa/${empresa.id}`}
+                                            className="text-primary font-medium text-sm hover:underline flex items-center gap-1"
+                                        >
                                             Ver perfil <ChevronRight size={14} />
-                                        </button>
+                                        </Link>
                                     </div>
                                 </div>
                             ))}

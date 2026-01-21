@@ -196,10 +196,27 @@ export default function MiCatalogoPage() {
         }
     };
 
+    const [createError, setCreateError] = useState('');
+
     const createProduct = async () => {
+        setCreateError('');
+
+        // Validate required fields
+        if (!newProduct.name.trim()) {
+            setCreateError('El nombre del producto es requerido');
+            return;
+        }
+        if (newProduct.price <= 0) {
+            setCreateError('El precio debe ser mayor a 0');
+            return;
+        }
+
         try {
             const priceData = {
-                ...newProduct,
+                name: newProduct.name.trim(),
+                description: newProduct.description.trim(),
+                sku: newProduct.sku.trim(),
+                min_order_qty: newProduct.minOrderQty || 1,
                 // Always store in USD for consistency, convert if entered in DOP
                 price: newProduct.currency === 'DOP'
                     ? newProduct.price / exchangeRate
@@ -209,7 +226,7 @@ export default function MiCatalogoPage() {
                     : newProduct.price * exchangeRate
             };
 
-            await fetch(`${API_URL}/products`, {
+            const res = await fetch(`${API_URL}/products`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -217,11 +234,18 @@ export default function MiCatalogoPage() {
                 },
                 body: JSON.stringify(priceData)
             });
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                setCreateError(errData.message || 'Error al crear el producto');
+                return;
+            }
+
             setShowCreate(false);
             setNewProduct({ name: '', description: '', sku: '', price: 0, currency: 'DOP', minOrderQty: 1 });
             loadProducts();
         } catch {
-            // Silent fail
+            setCreateError('Error de conexión al servidor');
         }
     };
 
@@ -532,17 +556,28 @@ export default function MiCatalogoPage() {
                             </div>
                         </div>
 
-                        <div className="flex gap-3 mt-6">
+                        {/* Error Message */}
+                        {createError && (
+                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mt-4 flex items-center gap-2">
+                                <AlertCircle size={18} className="flex-shrink-0" />
+                                <span className="text-sm">{createError}</span>
+                            </div>
+                        )}
+
+                        <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6">
                             <button
-                                onClick={() => setShowCreate(false)}
-                                className="flex-1 py-3 border rounded-xl font-medium hover:bg-gray-50"
+                                onClick={() => {
+                                    setShowCreate(false);
+                                    setCreateError('');
+                                }}
+                                className="flex-1 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-100 transition-colors"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={createProduct}
-                                disabled={!newProduct.name}
-                                className="flex-1 py-3 bg-primary text-white rounded-xl font-medium disabled:opacity-50"
+                                disabled={!newProduct.name || newProduct.price <= 0}
+                                className="flex-1 py-3 bg-primary text-white rounded-xl font-medium disabled:opacity-50 hover:bg-primary-600 transition-colors"
                             >
                                 Agregar Producto
                             </button>
