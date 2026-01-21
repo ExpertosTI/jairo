@@ -99,21 +99,77 @@ function CompanySection({ API_URL, user }: { API_URL: string; user: any }) {
                         </div>
                     </div>
 
+                    {/* Logo Section */}
                     <div className="p-4 bg-gray-50 rounded-xl">
                         <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center">
-                                <Building2 className="text-primary" size={28} />
+                            <div className="relative group">
+                                <div className="w-20 h-20 bg-white border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center overflow-hidden">
+                                    {companyInfo.logo ? (
+                                        <img
+                                            src={companyInfo.logo}
+                                            alt={companyInfo.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <Building2 className="text-gray-400" size={32} />
+                                    )}
+                                </div>
+                                <label className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl cursor-pointer">
+                                    <Camera className="text-white" size={24} />
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+
+                                            // Convert to base64 for now (in production use proper upload)
+                                            const reader = new FileReader();
+                                            reader.onloadend = async () => {
+                                                try {
+                                                    const res = await fetch(`${API_URL}/empresas/${companyInfo.id}`, {
+                                                        method: 'PUT',
+                                                        headers: {
+                                                            'Content-Type': 'application/json',
+                                                            Authorization: `Bearer ${getToken()}`
+                                                        },
+                                                        body: JSON.stringify({ logo: reader.result })
+                                                    });
+                                                    if (res.ok) {
+                                                        setCompanyInfo({ ...companyInfo, logo: reader.result as string });
+                                                        setMessage({ type: 'success', text: 'Logo actualizado' });
+                                                    }
+                                                } catch {
+                                                    setMessage({ type: 'error', text: 'Error al subir logo' });
+                                                }
+                                            };
+                                            reader.readAsDataURL(file);
+                                        }}
+                                    />
+                                </label>
                             </div>
-                            <div>
+                            <div className="flex-1">
                                 <h3 className="font-bold text-gray-900">{companyInfo.name}</h3>
                                 <p className="text-sm text-gray-500">
                                     Estado: <span className={companyInfo.status === 'active' ? 'text-green-600' : 'text-yellow-600'}>
                                         {companyInfo.status === 'active' ? 'Activa' : companyInfo.status === 'pending' ? 'Pendiente' : companyInfo.status}
                                     </span>
                                 </p>
+                                <p className="text-xs text-gray-400 mt-1">Haz clic en el logo para cambiarlo</p>
                             </div>
                         </div>
                     </div>
+
+                    {message.text && (
+                        <div className={`p-3 rounded-xl flex items-center gap-2 text-sm ${message.type === 'success'
+                                ? 'bg-green-50 text-green-700'
+                                : 'bg-red-50 text-red-700'
+                            }`}>
+                            {message.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+                            {message.text}
+                        </div>
+                    )}
 
                     <Link
                         href="/mi-catalogo"
@@ -136,8 +192,8 @@ function CompanySection({ API_URL, user }: { API_URL: string; user: any }) {
 
                     {message.text && (
                         <div className={`p-4 rounded-xl flex items-start gap-3 ${message.type === 'success'
-                                ? 'bg-green-50 border border-green-200 text-green-700'
-                                : 'bg-red-50 border border-red-200 text-red-700'
+                            ? 'bg-green-50 border border-green-200 text-green-700'
+                            : 'bg-red-50 border border-red-200 text-red-700'
                             }`}>
                             {message.type === 'success' ? (
                                 <CheckCircle className="flex-shrink-0 mt-0.5" size={18} />

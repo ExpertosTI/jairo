@@ -160,10 +160,12 @@ export class CompaniesService {
                 sector_id = COALESCE($7, sector_id),
                 type_id = COALESCE($8, type_id),
                 status = COALESCE($9, status),
+                logo = COALESCE($10, logo),
+                descripcion = COALESCE($11, descripcion),
                 updated_at = NOW()
             WHERE id = $1
             RETURNING *
-        `, [id, data.nombre, data.email, data.telefono, data.direccion, data.website, data.sectorId, data.tipoId, data.estado]);
+        `, [id, data.nombre, data.email, data.telefono, data.direccion, data.website, data.sectorId, data.tipoId, data.estado, data.logo, data.descripcion]);
 
         return result.rows[0];
     }

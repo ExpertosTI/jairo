@@ -154,13 +154,13 @@ export function Navbar() {
                                         <>
                                             {/* Backdrop to close on click outside */}
                                             <div
-                                                className="fixed inset-0 z-40"
+                                                className="fixed inset-0 z-[9998] bg-black/20"
                                                 onClick={() => setShowUserMenu(false)}
                                             />
-                                            <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border py-2 z-50">
+                                            <div className="fixed right-4 top-16 w-64 bg-white rounded-2xl shadow-2xl border py-2 z-[9999] max-h-[80vh] overflow-y-auto">
                                                 <div className="px-4 py-3 border-b">
                                                     <p className="font-medium text-gray-900">{user.nombre}</p>
-                                                    <p className="text-sm text-gray-500">{user.email}</p>
+                                                    <p className="text-sm text-gray-500 truncate">{user.email}</p>
                                                 </div>
                                                 {userMenuItems.map((item) => (
                                                     <Link
