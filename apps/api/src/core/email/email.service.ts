@@ -7,13 +7,18 @@ export class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
+    // Validate required SMTP configuration
+    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      this.logger.warn('⚠️ SMTP configuration incomplete. Email sending will fail.');
+    }
+
     this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.hostinger.com',
+      host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT || '465'),
       secure: true, // SSL
       auth: {
-        user: process.env.SMTP_USER || 'info@renace.space',
-        pass: process.env.SMTP_PASS || 'JustWork2027@',
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
       },
     });
   }
