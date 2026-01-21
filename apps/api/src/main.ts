@@ -12,18 +12,18 @@ async function bootstrap() {
     })
   );
 
-  // Security Headers (Helmet)
-  await app.register(helmet, {
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", "data:", "https:"],
-        scriptSrc: ["'self'"],
-      },
-    },
-    crossOriginEmbedderPolicy: false, // Allow embedding from other origins
-  });
+  // Security Headers (Helmet) - Temporarily disabled for debugging
+  // await app.register(helmet, {
+  //   contentSecurityPolicy: {
+  //     directives: {
+  //       defaultSrc: ["'self'"],
+  //       styleSrc: ["'self'", "'unsafe-inline'"],
+  //       imgSrc: ["'self'", "data:", "https:"],
+  //       scriptSrc: ["'self'"],
+  //     },
+  //   },
+  //   crossOriginEmbedderPolicy: false,
+  // });
 
   // Input Validation
   app.useGlobalPipes(new ValidationPipe({
