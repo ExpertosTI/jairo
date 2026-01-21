@@ -16,7 +16,7 @@ function LoginContent() {
         password: "",
     });
 
-    // Handle Google OAuth callback
+    // Handle Google OAuth callback (from URL params - fallback)
     useEffect(() => {
         const token = searchParams.get('token');
         const googleAuth = searchParams.get('google');
@@ -27,9 +27,8 @@ function LoginContent() {
             let msg = 'Error al iniciar sesión con Google.';
             if (errorDetails) {
                 try {
-                    // Try to decode if it's JSON-like or just show text
                     const decoded = decodeURIComponent(errorDetails);
-                    msg += ` Detalle: ${decoded.substring(0, 100)}`; // Limit length
+                    msg += ` Detalle: ${decoded.substring(0, 100)}`;
                 } catch {
                     msg += ` Detalle: ${errorDetails}`;
                 }
@@ -39,27 +38,44 @@ function LoginContent() {
         }
 
         if (token && googleAuth) {
-            // Decode token to get user info
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                localStorage.setItem("token", token);
-                localStorage.setItem("usuario", JSON.stringify({
-                    id: payload.id,
-                    email: payload.email,
-                    nombre: payload.email.split('@')[0],
-                    rol: payload.role
-                }));
-
-                if (payload.role === "super_admin" || payload.role === "admin") {
-                    router.push("/admin");
-                } else {
-                    router.push("/directorio");
-                }
-            } catch (e) {
-                setError('Error procesando autenticación');
-            }
+            handleGoogleToken(token);
         }
     }, [searchParams, router]);
+
+    // Handle Google OAuth popup message
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data?.type === 'GOOGLE_AUTH_SUCCESS' && event.data?.token) {
+                handleGoogleToken(event.data.token);
+            } else if (event.data?.type === 'GOOGLE_AUTH_ERROR') {
+                setError(`Error al iniciar sesión con Google. ${event.data.details || ''}`);
+            }
+        };
+
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, [router]);
+
+    const handleGoogleToken = (token: string) => {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            localStorage.setItem("token", token);
+            localStorage.setItem("usuario", JSON.stringify({
+                id: payload.id,
+                email: payload.email,
+                nombre: payload.email.split('@')[0],
+                rol: payload.role
+            }));
+
+            if (payload.role === "super_admin" || payload.role === "admin") {
+                router.push("/admin");
+            } else {
+                router.push("/directorio");
+            }
+        } catch (e) {
+            setError('Error procesando autenticación');
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -126,7 +142,18 @@ function LoginContent() {
                     <div className="space-y-4 mb-6">
                         <button
                             type="button"
-                            onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api'}/auth/google`}
+                            onClick={() => {
+                                const width = 500;
+                                const height = 600;
+                                const left = window.screenX + (window.outerWidth - width) / 2;
+                                const top = window.screenY + (window.outerHeight - height) / 2;
+                                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
+                                window.open(
+                                    `${apiUrl}/auth/google`,
+                                    'Google Login',
+                                    `width=${width},height=${height},left=${left},top=${top}`
+                                );
+                            }}
                             className="w-full bg-white border border-gray-200 text-gray-700 py-3.5 rounded-xl font-semibold hover:bg-gray-50 flex items-center justify-center gap-3 transition-all"
                         >
                             <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-6 h-6" />

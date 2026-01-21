@@ -10,6 +10,22 @@ function CallbackContent() {
 
     useEffect(() => {
         const token = searchParams.get('token');
+        const error = searchParams.get('error');
+        const details = searchParams.get('details');
+
+        // Check if we're in a popup
+        if (window.opener && window.opener !== window) {
+            // We're in a popup - send message to parent and close
+            if (token) {
+                window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS', token }, '*');
+            } else {
+                window.opener.postMessage({ type: 'GOOGLE_AUTH_ERROR', error: error || 'unknown', details }, '*');
+            }
+            window.close();
+            return;
+        }
+
+        // Not in popup - handle normally
         if (token) {
             localStorage.setItem('token', token);
             // Fetch profile to store user data

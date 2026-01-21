@@ -103,11 +103,11 @@ export class AuthController {
             // Generate JWT token
             const { token } = await this.authService.loginGoogle(user);
 
-            // Redirect to frontend with token
-            res.redirect(`https://jairoapp.renace.tech/login?token=${token}&google=1`);
+            // Redirect to frontend callback (works with popup)
+            res.redirect(`https://jairoapp.renace.tech/auth/callback?token=${token}`);
         } catch (error: any) {
             console.error('Google OAuth error:', error);
-            res.redirect(`https://jairoapp.renace.tech/login?error=oauth_failed&details=${encodeURIComponent(error.message || 'Unknown error')}`);
+            res.redirect(`https://jairoapp.renace.tech/auth/callback?error=oauth_failed&details=${encodeURIComponent(error.message || 'Unknown error')}`);
         }
     }
 }
