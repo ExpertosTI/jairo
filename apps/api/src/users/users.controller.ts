@@ -60,4 +60,18 @@ export class UsersController {
 
         return this.usersService.completeOnboarding(decoded.id, body);
     }
+
+    // Permite al usuario vincular su cuenta a una empresa existente
+    @Post('claim-company')
+    async claimCompany(@Headers('authorization') auth: string) {
+        const token = auth?.replace('Bearer ', '');
+        const jwt = require('jsonwebtoken');
+        const decoded: any = jwt.decode(token);
+
+        if (!decoded || !decoded.id) {
+            throw new HttpException('No autorizado', HttpStatus.UNAUTHORIZED);
+        }
+
+        return this.usersService.claimCompanyByEmail(decoded.id);
+    }
 }

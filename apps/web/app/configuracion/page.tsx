@@ -3,10 +3,187 @@
 import { useState, useEffect } from "react";
 import {
     Settings, User, Building2, Bell, Shield, CreditCard,
-    Globe, Moon, Sun, ChevronRight, LogOut, Camera
+    Globe, Moon, Sun, ChevronRight, LogOut, Camera, Loader2, Link as LinkIcon, CheckCircle, AlertCircle
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
+// Company Section Component
+function CompanySection({ API_URL, user }: { API_URL: string; user: any }) {
+    const [companyInfo, setCompanyInfo] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
+    const [linking, setLinking] = useState(false);
+    const [message, setMessage] = useState({ type: '', text: '' });
+
+    const getToken = () => localStorage.getItem("token");
+
+    useEffect(() => {
+        checkCompanyStatus();
+    }, []);
+
+    const checkCompanyStatus = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch(`${API_URL}/auth/perfil`, {
+                headers: { Authorization: `Bearer ${getToken()}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.company_id) {
+                    // Fetch company details
+                    const compRes = await fetch(`${API_URL}/empresas/${data.company_id}`);
+                    if (compRes.ok) {
+                        setCompanyInfo(await compRes.json());
+                    }
+                }
+            }
+        } catch {
+            // Silent fail
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const linkCompany = async () => {
+        setLinking(true);
+        setMessage({ type: '', text: '' });
+        try {
+            const res = await fetch(`${API_URL}/usuarios/claim-company`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${getToken()}` }
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                setMessage({ type: 'success', text: data.message });
+                if (data.company) {
+                    setCompanyInfo(data.company);
+                    // Update stored user info
+                    const storedUser = localStorage.getItem("usuario");
+                    if (storedUser) {
+                        const userData = JSON.parse(storedUser);
+                        userData.company_id = data.company.id;
+                        userData.empresa_nombre = data.company.name;
+                        localStorage.setItem("usuario", JSON.stringify(userData));
+                    }
+                }
+            } else {
+                setMessage({ type: 'error', text: data.message || 'Error al vincular empresa' });
+            }
+        } catch {
+            setMessage({ type: 'error', text: 'Error de conexión' });
+        } finally {
+            setLinking(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="bg-white rounded-2xl p-6 shadow-sm flex items-center justify-center py-12">
+                <Loader2 className="animate-spin text-primary" size={32} />
+            </div>
+        );
+    }
+
+    return (
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-gray-900 mb-6">Mi Empresa</h2>
+
+            {companyInfo ? (
+                <div className="space-y-4">
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3">
+                        <CheckCircle className="text-green-600 flex-shrink-0 mt-0.5" size={20} />
+                        <div>
+                            <p className="font-medium text-green-800">Empresa Vinculada</p>
+                            <p className="text-green-700 text-sm">Tu cuenta está conectada a una empresa</p>
+                        </div>
+                    </div>
+
+                    <div className="p-4 bg-gray-50 rounded-xl">
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center">
+                                <Building2 className="text-primary" size={28} />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-gray-900">{companyInfo.name}</h3>
+                                <p className="text-sm text-gray-500">
+                                    Estado: <span className={companyInfo.status === 'active' ? 'text-green-600' : 'text-yellow-600'}>
+                                        {companyInfo.status === 'active' ? 'Activa' : companyInfo.status === 'pending' ? 'Pendiente' : companyInfo.status}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Link
+                        href="/mi-catalogo"
+                        className="block w-full py-3 bg-primary text-white rounded-xl font-medium text-center hover:bg-primary-600 transition-colors"
+                    >
+                        Gestionar Mi Catálogo
+                    </Link>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-start gap-3">
+                        <AlertCircle className="text-yellow-600 flex-shrink-0 mt-0.5" size={20} />
+                        <div>
+                            <p className="font-medium text-yellow-800">Sin Empresa Vinculada</p>
+                            <p className="text-yellow-700 text-sm">
+                                Para publicar productos y crear cotizaciones necesitas vincular tu cuenta a una empresa.
+                            </p>
+                        </div>
+                    </div>
+
+                    {message.text && (
+                        <div className={`p-4 rounded-xl flex items-start gap-3 ${message.type === 'success'
+                                ? 'bg-green-50 border border-green-200 text-green-700'
+                                : 'bg-red-50 border border-red-200 text-red-700'
+                            }`}>
+                            {message.type === 'success' ? (
+                                <CheckCircle className="flex-shrink-0 mt-0.5" size={18} />
+                            ) : (
+                                <AlertCircle className="flex-shrink-0 mt-0.5" size={18} />
+                            )}
+                            <span className="text-sm">{message.text}</span>
+                        </div>
+                    )}
+
+                    <button
+                        onClick={linkCompany}
+                        disabled={linking}
+                        className="w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                        {linking ? (
+                            <>
+                                <Loader2 className="animate-spin" size={18} />
+                                Vinculando...
+                            </>
+                        ) : (
+                            <>
+                                <LinkIcon size={18} />
+                                Vincular Mi Empresa
+                            </>
+                        )}
+                    </button>
+
+                    <p className="text-sm text-gray-500 text-center">
+                        Tu cuenta ({user?.email}) se vinculará automáticamente a una empresa registrada con el mismo email.
+                    </p>
+
+                    <div className="pt-4 border-t">
+                        <p className="text-sm text-gray-600 mb-2">¿No tienes empresa registrada?</p>
+                        <Link
+                            href="/registro"
+                            className="block w-full py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-medium text-center hover:bg-gray-100 transition-colors"
+                        >
+                            Registrar Nueva Empresa
+                        </Link>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 export default function ConfiguracionPage() {
     const router = useRouter();
@@ -99,8 +276,8 @@ export default function ConfiguracionPage() {
                                         key={section.id}
                                         onClick={() => setActiveSection(section.id)}
                                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeSection === section.id
-                                                ? 'bg-primary/10 text-primary'
-                                                : 'text-gray-700 hover:bg-gray-50'
+                                            ? 'bg-primary/10 text-primary'
+                                            : 'text-gray-700 hover:bg-gray-50'
                                             }`}
                                     >
                                         <section.icon size={20} />
@@ -165,6 +342,10 @@ export default function ConfiguracionPage() {
                                     </button>
                                 </div>
                             </div>
+                        )}
+
+                        {activeSection === 'company' && (
+                            <CompanySection API_URL={API_URL} user={user} />
                         )}
 
                         {activeSection === 'notifications' && (

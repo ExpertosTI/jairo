@@ -196,4 +196,59 @@ export class UsersService {
             client.release();
         }
     }
+
+    // Vincula un usuario a una empresa si el email del usuario coincide con el email de la empresa
+    async claimCompanyByEmail(userId: string) {
+        // Get user email
+        const userRes = await this.db.query('SELECT email, company_id FROM users WHERE id = $1', [userId]);
+
+        if (!userRes.rows[0]) {
+            throw new HttpException('Usuario no encontrado', HttpStatus.NOT_FOUND);
+        }
+
+        const user = userRes.rows[0];
+
+        // If user already has a company, return info
+        if (user.company_id) {
+            const companyRes = await this.db.query('SELECT id, name FROM companies WHERE id = $1', [user.company_id]);
+            return {
+                linked: true,
+                company: companyRes.rows[0],
+                message: 'Ya tienes una empresa vinculada'
+            };
+        }
+
+        // Find company with matching email (case insensitive)
+        const companyRes = await this.db.query(
+            'SELECT id, name, status FROM companies WHERE LOWER(email) = LOWER($1) LIMIT 1',
+            [user.email]
+        );
+
+        if (!companyRes.rows[0]) {
+            throw new HttpException(
+                'No se encontró una empresa registrada con tu email. Puedes registrar una nueva empresa en la página de registro.',
+                HttpStatus.NOT_FOUND
+            );
+        }
+
+        const company = companyRes.rows[0];
+
+        // Link user to company
+        await this.db.query(
+            'UPDATE users SET company_id = $1, role = $2 WHERE id = $3',
+            [company.id, 'admin', userId]
+        );
+
+        this.logger.log(`✅ Usuario ${user.email} vinculado a empresa ${company.name}`);
+
+        return {
+            linked: true,
+            company: {
+                id: company.id,
+                name: company.name,
+                status: company.status
+            },
+            message: `¡Cuenta vinculada exitosamente a ${company.name}!`
+        };
+    }
 }
