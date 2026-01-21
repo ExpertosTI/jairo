@@ -26,8 +26,15 @@ export class RolesGuard implements CanActivate {
         }
 
         const token = authHeader.replace('Bearer ', '');
+        const jwtSecret = process.env.JWT_SECRET;
+
+        if (!jwtSecret) {
+            console.error('JWT_SECRET not configured');
+            return false;
+        }
+
         try {
-            const user: any = jwt.verify(token, process.env.JWT_SECRET || '');
+            const user: any = jwt.verify(token, jwtSecret);
             // user.role should simplify 'admin' etc.
             return requiredRoles.some((role) => user.role === role);
         } catch (e) {
