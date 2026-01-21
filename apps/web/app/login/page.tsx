@@ -96,13 +96,9 @@ function LoginContent() {
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <Link href="/" className="inline-flex items-center gap-2 justify-center">
-                        <img src="/logo.svg" alt="JairoApp" className="w-12 h-12 object-contain bg-white rounded-xl p-1" />
+                        <img src="/logo.svg" alt="JairoApp" className="w-32 h-32 object-contain bg-white rounded-2xl p-2 shadow-lg" />
                     </Link>
-                    <h1 className="text-3xl font-black text-white mt-4">
-                        <span>Jairo</span>
-                        <span className="text-secondary">App</span>
-                    </h1>
-                    <p className="text-white/70 mt-2">Plataforma B2B Empresarial</p>
+                    <p className="text-white/80 mt-4 text-lg font-medium">Plataforma B2B Empresarial</p>
                 </div>
 
                 {/* Card */}
@@ -148,7 +144,7 @@ function LoginContent() {
                                     value={formulario.email}
                                     onChange={(e) => setFormulario({ ...formulario, email: e.target.value })}
                                     placeholder="tu@email.com"
-                                    className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 text-gray-900 placeholder:text-gray-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium"
+                                    className="w-full pl-14 pr-4 py-3.5 bg-white border border-gray-200 text-gray-900 placeholder:text-gray-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium"
                                     required
                                 />
                             </div>
@@ -165,7 +161,7 @@ function LoginContent() {
                                     value={formulario.password}
                                     onChange={(e) => setFormulario({ ...formulario, password: e.target.value })}
                                     placeholder="••••••••"
-                                    className="w-full pl-12 pr-12 py-3.5 bg-white border border-gray-200 text-gray-900 placeholder:text-gray-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium"
+                                    className="w-full pl-14 pr-12 py-3.5 bg-white border border-gray-200 text-gray-900 placeholder:text-gray-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium"
                                     required
                                 />
                                 <button
