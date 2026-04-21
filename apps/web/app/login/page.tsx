@@ -143,21 +143,20 @@ function LoginContent() {
                         <button
                             type="button"
                             onClick={() => {
-                                const width = 500;
-                                const height = 600;
-                                const left = window.screenX + (window.outerWidth - width) / 2;
-                                const top = window.screenY + (window.outerHeight - height) / 2;
+                                setCargando(true);
                                 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
-                                window.open(
-                                    `${apiUrl}/auth/google`,
-                                    'Google Login',
-                                    `width=${width},height=${height},left=${left},top=${top}`
-                                );
+                                window.location.href = `${apiUrl}/auth/google`;
                             }}
                             className="w-full bg-white border border-gray-200 text-gray-700 py-3.5 rounded-xl font-semibold hover:bg-gray-50 flex items-center justify-center gap-3 transition-all"
                         >
-                            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-6 h-6" />
-                            Continuar con Google
+                            {cargando ? (
+                                <Loader2 className="animate-spin text-primary" size={24} />
+                            ) : (
+                                <>
+                                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-6 h-6" />
+                                    Continuar con Google
+                                </>
+                            )}
                         </button>
 
                         <div className="relative">
