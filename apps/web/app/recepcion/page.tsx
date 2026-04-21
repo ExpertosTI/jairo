@@ -22,7 +22,7 @@ interface Invitado {
     nivel?: 'VIP' | 'Directivo' | 'Invitado';
 }
 
-// --- DATA DIGITADA DESDE EL CUADERNO ---
+// --- DATA INICIAL (FALLBACK) ---
 const GUESTS_FROM_NOTEBOOK: Invitado[] = [
     { id: "1", nombre: "Angel Flores", empresa: "Invitado", mesa: "1", status: 'pending' },
     { id: "2", nombre: "Eduardo Lama", empresa: "Invitado", mesa: "2", status: 'pending' },
@@ -72,24 +72,8 @@ const GUESTS_FROM_NOTEBOOK: Invitado[] = [
     { id: "46", nombre: "Claudia Flores", empresa: "Invitado", mesa: "46", status: 'pending' },
     { id: "47", nombre: "Mark", empresa: "Invitado", mesa: "47", status: 'pending' },
     { id: "48", nombre: "Abiatar Contreras", empresa: "Invitado", mesa: "48", status: 'pending' },
-    { id: "54", nombre: "Adherlin", empresa: "Invitado", mesa: "54", status: 'pending' },
-    { id: "55", nombre: "Luciano", empresa: "Invitado", mesa: "55", status: 'pending' },
-    { id: "56", nombre: "Cespedes", empresa: "Invitado", mesa: "56", status: 'pending' },
-    { id: "64", nombre: "Lucia Lopez", empresa: "Invitado", mesa: "64", status: 'pending' },
-    { id: "65", nombre: "Carvajal Claudio", empresa: "Invitado", mesa: "65", status: 'pending' },
-    { id: "66", nombre: "Carlos Bido", empresa: "Invitado", mesa: "66", status: 'pending' },
-    { id: "67", nombre: "Moscar Melo", empresa: "Invitado", mesa: "67", status: 'pending' },
-    { id: "68", nombre: "Moscar Soto", empresa: "Invitado", mesa: "68", status: 'pending' },
     { id: "73", nombre: "J. Hanna Cordero", empresa: "Invitado", mesa: "73", status: 'pending', isVIP: true, nivel: 'VIP' },
-    { id: "74", nombre: "Melda Adams", empresa: "Invitado", mesa: "74", status: 'pending' },
-    { id: "75", nombre: "Norman Lozano", empresa: "Invitado", mesa: "75", status: 'pending' },
-    { id: "76", nombre: "Jesus Osorio", empresa: "Invitado", mesa: "76", status: 'pending' },
     { id: "83", nombre: "Winston Santos", empresa: "Invitado", mesa: "83", status: 'pending', nivel: 'Directivo' },
-    { id: "84", nombre: "Romelio", empresa: "Invitado", mesa: "84", status: 'pending' },
-    { id: "87", nombre: "Morenito", empresa: "Invitado", mesa: "87", status: 'pending' },
-    { id: "90", nombre: "Digna Sanchez", empresa: "Invitado", mesa: "90", status: 'pending' },
-    { id: "91", nombre: "Coopseguros 01", empresa: "Coopseguros", mesa: "91", status: 'pending' },
-    { id: "97", nombre: "Coopmaimon 01", empresa: "Coopmaimon", mesa: "97", status: 'pending' },
 ];
 
 export default function RecepcionCommandCenter() {
@@ -103,58 +87,57 @@ export default function RecepcionCommandCenter() {
     const [cargandoDB, setCargandoDB] = useState(true);
     const [draggingGuest, setDraggingGuest] = useState<Invitado | null>(null);
 
-    // --- Cargar estado real desde la DB ---
+    const API_BASE = 'https://jairoapp.renace.tech/api';
+    const EVENT_ID = 'evt_circulo_001';
+
+    // --- Cargar estado real ---
     useEffect(() => {
         const fetchAttendance = async () => {
             try {
-                const apiUrl = 'https://jairoapp.renace.tech/api';
-                const res = await fetch(`${apiUrl}/events/evt_circulo_001/attendance`);
+                const res = await fetch(`${API_BASE}/events/${EVENT_ID}/attendance`);
                 const data = await res.json();
-                
                 if (Array.isArray(data)) {
                     setInvitados(prev => prev.map(inv => {
-                        const isCleared = data.find((a: any) => a.guestId === inv.id);
+                        const isCleared = data.find((a: any) => String(a.guestId) === String(inv.id));
                         return isCleared ? { ...inv, status: 'cleared' } : inv;
                     }));
                 }
-            } catch (error) {
-                console.error('Error cargando asistencia:', error);
-            } finally {
-                setCargandoDB(false);
-            }
+            } catch (error) { console.error('Error:', error); }
+            finally { setCargandoDB(false); }
         };
         fetchAttendance();
     }, []);
 
-    // --- Efecto de Check-in Real con IA ---
+    // --- Check-in Real ---
     const handleGrantAccess = async () => {
         if (!selectedGuest) return;
         setAiProcessing(true);
         try {
-            const apiUrl = 'https://jairoapp.renace.tech/api';
-            await fetch(`${apiUrl}/events/attendance`, {
+            // CORRECCIÓN: Endpoint estandarizado con EVENT_ID en la URL
+            const res = await fetch(`${API_BASE}/events/${EVENT_ID}/attendance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    eventId: 'evt_circulo_001',
-                    guestId: parseInt(selectedGuest.id),
-                    metadata: { nombre: selectedGuest.nombre, empresa: selectedGuest.empresa, mesa: selectedGuest.mesa }
+                    guestId: selectedGuest.id,
+                    companyName: selectedGuest.empresa,
+                    guestName: selectedGuest.nombre
                 })
             });
 
-            setTimeout(() => {
-                setAiComplete(true);
-                setInvitados(prev => prev.map(inv => inv.id === selectedGuest.id ? { ...inv, status: 'cleared' } : inv));
+            if (res.ok) {
                 setTimeout(() => {
-                    setAiProcessing(false);
-                    setAiComplete(false);
-                    setSelectedGuest(null);
-                }, 3500);
-            }, 2500);
+                    setAiComplete(true);
+                    setInvitados(prev => prev.map(inv => inv.id === selectedGuest.id ? { ...inv, status: 'cleared' } : inv));
+                    setTimeout(() => {
+                        setAiProcessing(false);
+                        setAiComplete(false);
+                        setSelectedGuest(null);
+                    }, 3500);
+                }, 2000);
+            }
         } catch (error) {
-            console.error('Error en el check-in:', error);
+            console.error('Error:', error);
             setAiProcessing(false);
-            setSelectedGuest(null);
         }
     };
 
@@ -162,9 +145,13 @@ export default function RecepcionCommandCenter() {
         setInvitados(prev => prev.map(inv => inv.id === guestId ? { ...inv, mesa: targetMesa } : inv));
     };
 
+    // --- Buscador Unificado ---
     const filteredInvitados = invitados.filter(inv => {
-        const matchesSearch = inv.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                             inv.empresa.toLowerCase().includes(searchTerm.toLowerCase());
+        const query = searchTerm.toLowerCase();
+        const matchesSearch = inv.nombre.toLowerCase().includes(query) || 
+                             inv.empresa.toLowerCase().includes(query) ||
+                             inv.mesa.includes(query);
+        
         if (filter === 'pending') return matchesSearch && inv.status === 'pending';
         if (filter === 'cleared') return matchesSearch && inv.status === 'cleared';
         if (filter === 'vip') return matchesSearch && inv.isVIP;
@@ -176,121 +163,66 @@ export default function RecepcionCommandCenter() {
     return (
         <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-emerald-500/30 flex flex-col relative overflow-hidden">
             
-            {/* --- BACKGROUND EXECUTIVE WHITE --- */}
             <div className="absolute inset-0 z-0">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#10b98105,transparent_50%)]" />
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]" />
             </div>
 
-            {/* --- TOP NAV CORPORATE --- */}
             <nav className="h-24 border-b border-slate-200 bg-white/70 backdrop-blur-2xl flex items-center justify-between px-12 z-50 sticky top-0 shadow-sm">
                 <div className="flex items-center gap-16">
                     <div className="flex items-center gap-5">
-                        <div className="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-[0_10px_25px_rgba(16,185,129,0.2)]">
+                        <div className="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
                             <Fingerprint className="w-8 h-8 text-white" />
                         </div>
                         <div className="flex flex-col">
-                            <div className="flex items-center gap-3">
-                                <span className="text-2xl font-black tracking-tighter leading-none uppercase text-slate-900">JairoAcceso</span>
-                                <div className="px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-lg text-[9px] font-black text-emerald-600 tracking-tighter uppercase">Corporate v5.0</div>
-                            </div>
+                            <span className="text-2xl font-black uppercase text-slate-900 leading-none">JairoAcceso</span>
                             <span className="text-[10px] font-black text-slate-400 tracking-[0.4em] uppercase mt-1.5">Executive Synergy Portal</span>
                         </div>
                     </div>
 
                     <div className="relative w-[500px] group">
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-emerald-500" />
                         <input 
-                            type="text"
-                            placeholder="Buscar invitado, empresa o mesa..."
-                            className="w-full bg-slate-50 border border-slate-200 rounded-[2rem] py-4 pl-16 pr-8 text-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all font-semibold placeholder:text-slate-300 shadow-inner"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                            type="text" placeholder="Buscar por nombre, empresa o mesa..."
+                            className="w-full bg-slate-50 border border-slate-200 rounded-[2rem] py-4 pl-16 pr-8 text-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all font-semibold shadow-inner"
                         />
                     </div>
                 </div>
 
-                <div className="flex items-center gap-6">
+                <div className="flex gap-4">
                     <div className="flex items-center gap-2 p-1.5 bg-slate-100/80 border border-slate-200 rounded-2xl">
-                        <button 
-                            onClick={() => setView('directory')}
-                            className={`flex items-center gap-3 px-8 py-3 rounded-xl text-[11px] font-black transition-all tracking-widest ${view === 'directory' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-                        >
-                            <List className="w-5 h-5" />
-                            DIRECTORIO
-                        </button>
-                        <button 
-                            onClick={() => setView('tables')}
-                            className={`flex items-center gap-3 px-8 py-3 rounded-xl text-[11px] font-black transition-all tracking-widest ${view === 'tables' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-                        >
-                            <LayoutGrid className="w-5 h-5" />
-                            MESAS
-                        </button>
+                        <button onClick={() => setView('directory')} className={`px-8 py-3 rounded-xl text-[11px] font-black tracking-widest transition-all ${view === 'directory' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400'}`}>DIRECTORIO</button>
+                        <button onClick={() => setView('tables')} className={`px-8 py-3 rounded-xl text-[11px] font-black transition-all ${view === 'tables' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400'}`}>MESAS</button>
                     </div>
                 </div>
             </nav>
 
             <div className="flex flex-1 overflow-hidden z-10">
-                {/* --- TELEMETRY SIDEBAR CLEAN --- */}
                 <aside className="w-[380px] border-r border-slate-200 p-10 flex flex-col gap-10 bg-white/40 backdrop-blur-md">
                     <div className="space-y-8">
                         <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.4em]">Live Event Telemetry</p>
-                        
                         <div className="grid gap-6">
-                            <div className="p-8 rounded-[3.5rem] bg-white border border-slate-100 shadow-[0_20px_40px_rgba(0,0,0,0.02)] group hover:border-blue-500/20 transition-all">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center border border-blue-100">
-                                        <Users className="w-6 h-6 text-blue-500" />
-                                    </div>
-                                    <div className="w-3 h-3 rounded-full bg-blue-500 animate-pulse" />
-                                </div>
+                            <div className="p-8 rounded-[3.5rem] bg-white border border-slate-100 shadow-sm">
+                                <Users className="w-6 h-6 text-blue-500 mb-6" />
                                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Total Manifest</p>
-                                <p className="text-6xl font-black mt-3 tracking-tighter text-slate-800">93</p>
+                                <p className="text-6xl font-black mt-3 text-slate-800 tracking-tighter">{invitados.length}</p>
                             </div>
-
-                            <div className="p-8 rounded-[3.5rem] bg-white border border-slate-100 shadow-[0_20px_40px_rgba(0,0,0,0.02)] group hover:border-emerald-500/20 transition-all">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center border border-emerald-100">
-                                        <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                                    </div>
-                                    <span className="text-[11px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full">LIVE</span>
-                                </div>
+                            <div className="p-8 rounded-[3.5rem] bg-white border border-slate-100 shadow-sm">
+                                <CheckCircle2 className="w-6 h-6 text-emerald-600 mb-6" />
                                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Access Granted</p>
-                                <div className="flex items-end gap-3 mt-3">
-                                    <p className="text-6xl font-black tracking-tighter text-emerald-600">
-                                        {invitados.filter(i => i.status === 'cleared').length}
-                                    </p>
-                                    <p className="text-sm font-bold text-emerald-600/40 mb-3 uppercase tracking-tighter">Verified</p>
-                                </div>
-                            </div>
-
-                            <div className="p-8 rounded-[3.5rem] bg-white border border-slate-100 shadow-[0_20px_40px_rgba(0,0,0,0.02)] group hover:border-slate-300 transition-all">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-200">
-                                        <Clock className="w-6 h-6 text-slate-400" />
-                                    </div>
-                                </div>
-                                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Awaiting Entry</p>
-                                <p className="text-6xl font-black mt-3 tracking-tighter text-slate-300">
-                                    {93 - invitados.filter(i => i.status === 'cleared').length}
-                                </p>
+                                <p className="text-6xl font-black mt-3 text-emerald-600 tracking-tighter">{invitados.filter(i => i.status === 'cleared').length}</p>
                             </div>
                         </div>
                     </div>
                 </aside>
 
-                {/* --- MAIN CONTENT AREA --- */}
                 <main className="flex-1 flex flex-col bg-transparent overflow-hidden">
-                    
-                    <div className="px-12 py-8 border-b border-slate-200 bg-white/30 flex items-center justify-between">
-                        <div className="flex items-center gap-3 p-1.5 bg-slate-100/50 border border-slate-200 rounded-2xl">
+                    <div className="px-12 py-8 border-b border-slate-200 bg-white/30">
+                        <div className="flex gap-3 p-1.5 bg-slate-100/50 border border-slate-200 rounded-2xl w-fit">
                             {['all', 'pending', 'cleared', 'vip'].map((f) => (
-                                <button 
-                                    key={f}
-                                    onClick={() => setFilter(f as any)}
-                                    className={`px-8 py-3 rounded-xl text-[11px] font-black tracking-widest transition-all uppercase ${filter === f ? 'bg-white text-slate-900 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-                                >
-                                    {f === 'all' ? 'All Records' : f === 'pending' ? 'Pending' : f === 'cleared' ? 'Cleared' : 'VIP List'}
+                                <button key={f} onClick={() => setFilter(f as any)} className={`px-8 py-3 rounded-xl text-[11px] font-black tracking-widest transition-all uppercase ${filter === f ? 'bg-white text-slate-900 shadow-md' : 'text-slate-400'}`}>
+                                    {f === 'all' ? 'All' : f === 'pending' ? 'Pending' : f === 'cleared' ? 'Cleared' : 'VIP'}
                                 </button>
                             ))}
                         </div>
@@ -302,20 +234,12 @@ export default function RecepcionCommandCenter() {
                                 <AnimatePresence>
                                     {filteredInvitados.map((inv) => (
                                         <motion.div 
-                                            key={inv.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                                            onClick={() => setSelectedGuest(inv)}
-                                            className={`group p-10 rounded-[3.5rem] border transition-all cursor-pointer relative overflow-hidden bg-white shadow-sm hover:shadow-xl hover:-translate-y-1 ${
-                                                inv.status === 'cleared' ? 'border-emerald-500/30 ring-4 ring-emerald-500/5' : 'border-slate-100 hover:border-emerald-300'
-                                            }`}
+                                            key={inv.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => setSelectedGuest(inv)}
+                                            className={`group p-10 rounded-[3.5rem] border transition-all cursor-pointer bg-white shadow-sm hover:shadow-xl ${inv.status === 'cleared' ? 'border-emerald-500/30 ring-4 ring-emerald-500/5' : 'border-slate-100'}`}
                                         >
-                                            <div className="flex justify-between items-start mb-10">
-                                                <div className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-full text-[9px] font-black tracking-widest text-slate-400 group-hover:text-emerald-600 transition-colors uppercase">
-                                                    Mesa {inv.mesa}
-                                                </div>
-                                                {inv.isVIP && <Star className="w-5 h-5 text-amber-400 fill-amber-400" />}
-                                            </div>
-                                            <h3 className="text-3xl font-black tracking-tighter leading-none text-slate-800 uppercase">{inv.nombre}</h3>
-                                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-4">{inv.empresa}</p>
+                                            <div className="flex justify-between mb-8"><span className="px-3 py-1 bg-slate-50 border rounded-full text-[9px] font-black text-slate-400 uppercase">Mesa {inv.mesa}</span>{inv.isVIP && <Star className="w-4 h-4 text-amber-400 fill-amber-400" />}</div>
+                                            <h3 className="text-2xl font-black text-slate-800 uppercase leading-none">{inv.nombre}</h3>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-4">{inv.empresa}</p>
                                         </motion.div>
                                     ))}
                                 </AnimatePresence>
@@ -323,43 +247,18 @@ export default function RecepcionCommandCenter() {
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-12 items-start">
                                 {mesasIds.map((mesaId) => {
-                                    const mesaInvitados = invitados.filter(i => i.mesa === mesaId);
+                                    const mesaInvitados = filteredInvitados.filter(i => i.mesa === mesaId);
+                                    if (searchTerm && mesaInvitados.length === 0) return null; // Ocultar mesas vacías en búsqueda
                                     return (
-                                        <div 
-                                            key={mesaId} className="bg-white border border-slate-200 rounded-[4rem] p-10 shadow-sm relative group"
-                                            onDragOver={(e) => e.preventDefault()}
-                                            onDrop={() => draggingGuest && handleMoveGuest(draggingGuest.id, mesaId)}
-                                        >
-                                            <div className="flex justify-between items-center mb-10 px-2">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100">
-                                                        <LayoutGrid className="w-6 h-6 text-slate-400" />
-                                                    </div>
-                                                    <h3 className="text-2xl font-black uppercase tracking-tighter">Mesa {mesaId}</h3>
-                                                </div>
-                                                <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-4 py-1.5 rounded-full uppercase tracking-widest">{mesaInvitados.length} / 4</span>
-                                            </div>
-                                            <div className="space-y-5">
+                                        <div key={mesaId} className="bg-white border border-slate-200 rounded-[4rem] p-10 shadow-sm relative group">
+                                            <h3 className="text-2xl font-black uppercase tracking-tighter mb-8">Mesa {mesaId}</h3>
+                                            <div className="space-y-4">
                                                 {mesaInvitados.map(inv => (
-                                                    <motion.div 
-                                                        key={inv.id} draggable onDragStart={() => setDraggingGuest(inv)} onDragEnd={() => setDraggingGuest(null)} onClick={() => setSelectedGuest(inv)}
-                                                        className={`p-7 rounded-[2.5rem] bg-slate-50/50 border transition-all cursor-pointer flex items-center justify-between group/item ${
-                                                            inv.status === 'cleared' ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-100 hover:border-emerald-300'
-                                                        }`}
-                                                    >
-                                                        <div>
-                                                            <div className="text-sm font-black uppercase tracking-tight text-slate-700">{inv.nombre}</div>
-                                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{inv.empresa}</div>
-                                                        </div>
-                                                        {inv.isVIP ? <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> : <ChevronRight className="w-5 h-5 text-slate-200 group-hover/item:text-emerald-500 transition-all" />}
-                                                    </motion.div>
-                                                ))}
-                                                {mesaInvitados.length === 0 && (
-                                                    <div className="py-16 border-2 border-dashed border-slate-100 rounded-[3rem] flex flex-col items-center justify-center gap-4 opacity-30">
-                                                        <Plus className="w-8 h-8 text-slate-300" />
-                                                        <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest">Slot Libre</span>
+                                                    <div key={inv.id} onClick={() => setSelectedGuest(inv)} className={`p-6 rounded-[2.5rem] bg-slate-50 border transition-all cursor-pointer flex justify-between items-center ${inv.status === 'cleared' ? 'border-emerald-200 bg-emerald-50' : 'border-slate-100'}`}>
+                                                        <div className="text-sm font-black uppercase text-slate-700">{inv.nombre}</div>
+                                                        {inv.isVIP && <Star className="w-3 h-3 text-amber-400 fill-amber-400" />}
                                                     </div>
-                                                )}
+                                                ))}
                                             </div>
                                         </div>
                                     );
@@ -370,115 +269,42 @@ export default function RecepcionCommandCenter() {
                 </main>
             </div>
 
-            {/* --- MODAL DE CHECK-IN EXECUTIVE --- */}
             <AnimatePresence>
                 {selectedGuest && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-10 backdrop-blur-2xl bg-white/60">
-                        <motion.div 
-                            initial={{ opacity: 0, scale: 0.9, y: 50 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 50 }}
-                            className="w-full max-w-[1100px] bg-white rounded-[5rem] border border-slate-200 overflow-hidden shadow-[0_100px_200px_rgba(0,0,0,0.1)] flex relative"
-                        >
-                            {/* Panel Izquierdo */}
-                            <div className="w-[45%] bg-slate-50 p-20 border-r border-slate-200 flex flex-col justify-center">
-                                <div className="px-6 py-2 bg-emerald-600 rounded-full inline-flex items-center gap-3 mb-10 shadow-lg">
-                                    <ShieldCheck className="w-5 h-5 text-white" />
-                                    <span className="text-[11px] font-black text-white uppercase tracking-[0.3em]">Protocolo de Verificación</span>
-                                </div>
-
-                                <h2 className="text-8xl font-black tracking-tighter mb-8 uppercase leading-none text-slate-900">{selectedGuest.nombre}</h2>
-                                <p className="text-4xl font-bold text-slate-300 uppercase tracking-widest mb-16">{selectedGuest.empresa}</p>
-
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="p-10 bg-white rounded-[3.5rem] border border-slate-200 shadow-sm">
-                                        <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest mb-3">Asignación</p>
-                                        <p className="text-3xl font-black text-slate-800 uppercase tracking-tight">Mesa {selectedGuest.mesa}</p>
-                                    </div>
-                                    <div className="p-10 bg-white rounded-[3.5rem] border border-slate-200 shadow-sm">
-                                        <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest mb-3">Categoría</p>
-                                        <p className="text-3xl font-black text-emerald-600 uppercase tracking-tight">{selectedGuest.nivel || 'Invitado'}</p>
-                                    </div>
+                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-[1100px] bg-white rounded-[5rem] border border-slate-200 overflow-hidden shadow-2xl flex relative">
+                            <div className="w-[45%] bg-slate-50 p-20 border-r flex flex-col justify-center">
+                                <div className="px-6 py-2 bg-emerald-600 rounded-full inline-flex items-center gap-3 mb-10 text-white font-black text-[10px] uppercase tracking-widest"><ShieldCheck className="w-4 h-4" /> VERIFICACIÓN</div>
+                                <h2 className="text-7xl font-black uppercase text-slate-900 leading-none mb-6">{selectedGuest.nombre}</h2>
+                                <p className="text-3xl font-bold text-slate-300 uppercase tracking-widest mb-12">{selectedGuest.empresa}</p>
+                                <div className="p-8 bg-white rounded-[3rem] border shadow-sm">
+                                    <p className="text-[10px] font-black text-slate-300 uppercase mb-2">UBICACIÓN</p>
+                                    <p className="text-3xl font-black text-slate-800">MESA {selectedGuest.mesa}</p>
                                 </div>
                             </div>
-
-                            {/* Panel Derecho */}
                             <div className="flex-1 p-24 flex flex-col relative bg-white">
-                                <div className="flex justify-between items-center mb-20">
-                                    <div className="flex flex-col">
-                                        <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.5em]">Confirmación de Contacto</p>
-                                        <div className="w-16 h-1.5 bg-emerald-500 mt-4 rounded-full" />
-                                    </div>
-                                    <button onClick={() => setSelectedGuest(null)} className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center hover:bg-slate-100 transition-all">
-                                        <X className="w-8 h-8 text-slate-400" />
-                                    </button>
+                                <button onClick={() => setSelectedGuest(null)} className="absolute top-10 right-10 w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center"><X /></button>
+                                <div className="flex-1 space-y-10 flex flex-col justify-center">
+                                    <input type="text" placeholder="TELÉFONO MÓVIL" className="w-full bg-slate-50 h-24 rounded-[3rem] px-12 font-black text-3xl focus:outline-none border" />
+                                    <input type="email" placeholder="EMAIL CORPORATIVO" className="w-full bg-slate-50 h-24 rounded-[3rem] px-12 font-black text-3xl focus:outline-none border" />
                                 </div>
-
-                                <div className="flex-1 space-y-12">
-                                    <div className="space-y-6">
-                                        <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em] pl-4">Teléfono Móvil</p>
-                                        <input type="text" placeholder="+1 (809) 000-0000" className="w-full bg-slate-50 text-slate-900 h-24 rounded-[3rem] px-12 font-black text-3xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 border border-slate-100 transition-all" />
-                                    </div>
-                                    <div className="space-y-6">
-                                        <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em] pl-4">Correo Corporativo</p>
-                                        <input type="email" placeholder="ejemplo@corporacion.com" className="w-full bg-slate-50 text-slate-900 h-24 rounded-[3rem] px-12 font-black text-3xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 border border-slate-100 transition-all" />
-                                    </div>
+                                <div className="mt-auto flex justify-between items-center">
+                                    <button onClick={() => setSelectedGuest(null)} className="text-[11px] font-black text-slate-300 uppercase">CANCELAR</button>
+                                    <button onClick={handleGrantAccess} className="px-20 py-8 bg-slate-900 rounded-[3rem] text-white font-black uppercase tracking-widest hover:bg-emerald-600 transition-all">CONCEDER ACCESO</button>
                                 </div>
-
-                                <div className="mt-auto pt-16 flex items-center justify-between">
-                                    <button onClick={() => setSelectedGuest(null)} className="text-[12px] font-black text-slate-300 uppercase tracking-widest hover:text-slate-500 transition-colors">Volver al Directorio</button>
-                                    <button 
-                                        onClick={handleGrantAccess}
-                                        className="px-24 py-8 bg-slate-900 hover:bg-emerald-600 rounded-[3rem] text-lg font-black uppercase tracking-[0.3em] text-white flex items-center gap-6 shadow-[0_30px_60px_rgba(0,0,0,0.1)] transition-all transform hover:-translate-y-2 active:scale-95 group"
-                                    >
-                                        Validar Acceso <ChevronRight className="w-7 h-7 group-hover:translate-x-2 transition-all" />
-                                    </button>
-                                </div>
-
-                                {/* --- INSFORGE AI WOW OVERLAY (WHITE EDITION) --- */}
                                 <AnimatePresence>
                                     {aiProcessing && (
-                                        <motion.div 
-                                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                            className="absolute inset-0 z-50 bg-white/98 backdrop-blur-3xl flex flex-col items-center justify-center p-24 text-center"
-                                        >
+                                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-50 bg-white/98 backdrop-blur-3xl flex flex-col items-center justify-center p-24">
                                             {!aiComplete ? (
-                                                <div className="flex flex-col items-center gap-12">
-                                                    <div className="relative">
-                                                        <div className="w-40 h-40 rounded-full border-8 border-emerald-500/5 border-t-emerald-500 animate-spin" />
-                                                        <Fingerprint className="absolute inset-0 m-auto w-16 h-16 text-emerald-500" />
-                                                    </div>
-                                                    <div className="space-y-6">
-                                                        <p className="text-5xl font-black tracking-tighter uppercase italic text-slate-900">Procesando Sinergia...</p>
-                                                        <p className="text-[12px] font-black text-emerald-600 uppercase tracking-[0.8em]">Insforge Alpha v5.0</p>
-                                                    </div>
+                                                <div className="text-center">
+                                                    <div className="w-24 h-24 border-8 border-emerald-500/10 border-t-emerald-500 animate-spin rounded-full mx-auto mb-10" />
+                                                    <p className="text-4xl font-black uppercase italic">Analizando Perfil...</p>
                                                 </div>
                                             ) : (
-                                                <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full h-full flex flex-col justify-center">
-                                                    <div className="mb-20">
-                                                        <div className="w-48 h-48 rounded-full bg-emerald-50 border-8 border-white mx-auto flex items-center justify-center text-7xl font-black text-emerald-600 shadow-2xl relative">
-                                                            98%
-                                                            <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-emerald-600 rounded-full flex items-center justify-center shadow-lg">
-                                                                <Star className="w-8 h-8 text-white fill-white" />
-                                                            </div>
-                                                        </div>
-                                                        <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.5em] mt-10">Match Estratégico de Alto Nivel</p>
-                                                    </div>
-
-                                                    <div className="bg-slate-50 border border-slate-200 p-16 rounded-[4rem] text-left relative overflow-hidden mb-16 shadow-inner">
-                                                        <div className="absolute top-0 right-0 p-10 opacity-10"><Zap className="w-12 h-12 text-emerald-600" /></div>
-                                                        <p className="text-[11px] font-black text-emerald-600 uppercase tracking-widest mb-8">Executive Insight</p>
-                                                        <p className="text-3xl font-bold text-slate-700 leading-tight italic">
-                                                            "Invitado de alto valor. Su infraestructura logística es el engranaje perfecto para tu expansión trimestral."
-                                                        </p>
-                                                    </div>
-
-                                                    <div className="flex flex-wrap gap-4 justify-center">
-                                                        {['High Value', 'Tier 1 Partner', 'Strategic Asset'].map(tag => (
-                                                            <span key={tag} className="px-10 py-3 bg-white border border-slate-200 rounded-full text-[11px] font-black text-slate-500 uppercase tracking-widest shadow-sm">
-                                                                {tag}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                </motion.div>
+                                                <div className="text-center">
+                                                    <div className="text-8xl font-black text-emerald-600 mb-6">98%</div>
+                                                    <p className="text-xl font-bold italic text-slate-600">"Match Estratégico Detectado"</p>
+                                                </div>
                                             )}
                                         </motion.div>
                                     )}
@@ -488,12 +314,6 @@ export default function RecepcionCommandCenter() {
                     </div>
                 )}
             </AnimatePresence>
-
-            <style jsx global>{`
-                .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 20px; }
-                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-            `}</style>
         </div>
     );
 }
