@@ -26,4 +26,6 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
+# En standalone de Next.js, las dependencias ya vienen empaquetadas en node_modules dentro de standalone
+# Pero por seguridad con PNPM, nos aseguramos de que el servidor corra el comando correcto
 CMD ["node", "apps/web/server.js"]
