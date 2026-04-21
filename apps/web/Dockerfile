@@ -14,8 +14,8 @@ RUN npm install -g pnpm
 
 COPY .gitignore .gitignore
 COPY --from=builder /app/out/json/ .
-COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
-RUN pnpm install
+COPY --from=builder /app/out/package-lock.json ./package-lock.json
+RUN npm install
 
 COPY --from=builder /app/out/full/ .
 COPY turbo.json turbo.json
