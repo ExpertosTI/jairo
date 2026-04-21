@@ -1,24 +1,26 @@
-
 import { Injectable, OnModuleDestroy, OnModuleInit, Logger } from '@nestjs/common';
 import { Pool } from 'pg';
+import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
+import * as schema from '@repo/database/schema';
 
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     private pool: Pool;
+    public drizzle: NodePgDatabase<typeof schema>;
     private readonly logger = new Logger(DatabaseService.name);
 
     constructor() {
         this.pool = new Pool({
             connectionString: process.env.DATABASE_URL,
-            // Connection pool configuration for stability
             max: 10,
             idleTimeoutMillis: 30000,
             connectionTimeoutMillis: 2000,
         });
 
+        this.drizzle = drizzle(this.pool, { schema });
+
         this.pool.on('error', (err) => {
             this.logger.error('Unexpected error on idle client', err);
-            // Don't exit, let the pool reconnect
         });
     }
 
@@ -34,8 +36,6 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
             }
         } catch (e: any) {
             this.logger.error('❌ Failed to connect to database', e.stack);
-            // We don't throw here to allow app to start even if DB is temporarily down,
-            // but services depending on it will fail.
         }
     }
 
@@ -45,11 +45,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     }
 
     async query(text: string, params?: any[]) {
-        const start = Date.now();
         try {
             const res = await this.pool.query(text, params);
-            // const duration = Date.now() - start;
-            // this.logger.debug(`Executed query: ${text} (${duration}ms)`);
             return res;
         } catch (error) {
             this.logger.error(`Query failed: ${text}`, error);
@@ -57,7 +54,6 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         }
     }
 
-    // Expose the pool directly if needed for transactions
     getPool(): Pool {
         return this.pool;
     }

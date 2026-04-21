@@ -1,26 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { eventAttendance } from '@repo/database/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 @Injectable()
 export class EventsService {
   constructor(private readonly db: DatabaseService) {}
 
   async recordAttendance(data: { eventId: string; guestId: number; metadata: any }) {
-    // Aquí persistimos en la DB real usando Drizzle
-    return await this.db.db.insert(eventAttendance).values({
+    return await this.db.drizzle.insert(eventAttendance).values({
       eventId: data.eventId,
-      guestId: data.guestId,
+      guestId: data.guestId.toString(),
       checkinTime: new Date(),
-      metadata: data.metadata,
+      metadata: JSON.stringify(data.metadata),
     }).returning();
   }
 
   async generateAIProfile(guestId: number) {
-    // Mock de integración con Insforge AI para el Networking Match
-    // En una fase posterior, esto llamará a Claude/Anthropic con el contexto de la empresa
-    
     const matches = [
         { 
             score: 98, 
@@ -46,6 +42,6 @@ export class EventsService {
   }
 
   async getEventAttendance(eventId: string) {
-    return await this.db.db.select().from(eventAttendance).where(eq(eventAttendance.eventId, eventId));
+    return await this.db.drizzle.select().from(eventAttendance).where(eq(eventAttendance.eventId, eventId));
   }
 }

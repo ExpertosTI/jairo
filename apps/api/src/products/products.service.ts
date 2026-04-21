@@ -411,3 +411,11 @@ export class ProductsService {
         return result.rows;
     }
 
+    async getMyCatalog(user: any) {
+        return this.getMyCatalogV2(user);
+    }
+
+    async importProducts(user: any, products: any[]) {
+        return this.importProductsV2(user, products);
+    }
+}

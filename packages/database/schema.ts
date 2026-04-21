@@ -38,6 +38,7 @@ export const companies = pgTable('companies', {
     email: varchar('email', { length: 100 }),
     website: varchar('website', { length: 200 }),
     status: companyStatusEnum('status').default('pending'),
+    aiMetadata: text('ai_metadata'), // JSON storage for AI insights
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
 });
@@ -53,14 +54,25 @@ export const companyRelationships = pgTable('company_relationships', {
     createdAt: timestamp('created_at').defaultNow(),
 });
 
-// Users Table
-export const users = pgTable('users', {
+// Products Table
+export const products = pgTable('products', {
     id: uuid('id').primaryKey().defaultRandom(),
-    email: varchar('email', { length: 255 }).unique().notNull(),
-    password: varchar('password', { length: 255 }).notNull(),
-    name: varchar('name', { length: 200 }),
-    role: userRoleEnum('role').default('user'),
+    name: varchar('name', { length: 200 }).notNull(),
+    description: text('description'),
+    price: varchar('price', { length: 50 }),
+    image: varchar('image', { length: 500 }),
     companyId: uuid('company_id').references(() => companies.id),
+    category: varchar('category', { length: 100 }),
+    createdAt: timestamp('created_at').defaultNow(),
+});
+
+// Event Attendance Table
+export const eventAttendance = pgTable('event_attendance', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    eventId: varchar('event_id', { length: 100 }).notNull(),
+    guestId: varchar('guest_id', { length: 100 }).notNull(),
+    checkinTime: timestamp('checkin_time').defaultNow(),
+    metadata: text('metadata'), // JSON stringified for flexible data
     createdAt: timestamp('created_at').defaultNow(),
 });
 
@@ -70,3 +82,5 @@ export type CompanyType = typeof companyTypes.$inferSelect;
 export type Company = typeof companies.$inferSelect;
 export type CompanyRelationship = typeof companyRelationships.$inferSelect;
 export type User = typeof users.$inferSelect;
+export type Product = typeof products.$inferSelect;
+export type EventAttendance = typeof eventAttendance.$inferSelect;
