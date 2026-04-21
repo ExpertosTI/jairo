@@ -7,7 +7,7 @@ import {
     Fingerprint, LayoutGrid, List, ChevronRight, 
     Search, Activity, Target, Zap, CheckCircle2,
     X, Phone, Mail, MapPin, Sparkles, Loader2,
-    Lock, Star, Briefcase, ShieldAlert
+    Lock, Star, Briefcase, ShieldAlert, Plus
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -107,7 +107,7 @@ export default function RecepcionCommandCenter() {
     useEffect(() => {
         const fetchAttendance = async () => {
             try {
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
+                const apiUrl = 'https://jairoapp.renace.tech/api';
                 const res = await fetch(`${apiUrl}/events/evt_circulo_001/attendance`);
                 const data = await res.json();
                 
@@ -129,44 +129,28 @@ export default function RecepcionCommandCenter() {
     // --- Efecto de Check-in Real con IA ---
     const handleGrantAccess = async () => {
         if (!selectedGuest) return;
-        
         setAiProcessing(true);
-
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
-            
-            // 1. Registrar asistencia y crear empresa automáticamente en el backend
+            const apiUrl = 'https://jairoapp.renace.tech/api';
             await fetch(`${apiUrl}/events/attendance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     eventId: 'evt_circulo_001',
                     guestId: parseInt(selectedGuest.id),
-                    metadata: {
-                        nombre: selectedGuest.nombre,
-                        empresa: selectedGuest.empresa,
-                        mesa: selectedGuest.mesa
-                    }
+                    metadata: { nombre: selectedGuest.nombre, empresa: selectedGuest.empresa, mesa: selectedGuest.mesa }
                 })
             });
 
-            // 2. Simulamos el tiempo de "Análisis" para el efecto WOW
             setTimeout(() => {
                 setAiComplete(true);
-                
-                // Actualizar estado local
-                setInvitados(prev => prev.map(inv => 
-                    inv.id === selectedGuest.id ? { ...inv, status: 'cleared' } : inv
-                ));
-
-                // Cerrar modal tras mostrar el resultado
+                setInvitados(prev => prev.map(inv => inv.id === selectedGuest.id ? { ...inv, status: 'cleared' } : inv));
                 setTimeout(() => {
                     setAiProcessing(false);
                     setAiComplete(false);
                     setSelectedGuest(null);
                 }, 3500);
             }, 2500);
-
         } catch (error) {
             console.error('Error en el check-in:', error);
             setAiProcessing(false);
@@ -175,9 +159,7 @@ export default function RecepcionCommandCenter() {
     };
 
     const handleMoveGuest = (guestId: string, targetMesa: string) => {
-        setInvitados(prev => prev.map(inv => 
-            inv.id === guestId ? { ...inv, mesa: targetMesa } : inv
-        ));
+        setInvitados(prev => prev.map(inv => inv.id === guestId ? { ...inv, mesa: targetMesa } : inv));
     };
 
     const filteredInvitados = invitados.filter(inv => {
@@ -192,220 +174,190 @@ export default function RecepcionCommandCenter() {
     const mesasIds = Array.from(new Set(invitados.map(i => i.mesa))).sort((a,b) => parseInt(a) - parseInt(b));
 
     return (
-        <div className="min-h-screen bg-[#05070a] text-white font-sans selection:bg-emerald-500/30 flex flex-col relative overflow-hidden">
+        <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-emerald-500/30 flex flex-col relative overflow-hidden">
             
-            {/* --- BACKGROUND CINEMÁTICO (FÁCIL DE CAMBIAR) --- */}
+            {/* --- BACKGROUND EXECUTIVE WHITE --- */}
             <div className="absolute inset-0 z-0">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#10b98115,transparent_50%)]" />
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
-                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-emerald-500/5 via-transparent to-black/80" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#10b98105,transparent_50%)]" />
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]" />
             </div>
 
-            {/* --- TOP NAV GLASS --- */}
-            <nav className="h-20 border-b border-white/[0.05] bg-black/40 backdrop-blur-3xl flex items-center justify-between px-10 z-50 sticky top-0">
-                <div className="flex items-center gap-12">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.1)]">
-                            <Fingerprint className="w-7 h-7 text-emerald-500" />
+            {/* --- TOP NAV CORPORATE --- */}
+            <nav className="h-24 border-b border-slate-200 bg-white/70 backdrop-blur-2xl flex items-center justify-between px-12 z-50 sticky top-0 shadow-sm">
+                <div className="flex items-center gap-16">
+                    <div className="flex items-center gap-5">
+                        <div className="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-[0_10px_25px_rgba(16,185,129,0.2)]">
+                            <Fingerprint className="w-8 h-8 text-white" />
                         </div>
                         <div className="flex flex-col">
-                            <div className="flex items-center gap-2">
-                                <span className="text-2xl font-black tracking-tighter leading-none uppercase bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">JairoAcceso</span>
-                                <div className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-md text-[8px] font-black text-emerald-500 tracking-tighter">B2B PRO</div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-2xl font-black tracking-tighter leading-none uppercase text-slate-900">JairoAcceso</span>
+                                <div className="px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-lg text-[9px] font-black text-emerald-600 tracking-tighter uppercase">Corporate v5.0</div>
                             </div>
-                            <span className="text-[9px] font-black text-gray-500 tracking-[0.4em] uppercase mt-1">Strategic Command Center</span>
+                            <span className="text-[10px] font-black text-slate-400 tracking-[0.4em] uppercase mt-1.5">Executive Synergy Portal</span>
                         </div>
                     </div>
 
-                    <div className="relative w-96 group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 group-focus-within:text-emerald-500 transition-colors" />
+                    <div className="relative w-[500px] group">
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
                         <input 
                             type="text"
-                            placeholder="Buscar por ID, nombre o empresa..."
-                            className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all font-medium placeholder:text-gray-700"
+                            placeholder="Buscar invitado, empresa o mesa..."
+                            className="w-full bg-slate-50 border border-slate-200 rounded-[2rem] py-4 pl-16 pr-8 text-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all font-semibold placeholder:text-slate-300 shadow-inner"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
                 </div>
 
-                <div className="flex items-center gap-8">
-                    <div className="flex items-center gap-2 p-1 bg-white/[0.03] border border-white/5 rounded-2xl">
+                <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2 p-1.5 bg-slate-100/80 border border-slate-200 rounded-2xl">
                         <button 
                             onClick={() => setView('directory')}
-                            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black transition-all tracking-widest ${view === 'directory' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'text-gray-500 hover:text-gray-300'}`}
+                            className={`flex items-center gap-3 px-8 py-3 rounded-xl text-[11px] font-black transition-all tracking-widest ${view === 'directory' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                         >
-                            <List className="w-4 h-4" />
+                            <List className="w-5 h-5" />
                             DIRECTORIO
                         </button>
                         <button 
                             onClick={() => setView('tables')}
-                            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black transition-all tracking-widest ${view === 'tables' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'text-gray-500 hover:text-gray-300'}`}
+                            className={`flex items-center gap-3 px-8 py-3 rounded-xl text-[11px] font-black transition-all tracking-widest ${view === 'tables' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                         >
-                            <LayoutGrid className="w-4 h-4" />
+                            <LayoutGrid className="w-5 h-5" />
                             MESAS
                         </button>
                     </div>
-                    <button className="flex items-center gap-3 px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black tracking-widest hover:bg-white/10 transition-all">
-                        <Zap className="w-4 h-4 text-emerald-500" />
-                        INITIALIZE SCANNER
-                    </button>
                 </div>
             </nav>
 
             <div className="flex flex-1 overflow-hidden z-10">
-                {/* --- TELEMETRY SIDEBAR GLASS --- */}
-                <aside className="w-80 border-r border-white/[0.05] p-8 flex flex-col gap-8 bg-black/20 backdrop-blur-md">
-                    <div className="space-y-6">
-                        <div className="flex items-center justify-between">
-                            <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Live Telemetry</p>
-                            <div className="flex gap-1">
-                                <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                                <div className="w-1 h-1 rounded-full bg-emerald-500/50" />
-                                <div className="w-1 h-1 rounded-full bg-emerald-500/20" />
-                            </div>
-                        </div>
-
-                        {/* Metric Cards */}
-                        <div className="grid gap-4">
-                            <div className="p-6 rounded-[2.5rem] bg-white/[0.02] border border-white/5 group hover:border-blue-500/30 transition-all">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="w-10 h-10 bg-blue-500/10 rounded-2xl flex items-center justify-center">
-                                        <Users className="w-5 h-5 text-blue-500" />
+                {/* --- TELEMETRY SIDEBAR CLEAN --- */}
+                <aside className="w-[380px] border-r border-slate-200 p-10 flex flex-col gap-10 bg-white/40 backdrop-blur-md">
+                    <div className="space-y-8">
+                        <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.4em]">Live Event Telemetry</p>
+                        
+                        <div className="grid gap-6">
+                            <div className="p-8 rounded-[3.5rem] bg-white border border-slate-100 shadow-[0_20px_40px_rgba(0,0,0,0.02)] group hover:border-blue-500/20 transition-all">
+                                <div className="flex justify-between items-start mb-6">
+                                    <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center border border-blue-100">
+                                        <Users className="w-6 h-6 text-blue-500" />
                                     </div>
-                                    <span className="text-[9px] font-black text-blue-500/50 uppercase tracking-widest">Target</span>
+                                    <div className="w-3 h-3 rounded-full bg-blue-500 animate-pulse" />
                                 </div>
-                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Manifest</p>
-                                <p className="text-5xl font-black mt-2 tracking-tighter">70</p>
+                                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Total Manifest</p>
+                                <p className="text-6xl font-black mt-3 tracking-tighter text-slate-800">93</p>
                             </div>
 
-                            <div className="p-6 rounded-[2.5rem] bg-white/[0.02] border border-white/5 group hover:border-emerald-500/30 transition-all">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="w-10 h-10 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
-                                        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                            <div className="p-8 rounded-[3.5rem] bg-white border border-slate-100 shadow-[0_20px_40px_rgba(0,0,0,0.02)] group hover:border-emerald-500/20 transition-all">
+                                <div className="flex justify-between items-start mb-6">
+                                    <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center border border-emerald-100">
+                                        <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                                     </div>
-                                    <span className="text-[9px] font-black text-emerald-500/50 uppercase tracking-widest">Cleared</span>
+                                    <span className="text-[11px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full">LIVE</span>
                                 </div>
-                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Access Granted</p>
-                                <div className="flex items-end gap-3 mt-2">
-                                    <p className="text-5xl font-black tracking-tighter text-emerald-500">
+                                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Access Granted</p>
+                                <div className="flex items-end gap-3 mt-3">
+                                    <p className="text-6xl font-black tracking-tighter text-emerald-600">
                                         {invitados.filter(i => i.status === 'cleared').length}
                                     </p>
-                                    <p className="text-xs font-bold text-emerald-500/40 mb-2">0%</p>
+                                    <p className="text-sm font-bold text-emerald-600/40 mb-3 uppercase tracking-tighter">Verified</p>
                                 </div>
                             </div>
 
-                            <div className="p-6 rounded-[2.5rem] bg-white/[0.02] border border-white/5 group hover:border-orange-500/30 transition-all">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="w-10 h-10 bg-orange-500/10 rounded-2xl flex items-center justify-center">
-                                        <Clock className="w-5 h-5 text-orange-500" />
+                            <div className="p-8 rounded-[3.5rem] bg-white border border-slate-100 shadow-[0_20px_40px_rgba(0,0,0,0.02)] group hover:border-slate-300 transition-all">
+                                <div className="flex justify-between items-start mb-6">
+                                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-200">
+                                        <Clock className="w-6 h-6 text-slate-400" />
                                     </div>
-                                    <span className="text-[9px] font-black text-orange-500/50 uppercase tracking-widest">Inbound</span>
                                 </div>
-                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Pending Entry</p>
-                                <p className="text-5xl font-black mt-2 tracking-tighter text-orange-500">
-                                    {70 - invitados.filter(i => i.status === 'cleared').length}
+                                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Awaiting Entry</p>
+                                <p className="text-6xl font-black mt-3 tracking-tighter text-slate-300">
+                                    {93 - invitados.filter(i => i.status === 'cleared').length}
                                 </p>
                             </div>
                         </div>
                     </div>
                 </aside>
 
-                {/* --- MAIN CONTENT GLASS --- */}
-                <main className="flex-1 flex flex-col bg-transparent">
+                {/* --- MAIN CONTENT AREA --- */}
+                <main className="flex-1 flex flex-col bg-transparent overflow-hidden">
                     
-                    <div className="p-8 border-b border-white/[0.05] flex items-center justify-between bg-black/10 backdrop-blur-sm">
-                        <div className="flex items-center gap-2 p-1 bg-white/[0.03] border border-white/5 rounded-2xl">
+                    <div className="px-12 py-8 border-b border-slate-200 bg-white/30 flex items-center justify-between">
+                        <div className="flex items-center gap-3 p-1.5 bg-slate-100/50 border border-slate-200 rounded-2xl">
                             {['all', 'pending', 'cleared', 'vip'].map((f) => (
                                 <button 
                                     key={f}
                                     onClick={() => setFilter(f as any)}
-                                    className={`px-6 py-2.5 rounded-xl text-[10px] font-black tracking-widest transition-all uppercase ${filter === f ? 'bg-white text-black shadow-2xl' : 'text-gray-500 hover:text-white'}`}
+                                    className={`px-8 py-3 rounded-xl text-[11px] font-black tracking-widest transition-all uppercase ${filter === f ? 'bg-white text-slate-900 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                                 >
-                                    {f === 'all' ? 'All Records' : f === 'pending' ? 'Awaiting Entry' : f === 'cleared' ? 'Cleared' : 'VIP Lounge'}
+                                    {f === 'all' ? 'All Records' : f === 'pending' ? 'Pending' : f === 'cleared' ? 'Cleared' : 'VIP List'}
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
                         {view === 'directory' ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                {filteredInvitados.map((inv) => (
-                                    <motion.div 
-                                        key={inv.id}
-                                        layoutId={inv.id}
-                                        onClick={() => setSelectedGuest(inv)}
-                                        className={`group p-8 rounded-[3rem] border transition-all cursor-pointer relative overflow-hidden backdrop-blur-xl ${
-                                            inv.status === 'cleared' ? 'bg-emerald-500/[0.05] border-emerald-500/30' : 'bg-white/[0.03] border-white/5 hover:border-emerald-500/50'
-                                        }`}
-                                    >
-                                        <div className="flex justify-between items-start mb-8">
-                                            <div className="px-4 py-1.5 bg-black/40 border border-white/5 rounded-full text-[8px] font-black tracking-[0.2em] text-gray-500 group-hover:text-emerald-400 transition-colors uppercase">
-                                                MESA {inv.mesa}
-                                            </div>
-                                            {inv.isVIP ? (
-                                                <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                                                    <Star className="w-4 h-4 text-emerald-500 fill-emerald-500" />
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                                <AnimatePresence>
+                                    {filteredInvitados.map((inv) => (
+                                        <motion.div 
+                                            key={inv.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                                            onClick={() => setSelectedGuest(inv)}
+                                            className={`group p-10 rounded-[3.5rem] border transition-all cursor-pointer relative overflow-hidden bg-white shadow-sm hover:shadow-xl hover:-translate-y-1 ${
+                                                inv.status === 'cleared' ? 'border-emerald-500/30 ring-4 ring-emerald-500/5' : 'border-slate-100 hover:border-emerald-300'
+                                            }`}
+                                        >
+                                            <div className="flex justify-between items-start mb-10">
+                                                <div className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-full text-[9px] font-black tracking-widest text-slate-400 group-hover:text-emerald-600 transition-colors uppercase">
+                                                    Mesa {inv.mesa}
                                                 </div>
-                                            ) : (
-                                                <div className="w-2 h-2 rounded-full bg-gray-800" />
-                                            )}
-                                        </div>
-                                        <h3 className="text-2xl font-black tracking-tighter leading-none group-hover:text-emerald-400 transition-colors uppercase">{inv.nombre}</h3>
-                                        <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em] mt-3">{inv.empresa}</p>
-                                    </motion.div>
-                                ))}
+                                                {inv.isVIP && <Star className="w-5 h-5 text-amber-400 fill-amber-400" />}
+                                            </div>
+                                            <h3 className="text-3xl font-black tracking-tighter leading-none text-slate-800 uppercase">{inv.nombre}</h3>
+                                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-4">{inv.empresa}</p>
+                                        </motion.div>
+                                    ))}
+                                </AnimatePresence>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10 items-start">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-12 items-start">
                                 {mesasIds.map((mesaId) => {
                                     const mesaInvitados = invitados.filter(i => i.mesa === mesaId);
                                     return (
                                         <div 
-                                            key={mesaId} 
-                                            className="bg-white/[0.02] border border-white/10 rounded-[3rem] p-8 backdrop-blur-2xl relative group"
+                                            key={mesaId} className="bg-white border border-slate-200 rounded-[4rem] p-10 shadow-sm relative group"
                                             onDragOver={(e) => e.preventDefault()}
                                             onDrop={() => draggingGuest && handleMoveGuest(draggingGuest.id, mesaId)}
                                         >
-                                            <div className="flex justify-between items-center mb-8 px-2">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 bg-white/5 rounded-2xl flex items-center justify-center">
-                                                        <LayoutGrid className="w-5 h-5 text-gray-500" />
+                                            <div className="flex justify-between items-center mb-10 px-2">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100">
+                                                        <LayoutGrid className="w-6 h-6 text-slate-400" />
                                                     </div>
-                                                    <h3 className="text-xl font-black uppercase tracking-tighter">Mesa {mesaId}</h3>
+                                                    <h3 className="text-2xl font-black uppercase tracking-tighter">Mesa {mesaId}</h3>
                                                 </div>
-                                                <div className="flex flex-col items-end">
-                                                    <span className="text-[10px] font-black text-emerald-500/50 uppercase tracking-widest">{mesaInvitados.length} / 4</span>
-                                                    <span className="text-[8px] font-bold text-gray-600 uppercase tracking-widest mt-1">Occupancy</span>
-                                                </div>
+                                                <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-4 py-1.5 rounded-full uppercase tracking-widest">{mesaInvitados.length} / 4</span>
                                             </div>
-                                            <div className="space-y-4">
+                                            <div className="space-y-5">
                                                 {mesaInvitados.map(inv => (
                                                     <motion.div 
-                                                        key={inv.id}
-                                                        draggable
-                                                        onDragStart={() => setDraggingGuest(inv)}
-                                                        onDragEnd={() => setDraggingGuest(null)}
-                                                        onClick={() => setSelectedGuest(inv)}
-                                                        className={`p-6 rounded-[2rem] bg-black/40 border transition-all cursor-pointer flex items-center justify-between group/item ${
-                                                            inv.status === 'cleared' ? 'border-emerald-500/20 bg-emerald-500/[0.02]' : 'border-white/5 hover:border-emerald-500/40'
+                                                        key={inv.id} draggable onDragStart={() => setDraggingGuest(inv)} onDragEnd={() => setDraggingGuest(null)} onClick={() => setSelectedGuest(inv)}
+                                                        className={`p-7 rounded-[2.5rem] bg-slate-50/50 border transition-all cursor-pointer flex items-center justify-between group/item ${
+                                                            inv.status === 'cleared' ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-100 hover:border-emerald-300'
                                                         }`}
                                                     >
-                                                        <div className="flex flex-col gap-1">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className={`w-1.5 h-1.5 rounded-full ${inv.status === 'cleared' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-gray-700'}`} />
-                                                                <div className="text-xs font-black uppercase tracking-tight">{inv.nombre}</div>
-                                                            </div>
-                                                            <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest pl-3">{inv.empresa}</div>
+                                                        <div>
+                                                            <div className="text-sm font-black uppercase tracking-tight text-slate-700">{inv.nombre}</div>
+                                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{inv.empresa}</div>
                                                         </div>
-                                                        {inv.isVIP && <Star className="w-3 h-3 text-emerald-500 fill-emerald-500" />}
+                                                        {inv.isVIP ? <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> : <ChevronRight className="w-5 h-5 text-slate-200 group-hover/item:text-emerald-500 transition-all" />}
                                                     </motion.div>
                                                 ))}
                                                 {mesaInvitados.length === 0 && (
-                                                    <div className="py-12 border-2 border-dashed border-white/5 rounded-[2rem] flex flex-col items-center justify-center gap-3">
-                                                        <Plus className="w-6 h-6 text-gray-800" />
-                                                        <span className="text-[10px] font-black text-gray-700 uppercase tracking-widest">Espacio Disponible</span>
+                                                    <div className="py-16 border-2 border-dashed border-slate-100 rounded-[3rem] flex flex-col items-center justify-center gap-4 opacity-30">
+                                                        <Plus className="w-8 h-8 text-slate-300" />
+                                                        <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest">Slot Libre</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -418,126 +370,119 @@ export default function RecepcionCommandCenter() {
                 </main>
             </div>
 
-            {/* --- MODAL DE CHECK-IN PREMIUM --- */}
+            {/* --- MODAL DE CHECK-IN EXECUTIVE --- */}
             <AnimatePresence>
                 {selectedGuest && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/80">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-10 backdrop-blur-2xl bg-white/60">
                         <motion.div 
-                            initial={{ opacity: 0, scale: 0.95, y: 30 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 30 }}
-                            className="w-full max-w-[1000px] bg-[#0a0f18] rounded-[4rem] border border-white/[0.1] overflow-hidden shadow-[0_0_150px_rgba(0,0,0,0.8)] relative"
+                            initial={{ opacity: 0, scale: 0.9, y: 50 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 50 }}
+                            className="w-full max-w-[1100px] bg-white rounded-[5rem] border border-slate-200 overflow-hidden shadow-[0_100px_200px_rgba(0,0,0,0.1)] flex relative"
                         >
-                            <div className="flex h-[600px]">
-                                {/* Panel Izquierdo */}
-                                <div className="w-[40%] bg-gradient-to-br from-emerald-600/20 via-transparent to-transparent p-16 border-r border-white/[0.05]">
-                                    <div className="px-5 py-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full inline-flex items-center gap-3 mb-12">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
-                                        <span className="text-[11px] font-black text-emerald-500 uppercase tracking-[0.3em]">Protocolo de Seguridad</span>
-                                    </div>
+                            {/* Panel Izquierdo */}
+                            <div className="w-[45%] bg-slate-50 p-20 border-r border-slate-200 flex flex-col justify-center">
+                                <div className="px-6 py-2 bg-emerald-600 rounded-full inline-flex items-center gap-3 mb-10 shadow-lg">
+                                    <ShieldCheck className="w-5 h-5 text-white" />
+                                    <span className="text-[11px] font-black text-white uppercase tracking-[0.3em]">Protocolo de Verificación</span>
+                                </div>
 
-                                    <h2 className="text-6xl font-black tracking-tighter mb-6 uppercase leading-none">{selectedGuest.nombre}</h2>
-                                    <div className="px-5 py-2.5 bg-white/[0.05] rounded-2xl inline-flex items-center gap-3 mb-16">
-                                        <ShieldCheck className="w-5 h-5 text-emerald-500" />
-                                        <span className="text-xs font-black text-gray-300 uppercase tracking-widest">Nivel {selectedGuest.nivel || 'Invitado'}</span>
-                                    </div>
+                                <h2 className="text-8xl font-black tracking-tighter mb-8 uppercase leading-none text-slate-900">{selectedGuest.nombre}</h2>
+                                <p className="text-4xl font-bold text-slate-300 uppercase tracking-widest mb-16">{selectedGuest.empresa}</p>
 
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="p-10 bg-white rounded-[3.5rem] border border-slate-200 shadow-sm">
+                                        <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest mb-3">Asignación</p>
+                                        <p className="text-3xl font-black text-slate-800 uppercase tracking-tight">Mesa {selectedGuest.mesa}</p>
+                                    </div>
+                                    <div className="p-10 bg-white rounded-[3.5rem] border border-slate-200 shadow-sm">
+                                        <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest mb-3">Categoría</p>
+                                        <p className="text-3xl font-black text-emerald-600 uppercase tracking-tight">{selectedGuest.nivel || 'Invitado'}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Panel Derecho */}
+                            <div className="flex-1 p-24 flex flex-col relative bg-white">
+                                <div className="flex justify-between items-center mb-20">
+                                    <div className="flex flex-col">
+                                        <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.5em]">Confirmación de Contacto</p>
+                                        <div className="w-16 h-1.5 bg-emerald-500 mt-4 rounded-full" />
+                                    </div>
+                                    <button onClick={() => setSelectedGuest(null)} className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center hover:bg-slate-100 transition-all">
+                                        <X className="w-8 h-8 text-slate-400" />
+                                    </button>
+                                </div>
+
+                                <div className="flex-1 space-y-12">
                                     <div className="space-y-6">
-                                        <div className="p-8 bg-black/40 rounded-[2.5rem] border border-white/10 relative overflow-hidden group">
-                                            <div className="flex items-center gap-5">
-                                                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                                                    <MapPin className="w-6 h-6 text-emerald-500" />
-                                                </div>
-                                                <div>
-                                                    <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Zona Asignada</p>
-                                                    <p className="text-2xl font-black uppercase tracking-tight">Mesa {selectedGuest.mesa}</p>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em] pl-4">Teléfono Móvil</p>
+                                        <input type="text" placeholder="+1 (809) 000-0000" className="w-full bg-slate-50 text-slate-900 h-24 rounded-[3rem] px-12 font-black text-3xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 border border-slate-100 transition-all" />
+                                    </div>
+                                    <div className="space-y-6">
+                                        <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em] pl-4">Correo Corporativo</p>
+                                        <input type="email" placeholder="ejemplo@corporacion.com" className="w-full bg-slate-50 text-slate-900 h-24 rounded-[3rem] px-12 font-black text-3xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 border border-slate-100 transition-all" />
                                     </div>
                                 </div>
 
-                                {/* Panel Derecho */}
-                                <div className="flex-1 p-16 flex flex-col relative bg-[#0a0f18] overflow-hidden">
-                                    <div className="flex justify-between items-center mb-16">
-                                        <div className="flex flex-col">
-                                            <p className="text-[11px] font-black text-gray-500 uppercase tracking-[0.4em]">Data Enrichment</p>
-                                            <div className="w-12 h-1 bg-emerald-500 mt-2" />
-                                        </div>
-                                        <button onClick={() => setSelectedGuest(null)} className="w-12 h-12 rounded-full bg-white/[0.05] border border-white/10 flex items-center justify-center hover:bg-white/[0.1] transition-all">
-                                            <X className="w-6 h-6" />
-                                        </button>
-                                    </div>
+                                <div className="mt-auto pt-16 flex items-center justify-between">
+                                    <button onClick={() => setSelectedGuest(null)} className="text-[12px] font-black text-slate-300 uppercase tracking-widest hover:text-slate-500 transition-colors">Volver al Directorio</button>
+                                    <button 
+                                        onClick={handleGrantAccess}
+                                        className="px-24 py-8 bg-slate-900 hover:bg-emerald-600 rounded-[3rem] text-lg font-black uppercase tracking-[0.3em] text-white flex items-center gap-6 shadow-[0_30px_60px_rgba(0,0,0,0.1)] transition-all transform hover:-translate-y-2 active:scale-95 group"
+                                    >
+                                        Validar Acceso <ChevronRight className="w-7 h-7 group-hover:translate-x-2 transition-all" />
+                                    </button>
+                                </div>
 
-                                    <div className="flex-1 space-y-10">
-                                        <div className="space-y-4">
-                                            <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] pl-2">Contacto Directo</p>
-                                            <input type="text" placeholder="+1 (809) 000-0000" className="w-full bg-white text-black h-20 rounded-3xl px-8 font-black text-2xl focus:outline-none placeholder:text-gray-300 shadow-xl" />
-                                        </div>
-                                        <div className="space-y-4">
-                                            <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] pl-2">Email Corporativo</p>
-                                            <input type="email" placeholder="ceo@empresa.com" className="w-full bg-white text-black h-20 rounded-3xl px-8 font-black text-2xl focus:outline-none placeholder:text-gray-300 shadow-xl" />
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-auto pt-10 flex items-center justify-between">
-                                        <button onClick={() => setSelectedGuest(null)} className="text-[11px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition-colors">Cancelar Protocolo</button>
-                                        <button 
-                                            onClick={handleGrantAccess}
-                                            className="px-16 py-6 bg-emerald-600 hover:bg-emerald-500 rounded-3xl text-sm font-black uppercase tracking-[0.2em] flex items-center gap-4 shadow-[0_20px_50px_rgba(16,185,129,0.3)] transition-all transform hover:-translate-y-1 active:scale-95"
+                                {/* --- INSFORGE AI WOW OVERLAY (WHITE EDITION) --- */}
+                                <AnimatePresence>
+                                    {aiProcessing && (
+                                        <motion.div 
+                                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                            className="absolute inset-0 z-50 bg-white/98 backdrop-blur-3xl flex flex-col items-center justify-center p-24 text-center"
                                         >
-                                            Conceder Acceso <ChevronRight className="w-5 h-5" />
-                                        </button>
-                                    </div>
-
-                                    {/* --- INSFORGE AI WOW OVERLAY --- */}
-                                    <AnimatePresence>
-                                        {aiProcessing && (
-                                            <motion.div 
-                                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                                className="absolute inset-0 z-50 bg-[#0a0f18]/98 backdrop-blur-3xl flex flex-col items-center justify-center p-16 text-center"
-                                            >
-                                                {!aiComplete ? (
-                                                    <div className="flex flex-col items-center gap-10">
-                                                        <div className="relative">
-                                                            <div className="w-32 h-32 rounded-full border-4 border-emerald-500/10 border-t-emerald-500 animate-spin" />
-                                                            <Fingerprint className="absolute inset-0 m-auto w-12 h-12 text-emerald-500 animate-pulse" />
-                                                        </div>
-                                                        <div className="space-y-4">
-                                                            <p className="text-4xl font-black tracking-tighter uppercase italic text-emerald-500">Analizando Sinergia B2B...</p>
-                                                            <p className="text-[11px] font-bold text-emerald-500/40 uppercase tracking-[0.6em]">Insforge Engine v4.0</p>
-                                                        </div>
+                                            {!aiComplete ? (
+                                                <div className="flex flex-col items-center gap-12">
+                                                    <div className="relative">
+                                                        <div className="w-40 h-40 rounded-full border-8 border-emerald-500/5 border-t-emerald-500 animate-spin" />
+                                                        <Fingerprint className="absolute inset-0 m-auto w-16 h-16 text-emerald-500" />
                                                     </div>
-                                                ) : (
-                                                    <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full h-full flex flex-col justify-center">
-                                                        <div className="mb-16">
-                                                            <div className="w-32 h-32 rounded-full border-8 border-emerald-500/10 border-t-emerald-500 mx-auto flex items-center justify-center text-5xl font-black text-emerald-500 shadow-[0_0_80px_rgba(16,185,129,0.3)]">
-                                                                98%
+                                                    <div className="space-y-6">
+                                                        <p className="text-5xl font-black tracking-tighter uppercase italic text-slate-900">Procesando Sinergia...</p>
+                                                        <p className="text-[12px] font-black text-emerald-600 uppercase tracking-[0.8em]">Insforge Alpha v5.0</p>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full h-full flex flex-col justify-center">
+                                                    <div className="mb-20">
+                                                        <div className="w-48 h-48 rounded-full bg-emerald-50 border-8 border-white mx-auto flex items-center justify-center text-7xl font-black text-emerald-600 shadow-2xl relative">
+                                                            98%
+                                                            <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+                                                                <Star className="w-8 h-8 text-white fill-white" />
                                                             </div>
-                                                            <p className="text-[11px] font-black text-emerald-500 uppercase tracking-[0.4em] mt-6">Match Estratégico Detectado</p>
                                                         </div>
+                                                        <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.5em] mt-10">Match Estratégico de Alto Nivel</p>
+                                                    </div>
 
-                                                        <div className="bg-white/[0.03] border border-emerald-500/30 p-10 rounded-[3rem] text-left relative overflow-hidden mb-12 shadow-2xl">
-                                                            <div className="absolute top-0 right-0 p-6 opacity-30"><Zap className="w-8 h-8 text-emerald-500" /></div>
-                                                            <p className="text-[11px] font-black text-emerald-500 uppercase tracking-widest mb-6">AI Insight</p>
-                                                            <p className="text-2xl font-bold text-gray-200 leading-tight italic">
-                                                                "Invitado de alto valor. Su infraestructura logística en la región central es el engranaje perfecto para tu expansión trimestral."
-                                                            </p>
-                                                        </div>
+                                                    <div className="bg-slate-50 border border-slate-200 p-16 rounded-[4rem] text-left relative overflow-hidden mb-16 shadow-inner">
+                                                        <div className="absolute top-0 right-0 p-10 opacity-10"><Zap className="w-12 h-12 text-emerald-600" /></div>
+                                                        <p className="text-[11px] font-black text-emerald-600 uppercase tracking-widest mb-8">Executive Insight</p>
+                                                        <p className="text-3xl font-bold text-slate-700 leading-tight italic">
+                                                            "Invitado de alto valor. Su infraestructura logística es el engranaje perfecto para tu expansión trimestral."
+                                                        </p>
+                                                    </div>
 
-                                                        <div className="flex flex-wrap gap-3 justify-center">
-                                                            {['High Value', 'Tier 1 Partner', 'Corporate', 'Logistics'].map(tag => (
-                                                                <span key={tag} className="px-6 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-[10px] font-black text-emerald-500 uppercase tracking-widest">
-                                                                    {tag}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    </motion.div>
-                                                )}
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </div>
+                                                    <div className="flex flex-wrap gap-4 justify-center">
+                                                        {['High Value', 'Tier 1 Partner', 'Strategic Asset'].map(tag => (
+                                                            <span key={tag} className="px-10 py-3 bg-white border border-slate-200 rounded-full text-[11px] font-black text-slate-500 uppercase tracking-widest shadow-sm">
+                                                                {tag}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </motion.div>
                     </div>
@@ -545,16 +490,10 @@ export default function RecepcionCommandCenter() {
             </AnimatePresence>
 
             <style jsx global>{`
-                .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 20px; }
+                .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 20px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
             `}</style>
         </div>
     );
 }
-
-const Plus = ({ className }: { className?: string }) => (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-    </svg>
-);
