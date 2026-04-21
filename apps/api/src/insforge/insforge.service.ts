@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { companies, products, sectors } from '@repo/database/schema';
+import { companies, products, sectors } from '../database/schema';
 import { eq } from 'drizzle-orm';
 
 @Injectable()
@@ -12,7 +12,6 @@ export class InsforgeService {
     async getDepuratedDataForAI() {
         this.logger.log('Extrayendo datos depurados para Insforge AI...');
 
-        // Usando select plano para evitar errores de relaciones no configuradas en Drizzle
         const allCompanies = await this.db.drizzle.select().from(companies).where(eq(companies.status, 'active'));
         const allProducts = await this.db.drizzle.select().from(products);
 

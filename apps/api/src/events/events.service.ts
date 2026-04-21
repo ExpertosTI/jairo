@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { eventAttendance } from '@repo/database/schema';
+import { eventAttendance } from '../database/schema';
 import { eq } from 'drizzle-orm';
 
 @Injectable()

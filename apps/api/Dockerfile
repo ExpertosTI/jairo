@@ -9,23 +9,20 @@ COPY . .
 RUN pnpm install --no-frozen-lockfile
 RUN pnpm turbo build --filter=api...
 
-# 2. Runner
+# 2. Runner: Independencia total del monorepo para ejecución estable
 FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copiamos archivos como root para poder instalar
+# Copiamos solo el código compilado de la API (que ya incluye el esquema interno)
 COPY --from=builder /app/apps/api/package.json ./package.json
 COPY --from=builder /app/apps/api/dist ./dist
-COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
-COPY --from=builder /app/packages/database/package.json ./packages/database/package.json
-COPY --from=builder /app/packages/database/schema.ts ./packages/database/schema.ts
 
-# Instalamos dependencias como root
+# Instalación de producción limpia (Sin symlinks rotos)
 RUN pnpm install --prod --no-frozen-lockfile
 
-# Creamos el usuario y cambiamos permisos AL FINAL
+# Seguridad
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs && \
     chown -R nestjs:nodejs /app
