@@ -14,18 +14,22 @@ FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-USER nextjs
+
+# Configuración de usuario
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/apps/web/public ./apps/web/public
 COPY --from=builder /app/apps/web/.next/standalone ./
 COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
 
+# Aseguramos permisos
+RUN chown -R nextjs:nodejs /app
+
+USER nextjs
+
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# En standalone de Next.js, las dependencias ya vienen empaquetadas en node_modules dentro de standalone
-# Pero por seguridad con PNPM, nos aseguramos de que el servidor corra el comando correcto
 CMD ["node", "apps/web/server.js"]
