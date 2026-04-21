@@ -3,20 +3,20 @@ FROM node:20-alpine AS base
 FROM base AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
-RUN npm install -g pnpm turbo
+RUN npm install -g pnpm@9.0.0 turbo
 COPY . .
 RUN turbo prune --scope=api --docker
 
 FROM base AS installer
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9.0.0
 
 COPY .gitignore .gitignore
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
-RUN pnpm install
+RUN pnpm install --no-frozen-lockfile
 
 COPY --from=builder /app/out/full/ .
 COPY turbo.json turbo.json
