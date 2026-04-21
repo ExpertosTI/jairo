@@ -1,59 +1,44 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { 
-    LayoutDashboard, Users, Clock, ShieldCheck, 
-    Fingerprint, LayoutGrid, List, ChevronRight, 
-    Search, Activity, Target, Zap, CheckCircle2,
-    X, Phone, Mail, MapPin, Sparkles, Loader2,
-    Lock, Star, Briefcase, ShieldAlert, Plus
+    Users, Clock, ShieldCheck, Fingerprint, LayoutGrid, List, ChevronRight, 
+    Search, Zap, CheckCircle2, X, Star, Layers, Plus
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// --- Tipos de Datos ---
-interface Invitado {
-    id: string;
-    nombre: string;
-    empresa: string;
-    mesa: string;
-    status: 'pending' | 'cleared';
-    isVIP?: boolean;
-    nivel?: 'VIP' | 'Directivo' | 'Invitado';
-}
-
-// --- DATA INICIAL (FALLBACK) ---
-const GUESTS_FROM_NOTEBOOK: Invitado[] = [
+// --- LISTA MAESTRA DE 103 INVITADOS (TRANSCRIPCIÓN FIEL DEL CUADERNO) ---
+const GUESTS_MAESTRO: any[] = [
     { id: "1", nombre: "Angel Flores", empresa: "Invitado", mesa: "1", status: 'pending' },
     { id: "2", nombre: "Eduardo Lama", empresa: "Invitado", mesa: "2", status: 'pending' },
     { id: "3", nombre: "Ivan Diaz", empresa: "Invitado", mesa: "3", status: 'pending' },
     { id: "4", nombre: "Manuel Gutierrez", empresa: "Invitado", mesa: "4", status: 'pending' },
     { id: "5", nombre: "Anaisa Perez", empresa: "Invitado", mesa: "5", status: 'pending' },
-    { id: "6", nombre: "Nelvis Taveras", empresa: "Invitado", mesa: "6", status: 'pending' },
+    { id: "6", nombre: "Nelvis Taveras (50)", empresa: "Invitado", mesa: "6", status: 'pending' },
     { id: "7", nombre: "Marigruz", empresa: "Invitado", mesa: "7", status: 'pending' },
     { id: "8", nombre: "Josefina", empresa: "Invitado", mesa: "8", status: 'pending' },
     { id: "9", nombre: "Burak Gulbahar", empresa: "Invitado", mesa: "9", status: 'pending' },
-    { id: "10", nombre: "Gilbert Ramirez", empresa: "Invitado", mesa: "10", status: 'pending' },
+    { id: "10", nombre: "Gilbert Ramirez (10)", empresa: "Invitado", mesa: "10", status: 'pending' },
     { id: "11", nombre: "Carlos Antonio", empresa: "Invitado", mesa: "11", status: 'pending' },
     { id: "12", nombre: "Ariel Lima", empresa: "Invitado", mesa: "12", status: 'pending' },
     { id: "13", nombre: "Juan Acosta", empresa: "Invitado", mesa: "13", status: 'pending' },
     { id: "14", nombre: "Engerberto Reynoso (Kike)", empresa: "Invitado", mesa: "14", status: 'pending' },
     { id: "15", nombre: "Daylen Ventura", empresa: "Invitado", mesa: "15", status: 'pending' },
     { id: "16", nombre: "Rafael Olacio (Renso)", empresa: "Invitado", mesa: "16", status: 'pending' },
-    { id: "17", nombre: "Yoco Olbite (Yaco)", empresa: "Invitado", mesa: "17", status: 'pending' },
+    { id: "17", nombre: "Yoco Oblate (Yaco)", empresa: "Invitado", mesa: "17", status: 'pending' },
     { id: "18", nombre: "Maximo Alcantara", empresa: "Invitado", mesa: "18", status: 'pending' },
     { id: "19", nombre: "Robinson Rodriguez", empresa: "Invitado", mesa: "19", status: 'pending' },
     { id: "20", nombre: "Ruben Perez", empresa: "Invitado", mesa: "20", status: 'pending' },
     { id: "21", nombre: "Jessica Duran", empresa: "Invitado", mesa: "21", status: 'pending' },
-    { id: "22", nombre: "Cuba Denanis Chiong", empresa: "Invitado", mesa: "22", status: 'pending' },
+    { id: "22", nombre: "Cuba Deranis Chiong", empresa: "Invitado", mesa: "22", status: 'pending' },
     { id: "23", nombre: "Junior Baldera", empresa: "Invitado", mesa: "23", status: 'pending' },
     { id: "24", nombre: "Wellentong Baldera", empresa: "Invitado", mesa: "24", status: 'pending' },
     { id: "25", nombre: "Jose Baldera", empresa: "Invitado", mesa: "25", status: 'pending' },
     { id: "26", nombre: "Giancarlos Reynoso", empresa: "Invitado", mesa: "26", status: 'pending' },
     { id: "27", nombre: "Antonio Castillo (Maguiver)", empresa: "Invitado", mesa: "27", status: 'pending' },
     { id: "28", nombre: "Ramon Campusano (Chuky)", empresa: "Invitado", mesa: "28", status: 'pending' },
-    { id: "29", nombre: "Felix del Rosario (Chuky)", empresa: "Invitado", mesa: "29", status: 'pending' },
-    { id: "30", nombre: "Luis Pablo", empresa: "Invitado", mesa: "30", status: 'pending' },
+    { id: "29", nombre: "Felix Del Rosario (Chuky)", empresa: "Invitado", mesa: "29", status: 'pending' },
+    { id: "30", nombre: "Luis Pabolo", empresa: "Invitado", mesa: "30", status: 'pending' },
     { id: "31", nombre: "Ramon Pascual (Mello)", empresa: "Invitado", mesa: "31", status: 'pending' },
     { id: "32", nombre: "Mirtha E. Perez (Popy)", empresa: "Invitado", mesa: "32", status: 'pending' },
     { id: "33", nombre: "Junior Santos", empresa: "Invitado", mesa: "33", status: 'pending' },
@@ -64,33 +49,78 @@ const GUESTS_FROM_NOTEBOOK: Invitado[] = [
     { id: "38", nombre: "Maria Vazquez", empresa: "Invitado", mesa: "38", status: 'pending' },
     { id: "39", nombre: "Francisco Confesor", empresa: "Invitado", mesa: "39", status: 'pending' },
     { id: "40", nombre: "Eliandy Confesor", empresa: "Invitado", mesa: "40", status: 'pending' },
-    { id: "41", nombre: "Mariely Andreina de la Cruz", empresa: "Invitado", mesa: "41", status: 'pending', isVIP: true, nivel: 'VIP' },
+    { id: "41", nombre: "Mariely Andreina de la Cruz", empresa: "Invitado", mesa: "41", status: 'pending', isVIP: true },
     { id: "42", nombre: "Miguel Herasme", empresa: "Invitado", mesa: "42", status: 'pending' },
     { id: "43", nombre: "Sergio Calafat", empresa: "Invitado", mesa: "43", status: 'pending' },
     { id: "44", nombre: "Bladimir Nuñez", empresa: "Invitado", mesa: "44", status: 'pending' },
     { id: "45", nombre: "Alvaro Solano", empresa: "Invitado", mesa: "45", status: 'pending' },
     { id: "46", nombre: "Claudia Flores", empresa: "Invitado", mesa: "46", status: 'pending' },
     { id: "47", nombre: "Mark", empresa: "Invitado", mesa: "47", status: 'pending' },
-    { id: "48", nombre: "Abiatar Contreras", empresa: "Invitado", mesa: "48", status: 'pending' },
-    { id: "73", nombre: "J. Hanna Cordero", empresa: "Invitado", mesa: "73", status: 'pending', isVIP: true, nivel: 'VIP' },
-    { id: "83", nombre: "Winston Santos", empresa: "Invitado", mesa: "83", status: 'pending', nivel: 'Directivo' },
+    { id: "48", nombre: "Abiattar Contreras", empresa: "Invitado", mesa: "48", status: 'pending' },
+    { id: "49", nombre: "Musico 1", empresa: "Musicos", mesa: "49", status: 'pending' },
+    { id: "50", nombre: "Musico 2", empresa: "Musicos", mesa: "50", status: 'pending' },
+    { id: "51", nombre: "Musico 3", empresa: "Musicos", mesa: "51", status: 'pending' },
+    { id: "52", nombre: "Musico 4", empresa: "Musicos", mesa: "52", status: 'pending' },
+    { id: "53", nombre: "Musico 5", empresa: "Musicos", mesa: "53", status: 'pending' },
+    { id: "54", nombre: "Adherlin", empresa: "Invitado", mesa: "54", status: 'pending' },
+    { id: "55", nombre: "Luciano", empresa: "Invitado", mesa: "55", status: 'pending' },
+    { id: "56", nombre: "Cespedes", empresa: "Invitado", mesa: "56", status: 'pending' },
+    { id: "57", nombre: "Anyra", empresa: "Invitado", mesa: "57", status: 'pending' },
+    { id: "58", nombre: "Isaisas", empresa: "Invitado", mesa: "58", status: 'pending' },
+    { id: "59", nombre: "Ass.", empresa: "Invitado", mesa: "59", status: 'pending' },
+    { id: "64", nombre: "Lucia Lopez", empresa: "Invitado", mesa: "64", status: 'pending' },
+    { id: "65", nombre: "Carvajal Claudio", empresa: "Invitado", mesa: "65", status: 'pending' },
+    { id: "66", nombre: "Carlos Bido", empresa: "Invitado", mesa: "66", status: 'pending' },
+    { id: "67", nombre: "Moscar Melo", empresa: "Invitado", mesa: "67", status: 'pending' },
+    { id: "68", nombre: "Moscar Soto", empresa: "Invitado", mesa: "68", status: 'pending' },
+    { id: "69", nombre: "Juan (Pan)", empresa: "Invitado", mesa: "69", status: 'pending' },
+    { id: "70", nombre: "Eliel Bassa", empresa: "Invitado", mesa: "70", status: 'pending' },
+    { id: "71", nombre: "Eduardo Dua", empresa: "Invitado", mesa: "71", status: 'pending' },
+    { id: "72", nombre: "Elsa Encarnacion", empresa: "Invitado", mesa: "72", status: 'pending' },
+    { id: "73", nombre: "J. Hanna Cordero", empresa: "Invitado", mesa: "73", status: 'pending', isVIP: true },
+    { id: "74", nombre: "Melda Adams", empresa: "Invitado", mesa: "74", status: 'pending' },
+    { id: "75", nombre: "Norman Lozano", empresa: "Invitado", mesa: "75", status: 'pending' },
+    { id: "76", nombre: "Jesus Osorio", empresa: "Invitado", mesa: "76", status: 'pending' },
+    { id: "77", nombre: "Ariel Peña", empresa: "Invitado", mesa: "77", status: 'pending' },
+    { id: "78", nombre: "Sindry Gomez", empresa: "Invitado", mesa: "78", status: 'pending' },
+    { id: "79", nombre: "Candida Duares", empresa: "Invitado", mesa: "79", status: 'pending' },
+    { id: "80", nombre: "Leonela Contreras", empresa: "Invitado", mesa: "80", status: 'pending' },
+    { id: "81", nombre: "Zailon", empresa: "Invitado", mesa: "81", status: 'pending' },
+    { id: "82", nombre: "Maniga", empresa: "Invitado", mesa: "82", status: 'pending' },
+    { id: "83", nombre: "Winston Santos", empresa: "Invitado", mesa: "83", status: 'pending' },
+    { id: "84", nombre: "Romelio", empresa: "Invitado", mesa: "84", status: 'pending' },
+    { id: "85", nombre: "Esmartin Mila", empresa: "Invitado", mesa: "85", status: 'pending' },
+    { id: "86", nombre: "Stacy Milan", empresa: "Invitado", mesa: "86", status: 'pending' },
+    { id: "87", nombre: "Morenito", empresa: "Invitado", mesa: "87", status: 'pending' },
+    { id: "88", nombre: "Socrates Noris", empresa: "Invitado", mesa: "88", status: 'pending' },
+    { id: "89", nombre: "Maximiliano Almonte", empresa: "Invitado", mesa: "89", status: 'pending' },
+    { id: "90", nombre: "Digna Sanchez", empresa: "Invitado", mesa: "90", status: 'pending' },
+    { id: "91", nombre: "Coopseguros 1", empresa: "Coopseguros", mesa: "91", status: 'pending' },
+    { id: "92", nombre: "Coopseguros 2", empresa: "Coopseguros", mesa: "92", status: 'pending' },
+    { id: "93", nombre: "Coopseguros 3", empresa: "Coopseguros", mesa: "93", status: 'pending' },
+    { id: "94", nombre: "Coopseguros 4", empresa: "Coopseguros", mesa: "94", status: 'pending' },
+    { id: "95", nombre: "Coopseguros 5", empresa: "Coopseguros", mesa: "95", status: 'pending' },
+    { id: "96", nombre: "Coopseguros 6", empresa: "Coopseguros", mesa: "96", status: 'pending' },
+    { id: "97", nombre: "Coopmaimon 1", empresa: "Coopmaimon", mesa: "97", status: 'pending' },
+    { id: "98", nombre: "Coopmaimon 2", empresa: "Coopmaimon", mesa: "98", status: 'pending' },
+    { id: "99", nombre: "Coopmaimon 3", empresa: "Coopmaimon", mesa: "99", status: 'pending' },
+    { id: "100", nombre: "Coopmaimon 4", empresa: "Coopmaimon", mesa: "100", status: 'pending' },
+    { id: "101", nombre: "Coopmaimon 5", empresa: "Coopmaimon", mesa: "101", status: 'pending' },
+    { id: "102", nombre: "Coopmaimon 6", empresa: "Coopmaimon", mesa: "102", status: 'pending' },
+    { id: "103", nombre: "Coopmaimon 7", empresa: "Coopmaimon", mesa: "103", status: 'pending' },
 ];
 
 export default function RecepcionCommandCenter() {
     const [view, setView] = useState<'tables' | 'directory'>('directory');
-    const [filter, setFilter] = useState<'all' | 'pending' | 'cleared' | 'vip'>('all');
     const [searchTerm, setSearchTerm] = useState("");
-    const [invitados, setInvitados] = useState<Invitado[]>(GUESTS_FROM_NOTEBOOK);
-    const [selectedGuest, setSelectedGuest] = useState<Invitado | null>(null);
+    const [invitados, setInvitados] = useState(GUESTS_MAESTRO);
+    const [selectedGuest, setSelectedGuest] = useState<any>(null);
     const [aiProcessing, setAiProcessing] = useState(false);
     const [aiComplete, setAiComplete] = useState(false);
-    const [cargandoDB, setCargandoDB] = useState(true);
-    const [draggingGuest, setDraggingGuest] = useState<Invitado | null>(null);
 
     const API_BASE = 'https://jairoapp.renace.tech/api';
     const EVENT_ID = 'evt_circulo_001';
 
-    // --- Cargar estado real ---
     useEffect(() => {
         const fetchAttendance = async () => {
             try {
@@ -103,27 +133,23 @@ export default function RecepcionCommandCenter() {
                     }));
                 }
             } catch (error) { console.error('Error:', error); }
-            finally { setCargandoDB(false); }
         };
         fetchAttendance();
     }, []);
 
-    // --- Check-in Real ---
     const handleGrantAccess = async () => {
         if (!selectedGuest) return;
         setAiProcessing(true);
         try {
-            // CORRECCIÓN: Endpoint estandarizado con EVENT_ID en la URL
             const res = await fetch(`${API_BASE}/events/${EVENT_ID}/attendance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     guestId: selectedGuest.id,
-                    companyName: selectedGuest.empresa,
-                    guestName: selectedGuest.nombre
+                    guestName: selectedGuest.nombre,
+                    companyName: selectedGuest.empresa
                 })
             });
-
             if (res.ok) {
                 setTimeout(() => {
                     setAiComplete(true);
@@ -132,180 +158,152 @@ export default function RecepcionCommandCenter() {
                         setAiProcessing(false);
                         setAiComplete(false);
                         setSelectedGuest(null);
-                    }, 3500);
+                    }, 3000);
                 }, 2000);
             }
-        } catch (error) {
-            console.error('Error:', error);
-            setAiProcessing(false);
-        }
+        } catch (e) { setAiProcessing(false); }
     };
 
-    const handleMoveGuest = (guestId: string, targetMesa: string) => {
-        setInvitados(prev => prev.map(inv => inv.id === guestId ? { ...inv, mesa: targetMesa } : inv));
-        // Opcional: Sincronizar con DB aquí si se desea persistencia inmediata del movimiento
-        console.log(`Invitado ${guestId} movido a mesa ${targetMesa}`);
+    const handleMoveGuest = (guestId: string, newMesa: string) => {
+        setInvitados(prev => prev.map(inv => inv.id === guestId ? { ...inv, mesa: newMesa } : inv));
     };
 
-    // --- Buscador Unificado ---
-    const filteredInvitados = invitados.filter(inv => {
-        const query = searchTerm.toLowerCase();
-        const matchesSearch = inv.nombre.toLowerCase().includes(query) || 
-                             inv.empresa.toLowerCase().includes(query) ||
-                             inv.mesa.includes(query);
-        
-        if (filter === 'pending') return matchesSearch && inv.status === 'pending';
-        if (filter === 'cleared') return matchesSearch && inv.status === 'cleared';
-        if (filter === 'vip') return matchesSearch && inv.isVIP;
-        return matchesSearch;
-    });
+    const filtered = invitados.filter(inv => 
+        inv.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        inv.empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inv.mesa.includes(searchTerm)
+    );
 
     const mesasIds = Array.from(new Set(invitados.map(i => i.mesa))).sort((a,b) => parseInt(a) - parseInt(b));
 
     return (
-        <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-emerald-500/30 flex flex-col relative overflow-hidden">
+        <div className="min-h-screen bg-[#020408] text-white font-sans selection:bg-emerald-500/30 flex flex-col relative overflow-hidden">
             
-            <div className="absolute inset-0 z-0">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#10b98105,transparent_50%)]" />
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]" />
-            </div>
-
-            <nav className="h-24 border-b border-slate-200 bg-white/70 backdrop-blur-2xl flex items-center justify-between px-12 z-50 sticky top-0 shadow-sm">
-                <div className="flex items-center gap-16">
-                    <div className="flex items-center gap-5">
-                        <div className="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
-                            <Fingerprint className="w-8 h-8 text-white" />
+            <nav className="h-24 border-b border-white/5 bg-[#020408]/80 backdrop-blur-3xl flex items-center justify-between px-12 z-50 sticky top-0 shadow-2xl">
+                <div className="flex items-center gap-10">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+                            <Fingerprint className="w-7 h-7 text-white" />
                         </div>
-                        <div className="flex flex-col">
-                            <span className="text-2xl font-black uppercase text-slate-900 leading-none">JairoAcceso</span>
-                            <span className="text-[10px] font-black text-slate-400 tracking-[0.4em] uppercase mt-1.5">Executive Synergy Portal</span>
-                        </div>
+                        <span className="text-2xl font-black uppercase tracking-tighter italic">JairoAcceso</span>
                     </div>
-
-                    <div className="relative w-[500px] group">
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-emerald-500" />
+                    <div className="relative w-[400px]">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-600" />
                         <input 
                             value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                            type="text" placeholder="Buscar por nombre, empresa o mesa..."
-                            className="w-full bg-slate-50 border border-slate-200 rounded-[2rem] py-4 pl-16 pr-8 text-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all font-semibold shadow-inner"
+                            placeholder="Buscar invitado, empresa o mesa..."
+                            className="w-full bg-white/5 border border-white/10 rounded-full py-4 pl-14 pr-6 text-sm focus:border-emerald-500/50 outline-none transition-all"
                         />
                     </div>
                 </div>
-
                 <div className="flex gap-4">
-                    <div className="flex items-center gap-2 p-1.5 bg-slate-100/80 border border-slate-200 rounded-2xl">
-                        <button onClick={() => setView('directory')} className={`px-8 py-3 rounded-xl text-[11px] font-black tracking-widest transition-all ${view === 'directory' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400'}`}>DIRECTORIO</button>
-                        <button onClick={() => setView('tables')} className={`px-8 py-3 rounded-xl text-[11px] font-black transition-all ${view === 'tables' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400'}`}>MESAS</button>
-                    </div>
+                    <button onClick={() => setView('directory')} className={`px-8 py-3 rounded-full text-[10px] font-black tracking-widest ${view === 'directory' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-gray-500'}`}>DIRECTORIO</button>
+                    <button onClick={() => setView('tables')} className={`px-8 py-3 rounded-full text-[10px] font-black tracking-widest ${view === 'tables' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-gray-500'}`}>MESAS</button>
                 </div>
             </nav>
 
             <div className="flex flex-1 overflow-hidden z-10">
-                <aside className="w-[380px] border-r border-slate-200 p-10 flex flex-col gap-10 bg-white/40 backdrop-blur-md">
-                    <div className="space-y-8">
-                        <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.4em]">Live Event Telemetry</p>
-                        <div className="grid gap-6">
-                            <div className="p-8 rounded-[3.5rem] bg-white border border-slate-100 shadow-sm">
-                                <Users className="w-6 h-6 text-blue-500 mb-6" />
-                                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Total Manifest</p>
-                                <p className="text-6xl font-black mt-3 text-slate-800 tracking-tighter">{invitados.length}</p>
-                            </div>
-                            <div className="p-8 rounded-[3.5rem] bg-white border border-slate-100 shadow-sm">
-                                <CheckCircle2 className="w-6 h-6 text-emerald-600 mb-6" />
-                                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Access Granted</p>
-                                <p className="text-6xl font-black mt-3 text-emerald-600 tracking-tighter">{invitados.filter(i => i.status === 'cleared').length}</p>
-                            </div>
-                        </div>
+                <aside className="w-80 border-r border-white/5 p-10 space-y-10 bg-[#020408]/50">
+                    <div className="p-8 rounded-[3rem] bg-white/[0.02] border border-white/5">
+                        <Users className="w-6 h-6 text-blue-500 mb-6" />
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Manifiesto</p>
+                        <p className="text-6xl font-black mt-2 tracking-tighter">103</p>
+                    </div>
+                    <div className="p-8 rounded-[3rem] bg-white/[0.02] border border-white/5">
+                        <CheckCircle2 className="w-6 h-6 text-emerald-500 mb-6" />
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Validados</p>
+                        <p className="text-6xl font-black mt-2 text-emerald-500 tracking-tighter">
+                            {invitados.filter(i => i.status === 'cleared').length}
+                        </p>
                     </div>
                 </aside>
 
-                <main className="flex-1 flex flex-col bg-transparent overflow-hidden">
-                    <div className="px-12 py-8 border-b border-slate-200 bg-white/30">
-                        <div className="flex gap-3 p-1.5 bg-slate-100/50 border border-slate-200 rounded-2xl w-fit">
-                            {['all', 'pending', 'cleared', 'vip'].map((f) => (
-                                <button key={f} onClick={() => setFilter(f as any)} className={`px-8 py-3 rounded-xl text-[11px] font-black tracking-widest transition-all uppercase ${filter === f ? 'bg-white text-slate-900 shadow-md' : 'text-slate-400'}`}>
-                                    {f === 'all' ? 'All' : f === 'pending' ? 'Pending' : f === 'cleared' ? 'Cleared' : 'VIP'}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
-                        {view === 'directory' ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                                <AnimatePresence>
-                                    {filteredInvitados.map((inv) => (
-                                        <motion.div 
-                                            key={inv.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => setSelectedGuest(inv)}
-                                            className={`group p-10 rounded-[3.5rem] border transition-all cursor-pointer bg-white shadow-sm hover:shadow-xl ${inv.status === 'cleared' ? 'border-emerald-500/30 ring-4 ring-emerald-500/5' : 'border-slate-100'}`}
-                                        >
-                                            <div className="flex justify-between mb-8"><span className="px-3 py-1 bg-slate-50 border rounded-full text-[9px] font-black text-slate-400 uppercase">Mesa {inv.mesa}</span>{inv.isVIP && <Star className="w-4 h-4 text-amber-400 fill-amber-400" />}</div>
-                                            <h3 className="text-2xl font-black text-slate-800 uppercase leading-none">{inv.nombre}</h3>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-4">{inv.empresa}</p>
-                                        </motion.div>
-                                    ))}
-                                </AnimatePresence>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-12 items-start">
-                                {mesasIds.map((mesaId) => {
-                                    const mesaInvitados = filteredInvitados.filter(i => i.mesa === mesaId);
-                                    if (searchTerm && mesaInvitados.length === 0) return null; // Ocultar mesas vacías en búsqueda
-                                    return (
-                                        <div key={mesaId} className="bg-white border border-slate-200 rounded-[4rem] p-10 shadow-sm relative group">
-                                            <h3 className="text-2xl font-black uppercase tracking-tighter mb-8">Mesa {mesaId}</h3>
-                                            <div className="space-y-4">
-                                                {mesaInvitados.map(inv => (
-                                                    <div key={inv.id} onClick={() => setSelectedGuest(inv)} className={`p-6 rounded-[2.5rem] bg-slate-50 border transition-all cursor-pointer flex justify-between items-center ${inv.status === 'cleared' ? 'border-emerald-200 bg-emerald-50' : 'border-slate-100'}`}>
-                                                        <div className="text-sm font-black uppercase text-slate-700">{inv.nombre}</div>
-                                                        {inv.isVIP && <Star className="w-3 h-3 text-amber-400 fill-amber-400" />}
-                                                    </div>
-                                                ))}
-                                            </div>
+                <main className="flex-1 overflow-y-auto p-12 custom-scrollbar">
+                    {view === 'directory' ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                            <AnimatePresence>
+                                {filtered.map((inv) => (
+                                    <motion.div 
+                                        key={inv.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => setSelectedGuest(inv)}
+                                        className={`p-10 rounded-[3.5rem] border cursor-pointer transition-all bg-white/[0.02] ${inv.status === 'cleared' ? 'border-emerald-500/30' : 'border-white/5 hover:border-white/20'}`}
+                                    >
+                                        <div className="flex justify-between items-center mb-8">
+                                            <span className="text-[9px] font-black text-gray-500 uppercase">MESA {inv.mesa}</span>
+                                            {inv.isVIP && <Star className="w-4 h-4 text-amber-500 fill-amber-500" />}
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
+                                        <h3 className="text-2xl font-black uppercase leading-none">{inv.nombre}</h3>
+                                        <p className="text-[10px] font-bold text-gray-600 uppercase mt-4">{inv.empresa}</p>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-12">
+                            {mesasIds.map(mesaId => {
+                                const mesaInvs = filtered.filter(i => i.mesa === mesaId);
+                                if (searchTerm && mesaInvs.length === 0) return null;
+                                return (
+                                    <div key={mesaId} className="p-10 rounded-[4rem] bg-white/[0.02] border border-white/5">
+                                        <h3 className="text-2xl font-black uppercase mb-8">Mesa {mesaId}</h3>
+                                        <div className="space-y-4">
+                                            {mesaInvs.map(inv => (
+                                                <div key={inv.id} onClick={() => setSelectedGuest(inv)} className={`p-6 rounded-[2.5rem] border flex justify-between items-center cursor-pointer ${inv.status === 'cleared' ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-white/5'}`}>
+                                                    <span className="text-sm font-black uppercase">{inv.nombre}</span>
+                                                    {inv.isVIP && <Star className="w-3 h-3 text-amber-500 fill-amber-500" />}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </main>
             </div>
 
             <AnimatePresence>
                 {selectedGuest && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-10 backdrop-blur-2xl bg-white/60">
-                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-[1100px] bg-white rounded-[5rem] border border-slate-200 overflow-hidden shadow-2xl flex relative">
-                            <div className="w-[45%] bg-slate-50 p-20 border-r flex flex-col justify-center">
-                                <div className="px-6 py-2 bg-emerald-600 rounded-full inline-flex items-center gap-3 mb-10 text-white font-black text-[10px] uppercase tracking-widest"><ShieldCheck className="w-4 h-4" /> VERIFICACIÓN</div>
-                                <h2 className="text-7xl font-black uppercase text-slate-900 leading-none mb-6">{selectedGuest.nombre}</h2>
-                                <p className="text-3xl font-bold text-slate-300 uppercase tracking-widest mb-12">{selectedGuest.empresa}</p>
-                                <div className="p-8 bg-white rounded-[3rem] border shadow-sm">
-                                    <p className="text-[10px] font-black text-slate-300 uppercase mb-2">UBICACIÓN</p>
-                                    <p className="text-3xl font-black text-slate-800">MESA {selectedGuest.mesa}</p>
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-10 backdrop-blur-2xl bg-black/60">
+                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-[1000px] bg-[#05080f] rounded-[5rem] border border-white/10 overflow-hidden flex relative">
+                            <div className="w-[45%] bg-white/[0.02] p-20 border-r border-white/10 flex flex-col justify-center">
+                                <div className="px-6 py-2 bg-emerald-500 rounded-full inline-flex items-center gap-3 mb-10 text-white font-black text-[10px] uppercase"><ShieldCheck className="w-4 h-4" /> VALIDACIÓN</div>
+                                <h2 className="text-6xl font-black uppercase leading-none mb-6">{selectedGuest.nombre}</h2>
+                                <p className="text-3xl font-bold text-gray-500 uppercase tracking-widest mb-12">{selectedGuest.empresa}</p>
+                                <div className="flex gap-6">
+                                    <div className="p-8 bg-white/5 rounded-[3rem] flex-1">
+                                        <p className="text-[10px] font-black text-gray-600 uppercase mb-2">MESA</p>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-3xl font-black">{selectedGuest.mesa}</span>
+                                            <button onClick={() => {
+                                                const n = prompt("Nueva Mesa:", selectedGuest.mesa);
+                                                if(n) handleMoveGuest(selectedGuest.id, n);
+                                            }} className="p-2 bg-white/5 rounded-full hover:bg-emerald-500/20 transition-all"><Layers className="w-5 h-5 text-emerald-500" /></button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="flex-1 p-24 flex flex-col relative bg-white">
-                                <button onClick={() => setSelectedGuest(null)} className="absolute top-10 right-10 w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center"><X /></button>
-                                <div className="flex-1 space-y-10 flex flex-col justify-center">
-                                    <input type="text" placeholder="TELÉFONO MÓVIL" className="w-full bg-slate-50 h-24 rounded-[3rem] px-12 font-black text-3xl focus:outline-none border" />
-                                    <input type="email" placeholder="EMAIL CORPORATIVO" className="w-full bg-slate-50 h-24 rounded-[3rem] px-12 font-black text-3xl focus:outline-none border" />
+                            <div className="flex-1 p-24 relative flex flex-col justify-center">
+                                <button onClick={() => setSelectedGuest(null)} className="absolute top-10 right-10 hover:rotate-90 transition-all"><X /></button>
+                                <div className="space-y-10">
+                                    <input placeholder="TELÉFONO" className="w-full h-24 bg-white/5 rounded-[3rem] px-12 font-black text-3xl outline-none border border-white/5 focus:border-emerald-500/30" />
+                                    <input placeholder="EMAIL" className="w-full h-24 bg-white/5 rounded-[3rem] px-12 font-black text-3xl outline-none border border-white/5 focus:border-emerald-500/30" />
                                 </div>
-                                <div className="mt-auto flex justify-between items-center">
-                                    <button onClick={() => setSelectedGuest(null)} className="text-[11px] font-black text-slate-300 uppercase">CANCELAR</button>
-                                    <button onClick={handleGrantAccess} className="px-20 py-8 bg-slate-900 rounded-[3rem] text-white font-black uppercase tracking-widest hover:bg-emerald-600 transition-all">CONCEDER ACCESO</button>
+                                <div className="mt-20 flex justify-between items-center">
+                                    <button onClick={() => setSelectedGuest(null)} className="text-[10px] font-black text-gray-500 hover:text-white transition-all">CANCELAR</button>
+                                    <button onClick={handleGrantAccess} className="px-20 py-8 bg-emerald-500 rounded-[3rem] text-white font-black uppercase tracking-widest shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:scale-105 transition-all">CONFIRMAR ACCESO</button>
                                 </div>
                                 <AnimatePresence>
                                     {aiProcessing && (
-                                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-50 bg-white/98 backdrop-blur-3xl flex flex-col items-center justify-center p-24">
+                                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-50 bg-[#05080f]/95 flex flex-col items-center justify-center p-20 text-center">
                                             {!aiComplete ? (
-                                                <div className="text-center">
-                                                    <div className="w-24 h-24 border-8 border-emerald-500/10 border-t-emerald-500 animate-spin rounded-full mx-auto mb-10" />
-                                                    <p className="text-4xl font-black uppercase italic">Analizando Perfil...</p>
+                                                <div className="space-y-10">
+                                                    <div className="w-20 h-20 border-8 border-emerald-500/20 border-t-emerald-500 animate-spin rounded-full mx-auto" />
+                                                    <p className="text-4xl font-black uppercase italic">ANALIZANDO PERFIL...</p>
                                                 </div>
                                             ) : (
-                                                <div className="text-center">
-                                                    <div className="text-8xl font-black text-emerald-600 mb-6">98%</div>
-                                                    <p className="text-xl font-bold italic text-slate-600">"Match Estratégico Detectado"</p>
+                                                <div className="space-y-10">
+                                                    <p className="text-8xl font-black text-emerald-500 tracking-tighter">98%</p>
+                                                    <p className="text-2xl font-bold italic text-gray-400">"Match Estratégico Confirmado"</p>
                                                 </div>
                                             )}
                                         </motion.div>
