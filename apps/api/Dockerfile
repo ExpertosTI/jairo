@@ -1,33 +1,33 @@
 FROM node:20-alpine AS base
+RUN npm install -g pnpm@9.0.0 turbo
 
+# 1. Builder: Contexto completo para evitar errores de workspace
 FROM base AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
-RUN npm install -g pnpm@9.0.0 turbo
+
+# Copiamos todo el monorepo (fuente de verdad)
 COPY . .
-RUN turbo prune --scope=api --docker
 
-FROM base AS installer
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
-RUN npm install -g pnpm@9.0.0
-
-COPY .gitignore .gitignore
-COPY --from=builder /app/out/json/ .
-COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
-COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+# Instalación robusta ignorando lockfile corrupto si es necesario
 RUN pnpm install --no-frozen-lockfile
 
-COPY --from=builder /app/out/full/ .
-COPY turbo.json turbo.json
-
+# Build enfocado
 RUN pnpm turbo build --filter=api...
 
+# 2. Runner: Imagen ligera de producción
 FROM base AS runner
 WORKDIR /app
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 USER nestjs
-COPY --from=installer /app .
 
-CMD node apps/api/dist/main
+# Copiamos solo lo necesario para correr la app
+COPY --from=builder /app/apps/api/package.json ./package.json
+COPY --from=builder /app/apps/api/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
+
+EXPOSE 3001
+CMD ["node", "dist/main"]
