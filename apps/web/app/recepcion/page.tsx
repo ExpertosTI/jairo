@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import { 
     Users, Clock, ShieldCheck, Fingerprint, LayoutGrid, List, ChevronRight, 
-    Search, Zap, CheckCircle2, X, Star, Layers, Plus
+    Search, Zap, CheckCircle2, X, Star, Layers, Plus, Save
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// --- LISTA MAESTRA DE 103 INVITADOS (TRANSCRIPCIÓN FIEL DEL CUADERNO) ---
+// --- LISTA MAESTRA DE 103 INVITADOS ---
 const GUESTS_MAESTRO: any[] = [
     { id: "1", nombre: "Angel Flores", empresa: "Invitado", mesa: "1", status: 'pending' },
     { id: "2", nombre: "Eduardo Lama", empresa: "Invitado", mesa: "2", status: 'pending' },
@@ -117,6 +117,10 @@ export default function RecepcionCommandCenter() {
     const [selectedGuest, setSelectedGuest] = useState<any>(null);
     const [aiProcessing, setAiProcessing] = useState(false);
     const [aiComplete, setAiComplete] = useState(false);
+    
+    // Estados para edición de mesa sin prompts
+    const [isEditingMesa, setIsEditingMesa] = useState(false);
+    const [tempMesa, setTempMesa] = useState("");
 
     const API_BASE = 'https://jairoapp.renace.tech/api';
     const EVENT_ID = 'evt_circulo_001';
@@ -166,6 +170,10 @@ export default function RecepcionCommandCenter() {
 
     const handleMoveGuest = (guestId: string, newMesa: string) => {
         setInvitados(prev => prev.map(inv => inv.id === guestId ? { ...inv, mesa: newMesa } : inv));
+        if (selectedGuest && selectedGuest.id === guestId) {
+            setSelectedGuest({ ...selectedGuest, mesa: newMesa });
+        }
+        setIsEditingMesa(false);
     };
 
     const filtered = invitados.filter(inv => 
@@ -179,6 +187,7 @@ export default function RecepcionCommandCenter() {
     return (
         <div className="min-h-screen bg-[#020408] text-white font-sans selection:bg-emerald-500/30 flex flex-col relative overflow-hidden">
             
+            {/* Nav Principal */}
             <nav className="h-24 border-b border-white/5 bg-[#020408]/80 backdrop-blur-3xl flex items-center justify-between px-12 z-50 sticky top-0 shadow-2xl">
                 <div className="flex items-center gap-10">
                     <div className="flex items-center gap-4">
@@ -197,42 +206,45 @@ export default function RecepcionCommandCenter() {
                     </div>
                 </div>
                 <div className="flex gap-4">
-                    <button onClick={() => setView('directory')} className={`px-8 py-3 rounded-full text-[10px] font-black tracking-widest ${view === 'directory' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-gray-500'}`}>DIRECTORIO</button>
-                    <button onClick={() => setView('tables')} className={`px-8 py-3 rounded-full text-[10px] font-black tracking-widest ${view === 'tables' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-gray-500'}`}>MESAS</button>
+                    <button onClick={() => setView('directory')} className={`px-8 py-3 rounded-full text-[10px] font-black tracking-widest transition-all ${view === 'directory' ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-white/5 text-gray-500 hover:text-gray-300'}`}>DIRECTORIO</button>
+                    <button onClick={() => setView('tables')} className={`px-8 py-3 rounded-full text-[10px] font-black tracking-widest transition-all ${view === 'tables' ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-white/5 text-gray-500 hover:text-gray-300'}`}>MESAS</button>
                 </div>
             </nav>
 
             <div className="flex flex-1 overflow-hidden z-10">
+                {/* Telemetría Lateral */}
                 <aside className="w-80 border-r border-white/5 p-10 space-y-10 bg-[#020408]/50">
-                    <div className="p-8 rounded-[3rem] bg-white/[0.02] border border-white/5">
-                        <Users className="w-6 h-6 text-blue-500 mb-6" />
+                    <div className="p-8 rounded-[3rem] bg-white/[0.02] border border-white/5 group hover:border-blue-500/30 transition-all">
+                        <Users className="w-6 h-6 text-blue-500 mb-6 group-hover:scale-110 transition-transform" />
                         <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Manifiesto</p>
                         <p className="text-6xl font-black mt-2 tracking-tighter">103</p>
                     </div>
-                    <div className="p-8 rounded-[3rem] bg-white/[0.02] border border-white/5">
-                        <CheckCircle2 className="w-6 h-6 text-emerald-500 mb-6" />
-                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Validados</p>
+                    <div className="p-8 rounded-[3rem] bg-white/[0.02] border border-white/5 group hover:border-emerald-500/30 transition-all">
+                        <CheckCircle2 className="w-6 h-6 text-emerald-500 mb-6 group-hover:scale-110 transition-transform" />
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Accesos Validados</p>
                         <p className="text-6xl font-black mt-2 text-emerald-500 tracking-tighter">
                             {invitados.filter(i => i.status === 'cleared').length}
                         </p>
                     </div>
                 </aside>
 
+                {/* Grid Principal */}
                 <main className="flex-1 overflow-y-auto p-12 custom-scrollbar">
                     {view === 'directory' ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                             <AnimatePresence>
                                 {filtered.map((inv) => (
                                     <motion.div 
-                                        key={inv.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => setSelectedGuest(inv)}
-                                        className={`p-10 rounded-[3.5rem] border cursor-pointer transition-all bg-white/[0.02] ${inv.status === 'cleared' ? 'border-emerald-500/30' : 'border-white/5 hover:border-white/20'}`}
+                                        key={inv.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} onClick={() => setSelectedGuest(inv)}
+                                        className={`p-10 rounded-[3.5rem] border cursor-pointer transition-all bg-white/[0.02] relative overflow-hidden group ${inv.status === 'cleared' ? 'border-emerald-500/30 bg-emerald-500/[0.03]' : 'border-white/5 hover:border-white/20 hover:bg-white/[0.04]'}`}
                                     >
-                                        <div className="flex justify-between items-center mb-8">
-                                            <span className="text-[9px] font-black text-gray-500 uppercase">MESA {inv.mesa}</span>
+                                        <div className="flex justify-between items-center mb-8 relative z-10">
+                                            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">MESA {inv.mesa}</span>
                                             {inv.isVIP && <Star className="w-4 h-4 text-amber-500 fill-amber-500" />}
+                                            {inv.status === 'cleared' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
                                         </div>
-                                        <h3 className="text-2xl font-black uppercase leading-none">{inv.nombre}</h3>
-                                        <p className="text-[10px] font-bold text-gray-600 uppercase mt-4">{inv.empresa}</p>
+                                        <h3 className="text-2xl font-black uppercase leading-none relative z-10 group-hover:text-emerald-400 transition-colors">{inv.nombre}</h3>
+                                        <p className="text-[10px] font-bold text-gray-600 uppercase mt-4 relative z-10 tracking-widest">{inv.empresa}</p>
                                     </motion.div>
                                 ))}
                             </AnimatePresence>
@@ -243,13 +255,16 @@ export default function RecepcionCommandCenter() {
                                 const mesaInvs = filtered.filter(i => i.mesa === mesaId);
                                 if (searchTerm && mesaInvs.length === 0) return null;
                                 return (
-                                    <div key={mesaId} className="p-10 rounded-[4rem] bg-white/[0.02] border border-white/5">
-                                        <h3 className="text-2xl font-black uppercase mb-8">Mesa {mesaId}</h3>
+                                    <div key={mesaId} className="p-10 rounded-[4rem] bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all">
+                                        <h3 className="text-2xl font-black uppercase mb-8 border-b border-white/5 pb-4">Mesa {mesaId}</h3>
                                         <div className="space-y-4">
                                             {mesaInvs.map(inv => (
-                                                <div key={inv.id} onClick={() => setSelectedGuest(inv)} className={`p-6 rounded-[2.5rem] border flex justify-between items-center cursor-pointer ${inv.status === 'cleared' ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-white/5'}`}>
-                                                    <span className="text-sm font-black uppercase">{inv.nombre}</span>
-                                                    {inv.isVIP && <Star className="w-3 h-3 text-amber-500 fill-amber-500" />}
+                                                <div key={inv.id} onClick={() => setSelectedGuest(inv)} className={`p-6 rounded-[2.5rem] border flex justify-between items-center cursor-pointer transition-all group ${inv.status === 'cleared' ? 'border-emerald-500/20 bg-emerald-500/[0.05]' : 'border-white/5 hover:border-emerald-500/30'}`}>
+                                                    <span className="text-sm font-black uppercase group-hover:text-emerald-400">{inv.nombre}</span>
+                                                    <div className="flex gap-2">
+                                                        {inv.isVIP && <Star className="w-3 h-3 text-amber-500 fill-amber-500" />}
+                                                        {inv.status === 'cleared' && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
@@ -261,50 +276,101 @@ export default function RecepcionCommandCenter() {
                 </main>
             </div>
 
+            {/* Modal de Validación (Premium) */}
             <AnimatePresence>
                 {selectedGuest && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-10 backdrop-blur-2xl bg-black/60">
-                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-[1000px] bg-[#05080f] rounded-[5rem] border border-white/10 overflow-hidden flex relative">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-10 backdrop-blur-2xl bg-black/70">
+                        <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} className="w-full max-w-[1000px] bg-[#05080f] rounded-[5rem] border border-white/10 overflow-hidden flex relative shadow-[0_0_100px_rgba(0,0,0,0.5)]">
+                            {/* Panel Izquierdo: Info Invitado */}
                             <div className="w-[45%] bg-white/[0.02] p-20 border-r border-white/10 flex flex-col justify-center">
-                                <div className="px-6 py-2 bg-emerald-500 rounded-full inline-flex items-center gap-3 mb-10 text-white font-black text-[10px] uppercase"><ShieldCheck className="w-4 h-4" /> VALIDACIÓN</div>
-                                <h2 className="text-6xl font-black uppercase leading-none mb-6">{selectedGuest.nombre}</h2>
-                                <p className="text-3xl font-bold text-gray-500 uppercase tracking-widest mb-12">{selectedGuest.empresa}</p>
-                                <div className="flex gap-6">
-                                    <div className="p-8 bg-white/5 rounded-[3rem] flex-1">
-                                        <p className="text-[10px] font-black text-gray-600 uppercase mb-2">MESA</p>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-3xl font-black">{selectedGuest.mesa}</span>
-                                            <button onClick={() => {
-                                                const n = prompt("Nueva Mesa:", selectedGuest.mesa);
-                                                if(n) handleMoveGuest(selectedGuest.id, n);
-                                            }} className="p-2 bg-white/5 rounded-full hover:bg-emerald-500/20 transition-all"><Layers className="w-5 h-5 text-emerald-500" /></button>
-                                        </div>
+                                <div className="px-6 py-2 bg-emerald-500/20 text-emerald-500 rounded-full inline-flex items-center gap-3 mb-10 font-black text-[10px] uppercase tracking-widest border border-emerald-500/20"><ShieldCheck className="w-4 h-4" /> VERIFICACIÓN ACTIVA</div>
+                                <h2 className="text-6xl font-black uppercase leading-[0.9] mb-6 tracking-tighter">{selectedGuest.nombre}</h2>
+                                <p className="text-3xl font-bold text-gray-500 uppercase tracking-widest mb-12 italic">{selectedGuest.empresa}</p>
+                                
+                                {/* UI de Mesa (Sin Prompts) */}
+                                <div className="p-10 bg-white/[0.03] rounded-[3.5rem] border border-white/5 relative group">
+                                    <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-4">Ubicación Estratégica</p>
+                                    <div className="flex items-center justify-between">
+                                        {!isEditingMesa ? (
+                                            <>
+                                                <p className="text-5xl font-black uppercase tracking-tighter">Mesa {selectedGuest.mesa}</p>
+                                                <button 
+                                                    onClick={() => {
+                                                        setTempMesa(selectedGuest.mesa);
+                                                        setIsEditingMesa(true);
+                                                    }}
+                                                    className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center hover:bg-emerald-500 transition-all group-hover:shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                                                >
+                                                    <Layers className="w-6 h-6 text-emerald-500 group-hover:text-white" />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <div className="flex items-center gap-4 w-full">
+                                                <input 
+                                                    autoFocus
+                                                    type="number"
+                                                    value={tempMesa}
+                                                    onChange={(e) => setTempMesa(e.target.value)}
+                                                    className="bg-white/10 border border-emerald-500/50 rounded-2xl px-6 py-4 text-3xl font-black w-32 outline-none"
+                                                />
+                                                <button 
+                                                    onClick={() => handleMoveGuest(selectedGuest.id, tempMesa)}
+                                                    className="flex-1 bg-emerald-500 rounded-2xl py-4 font-black uppercase text-xs tracking-widest"
+                                                >
+                                                    GUARDAR
+                                                </button>
+                                                <button onClick={() => setIsEditingMesa(false)} className="p-4 bg-white/5 rounded-2xl"><X className="w-5 h-5" /></button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Panel Derecho: Check-in */}
                             <div className="flex-1 p-24 relative flex flex-col justify-center">
-                                <button onClick={() => setSelectedGuest(null)} className="absolute top-10 right-10 hover:rotate-90 transition-all"><X /></button>
-                                <div className="space-y-10">
-                                    <input placeholder="TELÉFONO" className="w-full h-24 bg-white/5 rounded-[3rem] px-12 font-black text-3xl outline-none border border-white/5 focus:border-emerald-500/30" />
-                                    <input placeholder="EMAIL" className="w-full h-24 bg-white/5 rounded-[3rem] px-12 font-black text-3xl outline-none border border-white/5 focus:border-emerald-500/30" />
+                                <button onClick={() => { setSelectedGuest(null); setIsEditingMesa(false); }} className="absolute top-12 right-12 w-12 h-12 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-all"><X /></button>
+                                
+                                <div className="space-y-8">
+                                    <div className="relative">
+                                        <span className="absolute left-10 top-1/2 -translate-y-1/2 text-gray-700 font-black italic">TEL</span>
+                                        <input placeholder="809 000 0000" className="w-full h-24 bg-white/[0.03] rounded-[2.5rem] px-24 font-black text-3xl outline-none border border-white/5 focus:border-emerald-500/30 transition-all shadow-inner" />
+                                    </div>
+                                    <div className="relative">
+                                        <span className="absolute left-10 top-1/2 -translate-y-1/2 text-gray-700 font-black italic">@</span>
+                                        <input placeholder="email@corporativo.com" className="w-full h-24 bg-white/[0.03] rounded-[2.5rem] px-24 font-black text-3xl outline-none border border-white/5 focus:border-emerald-500/30 transition-all shadow-inner" />
+                                    </div>
                                 </div>
+
                                 <div className="mt-20 flex justify-between items-center">
-                                    <button onClick={() => setSelectedGuest(null)} className="text-[10px] font-black text-gray-500 hover:text-white transition-all">CANCELAR</button>
-                                    <button onClick={handleGrantAccess} className="px-20 py-8 bg-emerald-500 rounded-[3rem] text-white font-black uppercase tracking-widest shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:scale-105 transition-all">CONFIRMAR ACCESO</button>
+                                    <button onClick={() => setSelectedGuest(null)} className="text-[10px] font-black text-gray-600 hover:text-white transition-all tracking-[0.3em]">DESCARTAR</button>
+                                    <button onClick={handleGrantAccess} className="px-24 py-8 bg-emerald-600 rounded-[2.5rem] text-white font-black uppercase tracking-widest shadow-[0_0_50px_rgba(16,185,129,0.3)] hover:scale-105 active:scale-95 transition-all">CONFIRMAR ACCESO</button>
                                 </div>
+
+                                {/* Animación de IA Premium */}
                                 <AnimatePresence>
                                     {aiProcessing && (
-                                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-50 bg-[#05080f]/95 flex flex-col items-center justify-center p-20 text-center">
+                                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-50 bg-[#05080f]/98 flex flex-col items-center justify-center p-20 text-center">
                                             {!aiComplete ? (
-                                                <div className="space-y-10">
-                                                    <div className="w-20 h-20 border-8 border-emerald-500/20 border-t-emerald-500 animate-spin rounded-full mx-auto" />
-                                                    <p className="text-4xl font-black uppercase italic">ANALIZANDO PERFIL...</p>
+                                                <div className="space-y-12">
+                                                    <div className="relative w-32 h-32 mx-auto">
+                                                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="absolute inset-0 border-t-4 border-emerald-500 rounded-full" />
+                                                        <div className="absolute inset-4 border-2 border-emerald-500/20 rounded-full flex items-center justify-center">
+                                                            <Zap className="w-8 h-8 text-emerald-500 animate-pulse" />
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-3xl font-black uppercase italic tracking-tighter">SINCRONIZANDO CON INSFORGE IA...</p>
+                                                    <div className="w-64 h-1 bg-white/5 rounded-full mx-auto overflow-hidden">
+                                                        <motion.div initial={{ x: '-100%' }} animate={{ x: '100%' }} transition={{ duration: 1.5, repeat: Infinity }} className="h-full w-1/2 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,1)]" />
+                                                    </div>
                                                 </div>
                                             ) : (
-                                                <div className="space-y-10">
-                                                    <p className="text-8xl font-black text-emerald-500 tracking-tighter">98%</p>
-                                                    <p className="text-2xl font-bold italic text-gray-400">"Match Estratégico Confirmado"</p>
-                                                </div>
+                                                <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="space-y-12">
+                                                    <div className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-[0_0_60px_rgba(16,185,129,0.5)]">
+                                                        <CheckCircle2 className="w-12 h-12 text-white" />
+                                                    </div>
+                                                    <p className="text-7xl font-black text-emerald-500 tracking-tighter">ACCESO OK</p>
+                                                    <p className="text-xl font-bold italic text-gray-400">Perfil verificado al 99.2%</p>
+                                                </motion.div>
                                             )}
                                         </motion.div>
                                     )}
@@ -314,6 +380,11 @@ export default function RecepcionCommandCenter() {
                     </div>
                 )}
             </AnimatePresence>
+
+            <style jsx global>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.1); border-radius: 20px; }
+            `}</style>
         </div>
     );
 }
