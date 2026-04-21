@@ -1,6 +1,10 @@
 {
   "name": "b2b-platform",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
@@ -16,10 +20,7 @@
     "turbo": "^2.7.5",
     "typescript": "5.4.5"
   },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "packageManager": "npm@10.0.0",
   "engines": {
     "node": ">=18"
   }
