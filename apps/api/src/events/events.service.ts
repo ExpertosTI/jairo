@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { eventAttendance } from '../database/schema';
+import { eventAttendance, companies } from '../database/schema';
 import { eq, sql } from 'drizzle-orm';
 
 @Injectable()
@@ -8,11 +8,42 @@ export class EventsService {
   constructor(private readonly db: DatabaseService) {}
 
   async recordAttendance(data: { eventId: string; guestId: number; metadata: any }) {
+    const empresaNombre = data.metadata?.empresa || 'Invitado';
+    
+    // 1. Buscar si la empresa existe (por nombre simplificado o slug)
+    const slug = empresaNombre.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+    
+    let companyId: string | null = null;
+    
+    try {
+        const existingCompany = await this.db.drizzle
+            .select()
+            .from(companies)
+            .where(eq(companies.slug, slug))
+            .limit(1);
+
+        if (existingCompany.length > 0) {
+            companyId = existingCompany[0].id;
+        } else {
+            // 2. Si no existe, crearla
+            const newCompany = await this.db.drizzle.insert(companies).values({
+                name: empresaNombre,
+                slug: slug,
+                status: 'pending',
+                aiMetadata: JSON.stringify({ source: 'event_checkin', eventId: data.eventId })
+            }).returning();
+            companyId = newCompany[0].id;
+        }
+    } catch (e) {
+        console.error('Error handling company detection:', e);
+    }
+
+    // 3. Registrar asistencia vinculada
     return await this.db.drizzle.insert(eventAttendance).values({
       eventId: data.eventId,
       guestId: data.guestId.toString(),
       checkinTime: new Date(),
-      metadata: JSON.stringify(data.metadata),
+      metadata: JSON.stringify({ ...data.metadata, companyId }),
     }).returning();
   }
 

@@ -11,6 +11,9 @@ async function bootstrap() {
     })
   );
 
+  // Global Prefix
+  app.setGlobalPrefix('api');
+
   // Input Validation
   app.useGlobalPipes(new ValidationPipe({
     transform: true,

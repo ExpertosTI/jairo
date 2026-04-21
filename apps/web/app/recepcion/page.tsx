@@ -100,27 +100,77 @@ export default function RecepcionCommandCenter() {
     const [selectedGuest, setSelectedGuest] = useState<Invitado | null>(null);
     const [aiProcessing, setAiProcessing] = useState(false);
     const [aiComplete, setAiComplete] = useState(false);
+    const [cargandoDB, setCargandoDB] = useState(true);
 
-    // --- Efecto de Check-in con IA ---
+    // --- Cargar estado real desde la DB ---
+    useEffect(() => {
+        const fetchAttendance = async () => {
+            try {
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
+                const res = await fetch(`${apiUrl}/events/evt_circulo_001/attendance`);
+                const data = await res.json();
+                
+                if (Array.isArray(data)) {
+                    setInvitados(prev => prev.map(inv => {
+                        const isCleared = data.find((a: any) => a.guestId === inv.id);
+                        return isCleared ? { ...inv, status: 'cleared' } : inv;
+                    }));
+                }
+            } catch (error) {
+                console.error('Error cargando asistencia:', error);
+            } finally {
+                setCargandoDB(false);
+            }
+        };
+        fetchAttendance();
+    }, []);
+
+    // --- Efecto de Check-in Real con IA ---
     const handleGrantAccess = async () => {
         if (!selectedGuest) return;
         
         setAiProcessing(true);
 
-        // Simulamos el "Análisis Semántico" de 4 segundos
-        setTimeout(() => {
-            setAiComplete(true);
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jairoapp.renace.tech/api';
             
-            // Después de los 4 segundos, cerramos y marcamos como cleared
+            // 1. Registrar asistencia y crear empresa automáticamente en el backend
+            await fetch(`${apiUrl}/events/attendance`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    eventId: 'evt_circulo_001',
+                    guestId: parseInt(selectedGuest.id),
+                    metadata: {
+                        nombre: selectedGuest.nombre,
+                        empresa: selectedGuest.empresa,
+                        mesa: selectedGuest.mesa
+                    }
+                })
+            });
+
+            // 2. Simulamos el tiempo de "Análisis" para el efecto WOW
             setTimeout(() => {
+                setAiComplete(true);
+                
+                // Actualizar estado local
                 setInvitados(prev => prev.map(inv => 
                     inv.id === selectedGuest.id ? { ...inv, status: 'cleared' } : inv
                 ));
-                setAiProcessing(false);
-                setAiComplete(false);
-                setSelectedGuest(null);
-            }, 3000); // 3 segundos adicionales de visualización del resultado
-        }, 2000);
+
+                // Cerrar modal tras mostrar el resultado
+                setTimeout(() => {
+                    setAiProcessing(false);
+                    setAiComplete(false);
+                    setSelectedGuest(null);
+                }, 3500);
+            }, 2500);
+
+        } catch (error) {
+            console.error('Error en el check-in:', error);
+            setAiProcessing(false);
+            setSelectedGuest(null);
+        }
     };
 
     const filteredInvitados = invitados.filter(inv => {
