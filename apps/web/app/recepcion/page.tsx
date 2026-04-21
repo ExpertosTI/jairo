@@ -143,6 +143,8 @@ export default function RecepcionCommandCenter() {
 
     const handleMoveGuest = (guestId: string, targetMesa: string) => {
         setInvitados(prev => prev.map(inv => inv.id === guestId ? { ...inv, mesa: targetMesa } : inv));
+        // Opcional: Sincronizar con DB aquí si se desea persistencia inmediata del movimiento
+        console.log(`Invitado ${guestId} movido a mesa ${targetMesa}`);
     };
 
     // --- Buscador Unificado ---
