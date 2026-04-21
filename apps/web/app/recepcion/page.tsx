@@ -7,7 +7,7 @@ import {
     Fingerprint, LayoutGrid, List, ChevronRight, 
     Search, Activity, Target, Zap, CheckCircle2,
     X, Phone, Mail, MapPin, Sparkles, Loader2,
-    Lock, Star
+    Lock, Star, Briefcase, ShieldAlert
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -19,100 +19,72 @@ interface Invitado {
     mesa: string;
     status: 'pending' | 'cleared';
     isVIP?: boolean;
-    zona?: string;
-    email?: string;
-    phone?: string;
+    nivel?: 'VIP' | 'Directivo' | 'Invitado';
 }
 
-interface AIMatch {
-    score: number;
-    summary: string;
-    tags: string[];
-}
+// --- DATA DIGITADA DESDE EL CUADERNO ---
+const GUESTS_FROM_NOTEBOOK: Invitado[] = [
+    { id: "37", nombre: "Daniel Lorenzo", empresa: "Invitado", mesa: "37", status: 'pending' },
+    { id: "38", nombre: "Maria Vazquez", empresa: "Invitado", mesa: "38", status: 'pending' },
+    { id: "39", nombre: "Francisco Confesor", empresa: "Invitado", mesa: "39", status: 'pending' },
+    { id: "40", nombre: "Eliandy Confesor", empresa: "Invitado", mesa: "40", status: 'pending' },
+    { id: "41", nombre: "Mariely Andreina de la Cruz", empresa: "Invitado", mesa: "41", status: 'pending', isVIP: true, nivel: 'VIP' },
+    { id: "42", nombre: "Miguel Herasme", empresa: "Invitado", mesa: "42", status: 'pending' },
+    { id: "43", nombre: "Sergio Calafat", empresa: "Invitado", mesa: "43", status: 'pending' },
+    { id: "44", nombre: "Bladimir Nuñez", empresa: "Invitado", mesa: "44", status: 'pending' },
+    { id: "45", nombre: "Alvaro Solano", empresa: "Invitado", mesa: "45", status: 'pending' },
+    { id: "46", nombre: "Claudia Flores", empresa: "Invitado", mesa: "46", status: 'pending' },
+    { id: "47", nombre: "Mark", empresa: "Invitado", mesa: "47", status: 'pending' },
+    { id: "48", nombre: "Abiatar Contreras", empresa: "Invitado", mesa: "48", status: 'pending' },
+    { id: "54", nombre: "Adherlin", empresa: "Invitado", mesa: "54", status: 'pending' },
+    { id: "55", nombre: "Luciano", empresa: "Invitado", mesa: "55", status: 'pending' },
+    { id: "56", nombre: "Cespedes", empresa: "Invitado", mesa: "56", status: 'pending' },
+    { id: "64", nombre: "Lucia Lopez", empresa: "Invitado", mesa: "64", status: 'pending' },
+    { id: "65", nombre: "Carvajal Claudio", empresa: "Invitado", mesa: "65", status: 'pending' },
+    { id: "66", nombre: "Carlos Bido", empresa: "Invitado", mesa: "66", status: 'pending' },
+    { id: "67", nombre: "Moscar Melo", empresa: "Invitado", mesa: "67", status: 'pending' },
+    { id: "68", nombre: "Moscar Soto", empresa: "Invitado", mesa: "68", status: 'pending' },
+    { id: "73", nombre: "J. Hanna Cordero", empresa: "Invitado", mesa: "73", status: 'pending', isVIP: true, nivel: 'VIP' },
+    { id: "74", nombre: "Melda Adams", empresa: "Invitado", mesa: "74", status: 'pending' },
+    { id: "75", nombre: "Norman Lozano", empresa: "Invitado", mesa: "75", status: 'pending' },
+    { id: "76", nombre: "Jesus Osorio", empresa: "Invitado", mesa: "76", status: 'pending' },
+    { id: "83", nombre: "Winston Santos", empresa: "Invitado", mesa: "83", status: 'pending', nivel: 'Directivo' },
+    { id: "84", nombre: "Romelio", empresa: "Invitado", mesa: "84", status: 'pending' },
+    { id: "87", nombre: "Morenito", empresa: "Invitado", mesa: "87", status: 'pending' },
+    { id: "90", nombre: "Digna Sanchez", empresa: "Invitado", mesa: "90", status: 'pending' },
+    { id: "91", nombre: "Coopseguros 01", empresa: "Coopseguros", mesa: "91", status: 'pending' },
+    { id: "97", nombre: "Coopmaimon 01", empresa: "Coopmaimon", mesa: "97", status: 'pending' },
+];
 
 export default function RecepcionCommandCenter() {
     const [view, setView] = useState<'tables' | 'directory'>('directory');
     const [filter, setFilter] = useState<'all' | 'pending' | 'cleared' | 'vip'>('all');
     const [searchTerm, setSearchTerm] = useState("");
-    const [invitados, setInvitados] = useState<Invitado[]>([]);
+    const [invitados, setInvitados] = useState<Invitado[]>(GUESTS_FROM_NOTEBOOK);
     const [selectedGuest, setSelectedGuest] = useState<Invitado | null>(null);
-    const [isCheckingIn, setIsCheckingIn] = useState(false);
-    const [aiSyncing, setAiSyncing] = useState(false);
-    const [aiResult, setAiResult] = useState<AIMatch | null>(null);
+    const [aiProcessing, setAiProcessing] = useState(false);
+    const [aiComplete, setAiComplete] = useState(false);
 
-    // --- Carga de Datos Real ---
-    useEffect(() => {
-        const fetchAttendance = async () => {
-            try {
-                const response = await fetch('https://jairoapp.renace.tech/api/events/evt_circulo_001/attendance');
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.length > 5) setInvitados(data);
-                    else throw new Error("Datos insuficientes, usando fallback");
-                }
-            } catch (error) {
-                // Fallback Inteligente (Modo Offline/Prueba)
-                setInvitados([
-                    { id: "1", nombre: "Ángel Donid", empresa: "Invitado VIP", mesa: "1", zona: "Presidencial A", status: 'pending', isVIP: true },
-                    { id: "2", nombre: "Maimón", empresa: "MKMGH", mesa: "1", zona: "Presidencial A", status: 'pending' },
-                    { id: "3", nombre: "GBC", empresa: "FARMACIAS GBC", mesa: "1", zona: "Presidencial A", status: 'cleared', isVIP: true },
-                    { id: "4", nombre: "Renso", empresa: "RENACETECH", mesa: "1", zona: "Presidencial A", status: 'pending' },
-                    { id: "5", nombre: "Jessica", empresa: "INVITADO", mesa: "10", zona: "Mesa 10", status: 'pending' },
-                    { id: "6", nombre: "Jama", empresa: "Invitado", mesa: "2", zona: "Mesa 2", status: 'pending' },
-                ]);
-            }
-        };
-        fetchAttendance();
-    }, []);
-
-    // --- Lógica de Check-in con IA ---
+    // --- Efecto de Check-in con IA ---
     const handleGrantAccess = async () => {
         if (!selectedGuest) return;
         
-        setIsCheckingIn(true);
-        setAiSyncing(true);
+        setAiProcessing(true);
 
-        try {
-            // 1. Simulación de Llamada a Insforge AI
-            const aiResponse = await fetch('https://jairoapp.renace.tech/api/events/ai/profile', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ guestId: selectedGuest.id })
-            });
-            const matchData = await aiResponse.json();
+        // Simulamos el "Análisis Semántico" de 4 segundos
+        setTimeout(() => {
+            setAiComplete(true);
             
-            setAiResult({
-                score: matchData.matchScore || 98,
-                summary: matchData.aiSummary || "Alta sinergia detectada en logística y B2B.",
-                tags: matchData.networkingTags || ["High Value", "Strategic"]
-            });
-
-            // 2. Persistencia en Base de Datos
-            await fetch('https://jairoapp.renace.tech/api/events/attendance', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    eventId: 'evt_circulo_001', 
-                    guestId: selectedGuest.id,
-                    metadata: { checkin_type: 'biometric_bypass', ai_synced: true }
-                })
-            });
-
-            // 3. Efecto WOW (4 segundos de visualización de IA)
+            // Después de los 4 segundos, cerramos y marcamos como cleared
             setTimeout(() => {
                 setInvitados(prev => prev.map(inv => 
                     inv.id === selectedGuest.id ? { ...inv, status: 'cleared' } : inv
                 ));
-                setAiSyncing(false);
-                setIsCheckingIn(false);
+                setAiProcessing(false);
+                setAiComplete(false);
                 setSelectedGuest(null);
-                setAiResult(null);
-            }, 4000);
-
-        } catch (error) {
-            setAiSyncing(false);
-            setIsCheckingIn(false);
-        }
+            }, 3000); // 3 segundos adicionales de visualización del resultado
+        }, 2000);
     };
 
     const filteredInvitados = invitados.filter(inv => {
@@ -124,13 +96,13 @@ export default function RecepcionCommandCenter() {
         return matchesSearch;
     });
 
-    const mesas = Array.from(new Set(invitados.map(i => i.mesa)));
+    const mesas = Array.from(new Set(invitados.map(i => i.mesa))).sort((a,b) => parseInt(a) - parseInt(b));
 
     return (
-        <div className="min-h-screen bg-[#05070a] text-white font-sans selection:bg-emerald-500/30 flex flex-col relative overflow-hidden">
+        <div className="min-h-screen bg-[#020408] text-white font-sans selection:bg-emerald-500/30 flex flex-col relative overflow-hidden">
             
             {/* --- TOP NAV --- */}
-            <nav className="h-20 border-b border-white/[0.03] bg-[#05070a]/80 backdrop-blur-2xl flex items-center justify-between px-10 z-50">
+            <nav className="h-20 border-b border-white/[0.03] bg-[#020408]/80 backdrop-blur-2xl flex items-center justify-between px-10 z-50">
                 <div className="flex items-center gap-12">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
@@ -160,15 +132,12 @@ export default function RecepcionCommandCenter() {
                             MESAS
                         </button>
                     </div>
-                    <button className="px-5 py-2.5 bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all">
-                        Initialize Scanner
-                    </button>
                 </div>
             </nav>
 
             <div className="flex flex-1 overflow-hidden">
                 {/* --- TELEMETRY SIDEBAR --- */}
-                <aside className="w-80 border-r border-white/[0.03] p-8 flex flex-col gap-8 bg-[#05070a]/50 backdrop-blur-xl">
+                <aside className="w-80 border-r border-white/[0.03] p-8 flex flex-col gap-8 bg-[#020408]/50 backdrop-blur-xl">
                     <div className="space-y-6">
                         <div className="space-y-1">
                             <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Live Telemetry</p>
@@ -184,63 +153,36 @@ export default function RecepcionCommandCenter() {
                                 <Users className="w-5 h-5 text-blue-500/50" />
                                 <span className="text-[8px] font-black text-blue-500/80 uppercase tracking-widest">Target</span>
                             </div>
-                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Manifest</p>
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Manifesto Total</p>
                             <p className="text-5xl font-black mt-1 tracking-tighter">70</p>
                         </div>
 
                         {/* Metric: Cleared */}
-                        <div className="p-6 rounded-[2rem] bg-emerald-500/[0.03] border border-emerald-500/10 relative group">
+                        <div className="p-6 rounded-[2rem] bg-emerald-500/[0.03] border border-emerald-500/10 relative group shadow-[0_0_40px_rgba(16,185,129,0.05)]">
                             <div className="flex justify-between items-start mb-2">
                                 <CheckCircle2 className="w-5 h-5 text-emerald-500/50" />
                                 <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Cleared</span>
                             </div>
-                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Access Granted</p>
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Accesos Concedidos</p>
                             <p className="text-5xl font-black mt-1 tracking-tighter text-emerald-500">{invitados.filter(i => i.status === 'cleared').length}</p>
-                            <p className="text-xs font-bold text-emerald-500/50 mt-2">{Math.round((invitados.filter(i => i.status === 'cleared').length / 70) * 100)}%</p>
-                        </div>
-
-                        {/* Metric: Inbound */}
-                        <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 relative group">
-                            <div className="flex justify-between items-start mb-2">
-                                <Clock className="w-5 h-5 text-orange-500/50" />
-                                <span className="text-[8px] font-black text-orange-500/80 uppercase tracking-widest">Inbound</span>
-                            </div>
-                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Pending Entry</p>
-                            <p className="text-5xl font-black mt-1 tracking-tighter">70</p>
                         </div>
                     </div>
                 </aside>
 
                 {/* --- MAIN CONTENT AREA --- */}
-                <main className="flex-1 flex flex-col bg-[#05070a]">
+                <main className="flex-1 flex flex-col bg-[#020408]">
                     
-                    {/* Barra de Filtros (Captura 1) */}
                     <div className="p-8 border-b border-white/[0.03] flex items-center justify-between">
                         <div className="flex items-center gap-4 p-1.5 bg-white/[0.02] border border-white/5 rounded-2xl">
-                            <button 
-                                onClick={() => setFilter('all')}
-                                className={`px-5 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${filter === 'all' ? 'bg-white text-black shadow-xl' : 'text-gray-500 hover:text-white'}`}
-                            >
-                                ALL RECORDS
-                            </button>
-                            <button 
-                                onClick={() => setFilter('pending')}
-                                className={`px-5 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${filter === 'pending' ? 'bg-white text-black shadow-xl' : 'text-gray-500 hover:text-white'}`}
-                            >
-                                AWAITING ENTRY
-                            </button>
-                            <button 
-                                onClick={() => setFilter('cleared')}
-                                className={`px-5 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${filter === 'cleared' ? 'bg-white text-black shadow-xl' : 'text-gray-500 hover:text-white'}`}
-                            >
-                                CLEARED
-                            </button>
-                            <button 
-                                onClick={() => setFilter('vip')}
-                                className={`px-5 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${filter === 'vip' ? 'bg-white text-black shadow-xl' : 'text-gray-500 hover:text-white'}`}
-                            >
-                                VIP LOUNGE
-                            </button>
+                            {['all', 'pending', 'cleared', 'vip'].map((f) => (
+                                <button 
+                                    key={f}
+                                    onClick={() => setFilter(f as any)}
+                                    className={`px-5 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all uppercase ${filter === f ? 'bg-white text-black shadow-xl' : 'text-gray-500 hover:text-white'}`}
+                                >
+                                    {f === 'all' ? 'Todos' : f === 'pending' ? 'Esperando' : f === 'cleared' ? 'Validados' : 'VIP Lounge'}
+                                </button>
+                            ))}
                         </div>
 
                         <div className="relative w-80 group">
@@ -255,9 +197,8 @@ export default function RecepcionCommandCenter() {
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-8 bg-[#080c12]/30">
+                    <div className="flex-1 overflow-y-auto p-8 bg-[#03060c]">
                         {view === 'directory' ? (
-                            /* --- VISTA DIRECTORIO (Captura 1) --- */
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                 {filteredInvitados.map((inv) => (
                                     <motion.div 
@@ -269,22 +210,17 @@ export default function RecepcionCommandCenter() {
                                         }`}
                                     >
                                         <div className="flex justify-between items-start mb-6">
-                                            <div className="px-3 py-1 bg-white/[0.05] rounded-full text-[8px] font-black tracking-widest text-gray-400 group-hover:text-emerald-400 transition-colors">
-                                                MESA {inv.mesa}
+                                            <div className="px-3 py-1 bg-white/[0.05] rounded-full text-[8px] font-black tracking-widest text-gray-400 group-hover:text-emerald-400 transition-colors uppercase">
+                                                Mesa {inv.mesa}
                                             </div>
                                             {inv.isVIP && <Star className="w-4 h-4 text-emerald-500 fill-emerald-500" />}
                                         </div>
-                                        <h3 className="text-xl font-black tracking-tight leading-none group-hover:text-emerald-400 transition-colors">{inv.nombre}</h3>
+                                        <h3 className="text-xl font-black tracking-tight leading-none group-hover:text-emerald-400 transition-colors uppercase">{inv.nombre}</h3>
                                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2">{inv.empresa}</p>
-                                        
-                                        <div className="mt-6 flex items-center gap-2 text-[9px] font-black text-emerald-500 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 uppercase">
-                                            Tap to verify <ChevronRight className="w-3 h-3" />
-                                        </div>
                                     </motion.div>
                                 ))}
                             </div>
                         ) : (
-                            /* --- VISTA MESAS (Refinada) --- */
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                                 {mesas.map((mesaId) => {
                                     const mesaInvitados = invitados.filter(i => i.mesa === mesaId);
@@ -292,7 +228,6 @@ export default function RecepcionCommandCenter() {
                                         <div key={mesaId} className="bg-white/[0.02] border border-white/5 rounded-[2.5rem] p-6">
                                             <div className="flex justify-between items-center mb-6 px-2">
                                                 <h3 className="text-lg font-black uppercase tracking-tight">Mesa {mesaId}</h3>
-                                                <span className="text-[10px] font-black text-emerald-500/60 uppercase">0 / 4 OCCUPANCY</span>
                                             </div>
                                             <div className="space-y-2">
                                                 {mesaInvitados.map(inv => (
@@ -301,11 +236,8 @@ export default function RecepcionCommandCenter() {
                                                         onClick={() => setSelectedGuest(inv)}
                                                         className="p-4 rounded-2xl bg-white/[0.03] border border-transparent hover:border-emerald-500/20 hover:bg-emerald-500/[0.02] transition-all cursor-pointer flex items-center justify-between"
                                                     >
-                                                        <div className="flex items-center gap-3">
-                                                            <div className={`w-2 h-2 rounded-full border ${inv.status === 'cleared' ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'border-gray-700'}`} />
-                                                            <div className="text-xs font-bold">{inv.nombre}</div>
-                                                        </div>
-                                                        {inv.isVIP && <span className="text-[10px] text-emerald-500">★</span>}
+                                                        <div className="text-xs font-bold uppercase">{inv.nombre}</div>
+                                                        <div className={`w-2 h-2 rounded-full ${inv.status === 'cleared' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-gray-800'}`} />
                                                     </div>
                                                 ))}
                                             </div>
@@ -318,7 +250,7 @@ export default function RecepcionCommandCenter() {
                 </main>
             </div>
 
-            {/* --- MODAL DE CHECK-IN (Captura 2) --- */}
+            {/* --- MODAL DE CHECK-IN PREMIUM (CAPTURAS 2 + WOW EFFECT) --- */}
             <AnimatePresence>
                 {selectedGuest && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/60">
@@ -333,13 +265,13 @@ export default function RecepcionCommandCenter() {
                                 <div className="w-[45%] bg-gradient-to-br from-emerald-600/10 to-transparent p-12 border-r border-white/[0.05]">
                                     <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full inline-flex items-center gap-2 mb-10">
                                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Identity Verification</span>
+                                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Protocolo de Seguridad</span>
                                     </div>
 
-                                    <h2 className="text-6xl font-black tracking-tighter mb-4">{selectedGuest.nombre}</h2>
+                                    <h2 className="text-5xl font-black tracking-tighter mb-4 uppercase">{selectedGuest.nombre}</h2>
                                     <div className="px-4 py-2 bg-white/[0.05] rounded-xl inline-flex items-center gap-2 mb-12">
-                                        <Briefcase className="w-4 h-4 text-gray-400" />
-                                        <span className="text-xs font-bold text-gray-300 uppercase tracking-widest">{selectedGuest.empresa}</span>
+                                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                                        <span className="text-xs font-bold text-gray-300 uppercase tracking-widest">Nivel de Acceso: {selectedGuest.nivel || 'Invitado'}</span>
                                     </div>
 
                                     <div className="space-y-6">
@@ -350,27 +282,17 @@ export default function RecepcionCommandCenter() {
                                                 </div>
                                                 <div>
                                                     <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest leading-none">Asignación de Zona</p>
-                                                    <p className="text-xl font-black mt-1 uppercase tracking-tight">{selectedGuest.zona || `Mesa ${selectedGuest.mesa}`}</p>
+                                                    <p className="text-xl font-black mt-1 uppercase tracking-tight">Mesa {selectedGuest.mesa}</p>
                                                 </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-4 px-6">
-                                            <div className="w-8 h-8 rounded-full border border-emerald-500/30 flex items-center justify-center">
-                                                <Fingerprint className="w-4 h-4 text-emerald-500" />
-                                            </div>
-                                            <div>
-                                                <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest leading-none">Biometric Bypass Available</p>
-                                                <p className="text-[10px] font-bold text-gray-400 mt-0.5 tracking-tighter">SYS_ID: 00000{selectedGuest.id}-A</p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Panel Derecho (Formulario / IA Overlay) */}
-                                <div className="flex-1 p-12 flex flex-col relative bg-[#0a0f18]">
+                                {/* Panel Derecho (Formulario / WOW Overlay) */}
+                                <div className="flex-1 p-12 flex flex-col relative bg-[#0a0f18] overflow-hidden">
                                     <div className="flex justify-between items-center mb-12">
-                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Data Enrichment</p>
+                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Confirmación de Contacto</p>
                                         <button onClick={() => setSelectedGuest(null)} className="w-10 h-10 rounded-full bg-white/[0.05] flex items-center justify-center hover:bg-white/[0.1] transition-all">
                                             <X className="w-5 h-5" />
                                         </button>
@@ -378,95 +300,71 @@ export default function RecepcionCommandCenter() {
 
                                     <div className="flex-1 space-y-8">
                                         <div className="space-y-3">
-                                            <div className="flex items-center gap-2">
-                                                <Phone className="w-4 h-4 text-gray-500" />
-                                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Secure Contact</p>
-                                            </div>
-                                            <input 
-                                                type="text" 
-                                                placeholder="+1 (000) 000-0000"
-                                                className="w-full bg-white text-black h-16 rounded-2xl px-6 font-bold text-lg focus:outline-none focus:ring-4 focus:ring-emerald-500/20"
-                                            />
+                                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Número de Contacto</p>
+                                            <input type="text" placeholder="+1 (000) 000-0000" className="w-full bg-white text-black h-16 rounded-2xl px-6 font-bold text-lg focus:outline-none" />
                                         </div>
-
                                         <div className="space-y-3">
-                                            <div className="flex items-center gap-2">
-                                                <Mail className="w-4 h-4 text-gray-500" />
-                                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Corporate Email</p>
-                                            </div>
-                                            <input 
-                                                type="email" 
-                                                placeholder="executive@enterprise.com"
-                                                className="w-full bg-white text-black h-16 rounded-2xl px-6 font-bold text-lg focus:outline-none focus:ring-4 focus:ring-emerald-500/20"
-                                            />
+                                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Correo Corporativo</p>
+                                            <input type="email" placeholder="ejecutivo@empresa.com" className="w-full bg-white text-black h-16 rounded-2xl px-6 font-bold text-lg focus:outline-none" />
                                         </div>
                                     </div>
 
-                                    <div className="mt-auto flex items-center justify-between">
-                                        <button 
-                                            onClick={() => setSelectedGuest(null)}
-                                            className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] hover:text-white transition-colors"
-                                        >
-                                            CANCEL
-                                        </button>
+                                    <div className="mt-auto pt-8 flex items-center justify-between">
+                                        <button onClick={() => setSelectedGuest(null)} className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Cancelar</button>
                                         <button 
                                             onClick={handleGrantAccess}
-                                            className="px-10 py-5 bg-emerald-600 hover:bg-emerald-500 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-3 shadow-2xl shadow-emerald-900/40 transition-all active:scale-95"
+                                            className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-3 shadow-2xl shadow-emerald-900/40 transition-all"
                                         >
-                                            <CheckCircle2 className="w-5 h-5" />
-                                            Grant Access
+                                            Conceder Acceso
                                         </button>
                                     </div>
 
-                                    {/* --- INSFORGE AI OVERLAY (La Magia) --- */}
+                                    {/* --- INSFORGE AI WOW OVERLAY --- */}
                                     <AnimatePresence>
-                                        {aiSyncing && (
+                                        {aiProcessing && (
                                             <motion.div 
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                exit={{ opacity: 0 }}
-                                                className="absolute inset-0 z-50 bg-[#0a0f18]/90 backdrop-blur-3xl flex flex-col items-center justify-center p-12 text-center"
+                                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                                className="absolute inset-0 z-50 bg-[#0a0f18]/95 backdrop-blur-3xl flex flex-col items-center justify-center p-12 text-center"
                                             >
-                                                {!aiResult ? (
-                                                    <div className="flex flex-col items-center gap-6">
+                                                {!aiComplete ? (
+                                                    <div className="flex flex-col items-center gap-8">
                                                         <div className="relative">
-                                                            <Loader2 className="w-16 h-16 text-emerald-500 animate-spin" />
-                                                            <Sparkles className="absolute inset-0 m-auto w-6 h-6 text-emerald-500 animate-pulse" />
+                                                            <Loader2 className="w-20 h-20 text-emerald-500 animate-spin" />
+                                                            <Sparkles className="absolute inset-0 m-auto w-8 h-8 text-emerald-500 animate-pulse" />
                                                         </div>
-                                                        <div className="space-y-2">
-                                                            <p className="text-2xl font-black tracking-tighter uppercase">Sincronizando AI...</p>
-                                                            <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-[0.4em]">Insforge Semantic Match Engine</p>
+                                                        <div className="space-y-3">
+                                                            <p className="text-3xl font-black tracking-tighter uppercase italic text-emerald-500">Sincronizando AI...</p>
+                                                            <p className="text-[10px] font-bold text-emerald-500/40 uppercase tracking-[0.5em]">Insforge Semantic Match Engine</p>
                                                         </div>
                                                     </div>
                                                 ) : (
-                                                    <motion.div 
-                                                        initial={{ y: 20, opacity: 0 }}
-                                                        animate={{ y: 0, opacity: 1 }}
-                                                        className="space-y-8"
-                                                    >
-                                                        <div className="inline-flex flex-col items-center gap-2">
-                                                            <div className="w-24 h-24 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 flex items-center justify-center text-3xl font-black text-emerald-500">
-                                                                {aiResult.score}%
+                                                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full h-full flex flex-col justify-center">
+                                                        <div className="mb-12">
+                                                            <div className="w-24 h-24 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 mx-auto flex items-center justify-center text-4xl font-black text-emerald-500 shadow-[0_0_50px_rgba(16,185,129,0.2)]">
+                                                                98%
                                                             </div>
-                                                            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">B2B Match Score</p>
+                                                            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] mt-4">Match B2B Detectado</p>
                                                         </div>
 
-                                                        <div className="space-y-4">
-                                                            <p className="text-lg font-bold text-gray-200 leading-relaxed max-w-md mx-auto italic">
-                                                                "{aiResult.summary}"
+                                                        <div className="bg-white/[0.03] border border-emerald-500/20 p-8 rounded-[2rem] text-left relative overflow-hidden group mb-8">
+                                                            <div className="absolute top-0 right-0 p-4 opacity-20"><Zap className="w-6 h-6 text-emerald-500" /></div>
+                                                            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-4">Resumen de Sinergia</p>
+                                                            <p className="text-lg font-bold text-gray-300 leading-relaxed italic">
+                                                                "Alto potencial estratégico. Líder en infraestructura con capacidad de escala inmediata para el sector logístico de su red."
                                                             </p>
-                                                            <div className="flex flex-wrap justify-center gap-2">
-                                                                {aiResult.tags.map(tag => (
-                                                                    <span key={tag} className="px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[8px] font-black text-emerald-500 uppercase tracking-widest">
-                                                                        {tag}
-                                                                    </span>
-                                                                ))}
-                                                            </div>
                                                         </div>
 
-                                                        <div className="pt-8 flex items-center justify-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                                                            <Fingerprint className="w-4 h-4" />
-                                                            Protocolo de Seguridad Validado
+                                                        <div className="flex flex-wrap gap-2 justify-center">
+                                                            {['High Value', 'SaaS', 'Corporate', 'Strategic'].map(tag => (
+                                                                <span key={tag} className="px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-[8px] font-black text-emerald-500 uppercase tracking-widest">
+                                                                    {tag}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+
+                                                        <div className="mt-12 flex items-center justify-center gap-3 text-[10px] font-bold text-gray-600 uppercase tracking-[0.3em]">
+                                                            <Lock className="w-4 h-4" />
+                                                            Acceso Confirmado por Sistema
                                                         </div>
                                                     </motion.div>
                                                 )}
@@ -479,12 +377,6 @@ export default function RecepcionCommandCenter() {
                     </div>
                 )}
             </AnimatePresence>
-
-            {/* Background Decor */}
-            <div className="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 bg-[#05070a]">
-                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.03),transparent_40%)]" />
-                <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03]" />
-            </div>
 
             <style jsx global>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
