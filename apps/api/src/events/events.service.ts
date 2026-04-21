@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { eventAttendance } from '../database/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 @Injectable()
 export class EventsService {
@@ -14,6 +14,21 @@ export class EventsService {
       checkinTime: new Date(),
       metadata: JSON.stringify(data.metadata),
     }).returning();
+  }
+
+  async getAttendanceStatus() {
+    // Simulación de métricas reales basadas en DB
+    // En un escenario real, haríamos un count de invitados vs count de attendance
+    const attendanceCount = await this.db.drizzle
+      .select({ count: sql<number>`count(*)` })
+      .from(eventAttendance);
+
+    return {
+      totalManifest: 70, // Harcoding para el MVP según la captura, pero puede ser dinámico
+      cleared: Number(attendanceCount[0]?.count || 0),
+      pendingEntry: 70 - Number(attendanceCount[0]?.count || 0),
+      timestamp: new Date().toISOString()
+    };
   }
 
   async generateAIProfile(guestId: number) {

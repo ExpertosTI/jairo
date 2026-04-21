@@ -10,6 +10,11 @@ export class EventsController {
     return this.eventsService.recordAttendance(data);
   }
 
+  @Get('attendance/status')
+  async getAttendanceStatus() {
+    return this.eventsService.getAttendanceStatus();
+  }
+
   @Post('ai/profile')
   async generateAIProfile(@Body() data: { guestId: number }) {
     return this.eventsService.generateAIProfile(data.guestId);
