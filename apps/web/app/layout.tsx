@@ -1,43 +1,27 @@
 import type { Metadata, Viewport } from "next";
+import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
-import { ToastProvider } from "@/components/ui/Toast";
-import { Navbar } from "@/components/Navbar";
-import { ConditionalFooter } from "@/components/ConditionalFooter";
 
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  themeColor: '#10b981',
-};
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
 export const metadata: Metadata = {
-  title: "JairoApp - Plataforma B2B Estratégica Premium",
-  description: "Ecosistema de sinergia empresarial y control de networking de alta fidelidad. Conecte su empresa con socios estratégicos y mercados globales.",
-  keywords: "B2B, networking estratégico, inteligencia de mercado, sinergia empresarial, plataforma premium",
-  authors: [{ name: "JairoApp" }],
+  title: "JairoApp - Tactical Access",
+  description: "Sistema de Acceso Estratégico B2B",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "JairoApp",
   },
-  openGraph: {
-    title: "JairoApp - Plataforma B2B Empresarial",
-    description: "Conecta tu empresa con nuevos mercados",
-    type: "website",
-    locale: "es_LA",
-  },
-  icons: {
-    icon: [
-      { url: "/logo.svg", type: "image/svg+xml" },
-    ],
-    shortcut: "/logo.svg",
-    apple: [
-      { url: "/logo.svg", type: "image/svg+xml" },
-    ],
-  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#020408",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -46,34 +30,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" className="dark">
       <head>
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/logo.svg" type="image/svg+xml" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body>
-        <ToastProvider>
-          <div className="flex flex-col min-h-screen">
-            <Navbar />
-            <main className="flex-1">
-              {children}
-            </main>
-            <ConditionalFooter />
-          </div>
-        </ToastProvider>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js');
-                });
-              }
-            `,
-          }}
-        />
+      <body className={`${inter.variable} ${outfit.variable} font-sans antialiased bg-[#020408] text-white`}>
+        {children}
       </body>
     </html>
   );
