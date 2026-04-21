@@ -1,202 +1,323 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 import { 
-    LayoutDashboard, Users, Briefcase, FileText, Settings, 
-    Bell, Search, Menu, X, ArrowUpRight, TrendingUp, 
-    Activity, BarChart3, PieChart, ChevronRight, Zap
+    LayoutDashboard, Users, TrendingUp, Activity, 
+    Target, Zap, ShieldCheck, Clock, ArrowUpRight,
+    Briefcase, MessageSquare, BarChart3, PieChart,
+    ChevronRight, Globe, Layers, Search, Bell, X,
+    Sparkles, ArrowRight, Fingerprint, Database,
+    Cpu, Network
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
-export default function DemoPage() {
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+// --- Animación de Contadores Orgánicos ---
+const CountUp = ({ value, duration = 2 }: { value: number, duration?: number }) => {
+    const [count, setCount] = useState(0);
+    useEffect(() => {
+        let start = 0;
+        const end = value;
+        const totalFrames = duration * 60;
+        const increment = end / totalFrames;
+        
+        const timer = setInterval(() => {
+            start += increment;
+            if (start >= end) {
+                setCount(end);
+                clearInterval(timer);
+            } else {
+                setCount(Math.floor(start));
+            }
+        }, 1000 / 60);
+        return () => clearInterval(timer);
+    }, [value]);
+    return <span>{count.toLocaleString()}</span>;
+};
+
+export default function JairoCyberDemo() {
+    const [activeModule, setActiveModule] = useState('overview');
+    const [loadingStage, setLoadingStage] = useState(0);
+    const [selectedEntity, setSelectedEntity] = useState<any>(null);
+
+    // --- Simulación de Inteligencia de Carga ---
+    useEffect(() => {
+        const timer1 = setTimeout(() => setLoadingStage(1), 400);
+        const timer2 = setTimeout(() => setLoadingStage(2), 800);
+        const timer3 = setTimeout(() => setLoadingStage(3), 1200);
+        return () => { clearTimeout(timer1); clearTimeout(timer2); clearTimeout(timer3); };
+    }, []);
+
+    const metrics = [
+        { title: "Índice de Sinergia", value: 94, unit: "%", icon: Zap, color: "emerald", trend: "+12%" },
+        { title: "RFQs Detectados", value: 128, unit: "", icon: MessageSquare, color: "blue", trend: "Live" },
+        { title: "Volumen Proyectado", value: 2.4, unit: "M", icon: TrendingUp, color: "purple", trend: "+18%" },
+        { title: "Nodos Activos", value: 70, unit: "", icon: Network, color: "orange", trend: "Optimal" },
+    ];
 
     return (
-        <div className="min-h-screen bg-gray-50 flex overflow-hidden">
-            {/* Sidebar */}
-            <aside className={`bg-white border-r border-gray-200 transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-20'} flex flex-col hidden md:flex`}>
-                <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
-                    <div className={`flex items-center gap-2 font-black text-xl overflow-hidden ${sidebarOpen ? 'w-auto' : 'w-0 opacity-0'}`}>
-                        <span className="text-primary">Jairo</span><span className="text-secondary">CRM</span>
+        <div className="min-h-screen bg-[#04060a] text-white font-sans selection:bg-emerald-500/30 overflow-hidden flex">
+            
+            {/* --- HUD BACKGROUND ELEMENTS --- */}
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(16,185,129,0.02),transparent_70%)]" />
+                <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03] mix-blend-overlay" />
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent blur-sm" />
+            </div>
+
+            {/* --- SIDEBAR: TACTICAL NAV --- */}
+            <aside className="w-24 lg:w-72 border-r border-white/[0.03] bg-[#04060a]/80 backdrop-blur-3xl z-50 flex flex-col relative">
+                <div className="h-24 flex items-center px-8 gap-4 border-b border-white/[0.03]">
+                    <motion.div 
+                        animate={{ rotate: [0, 90, 90, 0], scale: [1, 1.1, 1] }}
+                        transition={{ duration: 4, repeat: Infinity }}
+                        className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                    >
+                        <Cpu className="w-6 h-6 text-white" />
+                    </motion.div>
+                    <div className="hidden lg:block">
+                        <h1 className="text-xl font-black tracking-tighter leading-none italic">JAIRO OS</h1>
+                        <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-[0.3em] mt-1">Tactical Interface</p>
                     </div>
-                    <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1 rounded-md hover:bg-gray-100 text-gray-500">
-                        <Menu size={20} />
-                    </button>
                 </div>
 
-                <nav className="flex-1 py-6 flex flex-col gap-2 px-3">
+                <nav className="flex-1 p-6 space-y-3">
                     {[
-                        { icon: LayoutDashboard, label: "Dashboard", active: true },
-                        { icon: Briefcase, label: "Oportunidades" },
-                        { icon: Users, label: "Contactos B2B" },
-                        { icon: FileText, label: "Cotizaciones (RFQ)" },
-                        { icon: BarChart3, label: "Reportes" },
+                        { id: 'overview', icon: LayoutDashboard, label: 'Command Center' },
+                        { id: 'map', icon: Globe, label: 'Geo-Strategy' },
+                        { id: 'ai', icon: Sparkles, label: 'Insforge AI' },
+                        { id: 'data', icon: Database, label: 'Market Data' }
                     ].map((item, i) => (
-                        <button key={i} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${item.active ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-                            <item.icon size={20} className={item.active ? 'text-primary' : 'text-gray-500'} />
-                            <span className={`whitespace-nowrap transition-all duration-300 ${sidebarOpen ? 'opacity-100 w-auto' : 'opacity-0 w-0 hidden'}`}>
-                                {item.label}
-                            </span>
-                        </button>
+                        <motion.button
+                            key={item.id}
+                            initial={{ x: -20, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ delay: 0.1 * i }}
+                            onClick={() => setActiveModule(item.id)}
+                            className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all group relative overflow-hidden ${activeModule === item.id ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-lg shadow-emerald-500/5' : 'text-gray-500 hover:bg-white/[0.02] hover:text-gray-300'}`}
+                        >
+                            <item.icon className="w-5 h-5" />
+                            <span className="hidden lg:block text-[10px] font-black uppercase tracking-[0.2em]">{item.label}</span>
+                            {activeModule === item.id && (
+                                <motion.div layoutId="nav-active" className="absolute left-0 w-1 h-6 bg-emerald-500 rounded-r-full" />
+                            )}
+                        </motion.button>
                     ))}
                 </nav>
 
-                <div className="p-4 border-t border-gray-100">
-                    <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100 w-full">
-                        <Settings size={20} />
-                        <span className={`whitespace-nowrap transition-all duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
-                            Ajustes
-                        </span>
-                    </button>
+                <div className="p-8 border-t border-white/[0.03]">
+                    <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">System Live</span>
+                    </div>
                 </div>
             </aside>
 
-            {/* Main Content */}
-            <main className="flex-1 flex flex-col h-screen overflow-hidden">
-                {/* Header */}
-                <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-10">
-                    <div className="flex items-center gap-4">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                            <input 
-                                type="text" 
-                                placeholder="Buscar empresas, RFQs..." 
-                                className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary w-64 md:w-96 transition-all"
-                            />
+            {/* --- MAIN INTERFACE --- */}
+            <main className="flex-1 flex flex-col h-screen overflow-hidden z-10">
+                {/* HUD Header */}
+                <header className="h-24 px-12 border-b border-white/[0.03] flex items-center justify-between bg-[#04060a]/50 backdrop-blur-xl shrink-0">
+                    <div className="flex items-center gap-8">
+                        <div>
+                            <h2 className="text-3xl font-black tracking-tighter uppercase italic">
+                                {activeModule === 'overview' ? 'Monitor Central' : 'Módulo de Análisis'}
+                            </h2>
+                            <div className="flex items-center gap-4 mt-1">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Encaminamiento Activo</p>
+                                </div>
+                                <div className="w-px h-3 bg-white/10" />
+                                <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">B2B Core v4.0</p>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div className="flex items-center gap-4">
-                        <button className="relative p-2 text-gray-500 hover:bg-gray-100 rounded-full">
-                            <Bell size={20} />
-                            <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
-                        </button>
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-primary to-secondary flex items-center justify-center text-white font-bold shadow-md cursor-pointer hover:shadow-lg transition-all">
-                            JD
+
+                    <div className="flex items-center gap-6">
+                        <div className="relative group hidden md:block">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 group-focus-within:text-emerald-500 transition-colors" />
+                            <input 
+                                type="text" 
+                                placeholder="Escanear red empresarial..."
+                                className="w-72 bg-white/[0.02] border border-white/5 rounded-full py-3 pl-12 pr-4 text-[10px] font-black uppercase tracking-widest text-white placeholder:text-gray-700 focus:outline-none focus:border-emerald-500/30 transition-all"
+                            />
+                        </div>
+                        <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center relative cursor-pointer hover:bg-white/[0.05] transition-all">
+                            <Bell className="w-4 h-4 text-gray-400" />
+                            <div className="absolute top-2 right-2 w-2 h-2 bg-orange-500 rounded-full border-2 border-[#04060a]" />
                         </div>
                     </div>
                 </header>
 
-                {/* Dashboard Scrollable Area */}
-                <div className="flex-1 overflow-y-auto p-6 md:p-8">
-                    <div className="flex items-center justify-between mb-8">
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900">Bienvenido a la Demo de JairoCRM</h1>
-                            <p className="text-gray-500 mt-1">Así es como tu equipo gestionará las oportunidades B2B.</p>
-                        </div>
-                        <div className="hidden sm:flex gap-3">
-                            <button className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 shadow-sm transition-all">
-                                Exportar Datos
-                            </button>
-                            <Link href="/registro" className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-600 shadow-md shadow-primary/20 transition-all flex items-center gap-2">
-                                Crear mi Cuenta Real <ArrowUpRight size={16} />
-                            </Link>
-                        </div>
-                    </div>
-
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        {[
-                            { label: "Oportunidades Activas", value: "24", change: "+12%", up: true, icon: Activity, color: "text-blue-600", bg: "bg-blue-50" },
-                            { label: "Cotizaciones (RFQ) Abiertas", value: "8", change: "+3%", up: true, icon: FileText, color: "text-primary", bg: "bg-primary-50" },
-                            { label: "Tasa de Cierre", value: "68%", change: "+5.4%", up: true, icon: PieChart, color: "text-secondary", bg: "bg-secondary-50" },
-                            { label: "Valor del Pipeline", value: "$142,500", change: "-2%", up: false, icon: TrendingUp, color: "text-purple-600", bg: "bg-purple-50" }
-                        ].map((stat, i) => (
-                            <div key={i} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className={`p-2.5 rounded-xl ${stat.bg}`}>
-                                        <stat.icon size={20} className={stat.color} />
+                {/* Dashboard Stage */}
+                <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
+                    <AnimatePresence mode="wait">
+                        {loadingStage < 3 ? (
+                            /* --- INTELLIGENT LOADING SKELETON --- */
+                            <div key="loader" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+                                {[1,2,3,4].map(i => (
+                                    <div key={i} className="h-40 rounded-[2.5rem] bg-white/[0.02] border border-white/5 animate-pulse overflow-hidden relative">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.03] to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
                                     </div>
-                                    <div className={`flex items-center gap-1 text-sm font-medium ${stat.up ? 'text-green-600' : 'text-red-600'}`}>
-                                        {stat.up ? '+' : ''}{stat.change}
-                                    </div>
-                                </div>
-                                <h3 className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</h3>
-                                <p className="text-gray-500 text-sm font-medium">{stat.label}</p>
+                                ))}
                             </div>
-                        ))}
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Pipeline CRM - Kanban Style preview */}
-                        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className="text-lg font-bold text-gray-900">Pipeline B2B Reciente</h2>
-                                <button className="text-sm text-primary font-medium hover:underline flex items-center">
-                                    Ver Kanban <ChevronRight size={16} />
-                                </button>
-                            </div>
-                            
-                            <div className="space-y-4">
-                                {[
-                                    { company: "Logística del Norte S.A.", desc: "Provisión de 50 uniformes industriales", amount: "$4,500", status: "Negociación", color: "bg-blue-100 text-blue-700" },
-                                    { company: "Constructora Apex", desc: "Materiales de seguridad (RFQ-1029)", amount: "$12,800", status: "Cotizado", color: "bg-yellow-100 text-yellow-700" },
-                                    { company: "TechHub Solutions", desc: "Mobiliario de oficina corporativa", amount: "$8,250", status: "Cerrado Ganado", color: "bg-green-100 text-green-700" },
-                                    { company: "Alimentos Frescos SRL", desc: "Empaques biodegradables", amount: "$3,100", status: "Nuevo Lead", color: "bg-gray-100 text-gray-700" },
-                                ].map((deal, i) => (
-                                    <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer group">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 font-bold border border-gray-200 group-hover:bg-primary-50 group-hover:text-primary group-hover:border-primary/20 transition-colors">
-                                                {deal.company.charAt(0)}
+                        ) : (
+                            <motion.div 
+                                key="content"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="space-y-12"
+                            >
+                                {/* Metrics Flow */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+                                    {metrics.map((m, i) => (
+                                        <motion.div 
+                                            key={i}
+                                            initial={{ scale: 0.9, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            transition={{ delay: i * 0.1, type: "spring", stiffness: 100 }}
+                                            className="p-8 rounded-[2.5rem] bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 relative group cursor-default hover:border-emerald-500/30 transition-all"
+                                        >
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className={`p-3 rounded-2xl bg-${m.color}-500/10 border border-${m.color}-500/20`}>
+                                                    <m.icon className={`w-5 h-5 text-${m.color}-500`} />
+                                                </div>
+                                                <div className="flex items-center gap-1.5 px-2 py-1 bg-white/[0.03] rounded-full">
+                                                    <div className={`w-1 h-1 rounded-full bg-${m.color}-500 animate-pulse`} />
+                                                    <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{m.trend}</span>
+                                                </div>
                                             </div>
+                                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest leading-none mb-1">{m.title}</p>
+                                            <p className="text-5xl font-black tracking-tighter">
+                                                <CountUp value={m.value} duration={1.5} />
+                                                <span className={`text-2xl text-${m.color}-500/40 ml-1`}>{m.unit}</span>
+                                            </p>
+                                            
+                                            {/* Micro Sparkline Simulation */}
+                                            <div className="mt-6 h-1 w-full bg-white/[0.02] rounded-full overflow-hidden">
+                                                <motion.div 
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: "70%" }}
+                                                    transition={{ duration: 2, delay: 0.5 }}
+                                                    className={`h-full bg-${m.color}-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]`}
+                                                />
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+
+                                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                                    {/* Main Tactical Feed */}
+                                    <div className="xl:col-span-2 p-10 rounded-[3.5rem] bg-[#080c14]/80 border border-white/[0.03] shadow-2xl relative overflow-hidden group">
+                                        <div className="flex items-center justify-between mb-10">
                                             <div>
-                                                <h4 className="font-semibold text-gray-900 text-sm">{deal.company}</h4>
-                                                <p className="text-xs text-gray-500 mt-0.5">{deal.desc}</p>
+                                                <h3 className="text-2xl font-black uppercase tracking-tight italic">Radar de Sinergias IA</h3>
+                                                <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.4em] mt-1">Escaneo Semántico Activo</p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center cursor-pointer hover:bg-emerald-500/10 transition-all">
+                                                    <BarChart3 className="w-4 h-4 text-gray-500" />
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-6">
-                                            <span className="font-bold text-gray-900">{deal.amount}</span>
-                                            <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${deal.color}`}>
-                                                {deal.status}
-                                            </span>
+
+                                        <div className="space-y-4">
+                                            {[
+                                                { company: "Global Logistics", industry: "Supply Chain", score: 98, status: "High Sinergy" },
+                                                { company: "TechNova SaaS", industry: "Fintech", score: 92, status: "Strategic Match" },
+                                                { company: "EcoGreen Energy", industry: "Renewables", score: 85, status: "Growth Potential" },
+                                                { company: "Prime Builders", industry: "Infrastructure", score: 78, status: "Standard" },
+                                            ].map((item, i) => (
+                                                <motion.div 
+                                                    key={i}
+                                                    initial={{ x: -20, opacity: 0 }}
+                                                    animate={{ x: 0, opacity: 1 }}
+                                                    transition={{ delay: 1.5 + (i * 0.1) }}
+                                                    className="p-5 rounded-[2rem] bg-white/[0.02] border border-white/[0.05] hover:bg-emerald-500/[0.03] hover:border-emerald-500/30 transition-all flex items-center justify-between cursor-pointer group/item"
+                                                >
+                                                    <div className="flex items-center gap-6">
+                                                        <div className="text-2xl font-black text-gray-800 group-hover/item:text-emerald-500/40 transition-colors">0{i+1}</div>
+                                                        <div>
+                                                            <p className="text-lg font-black tracking-tight leading-none mb-1">{item.company}</p>
+                                                            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">{item.industry}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-8">
+                                                        <div className="hidden md:block px-4 py-1.5 rounded-full border border-white/5 text-[8px] font-black text-gray-500 uppercase tracking-widest">
+                                                            {item.status}
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-2xl font-black text-emerald-500 leading-none">{item.score}%</p>
+                                                            <p className="text-[8px] font-bold text-gray-600 uppercase tracking-widest mt-1">Sinergia</p>
+                                                        </div>
+                                                        <ChevronRight className="w-5 h-5 text-gray-700 group-hover/item:text-emerald-500 group-hover/item:translate-x-1 transition-all" />
+                                                    </div>
+                                                </motion.div>
+                                            ))}
+                                        </div>
+
+                                        {/* Bottom HUD info */}
+                                        <div className="mt-10 pt-8 border-t border-white/[0.03] flex justify-between items-center">
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex -space-x-2">
+                                                    {[1,2,3].map(i => <div key={i} className="w-8 h-8 rounded-full border-2 border-[#080c14] bg-gray-800" />)}
+                                                </div>
+                                                <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">+12 conexiones recomendadas</p>
+                                            </div>
+                                            <button className="flex items-center gap-2 text-[10px] font-black text-emerald-500 uppercase tracking-widest hover:gap-4 transition-all">
+                                                Ver Análisis Completo <ArrowRight className="w-4 h-4" />
+                                            </button>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        </div>
 
-                        {/* AI Matchmaker (Insforge preview) */}
-                        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 shadow-lg p-6 text-white relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl"></div>
-                            
-                            <div className="flex items-center gap-2 mb-6">
-                                <div className="p-2 bg-primary/20 rounded-lg">
-                                    <Zap size={20} className="text-primary-300" />
+                                    {/* Sidebar Intelligence */}
+                                    <div className="space-y-8">
+                                        <div className="p-10 rounded-[3.5rem] bg-emerald-500/10 border border-emerald-500/20 relative overflow-hidden">
+                                            <Sparkles className="w-12 h-12 text-emerald-500/20 absolute top-[-10px] right-[-10px] rotate-12" />
+                                            <h3 className="text-xl font-black uppercase tracking-tight mb-4">Insforge Insight</h3>
+                                            <p className="text-sm font-bold text-gray-400 leading-relaxed italic border-l-2 border-emerald-500/30 pl-4">
+                                                "Se ha detectado una anomalía positiva en el flujo de RFQs de construcción. Sinergia recomendada con proveedores de Zona 2."
+                                            </p>
+                                            <div className="mt-8 flex items-center justify-between">
+                                                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Optimización Activa</span>
+                                                <Fingerprint className="w-6 h-6 text-emerald-500/30" />
+                                            </div>
+                                        </div>
+
+                                        <div className="p-10 rounded-[3.5rem] bg-white/[0.02] border border-white/5">
+                                            <div className="flex items-center justify-between mb-8">
+                                                <h3 className="text-lg font-black uppercase tracking-tight">Geo-Flujo</h3>
+                                                <Globe className="w-5 h-5 text-gray-700" />
+                                            </div>
+                                            <div className="h-40 bg-black/40 rounded-3xl border border-white/5 flex items-center justify-center">
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <div className="w-16 h-1 bg-emerald-500/10 rounded-full overflow-hidden">
+                                                        <motion.div 
+                                                            animate={{ x: ["-100%", "100%"] }}
+                                                            transition={{ duration: 2, repeat: Infinity }}
+                                                            className="w-1/2 h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+                                                        />
+                                                    </div>
+                                                    <p className="text-[8px] font-bold text-gray-600 uppercase tracking-widest">Mapping Nodos...</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <h2 className="text-lg font-bold">Motor IA (Insforge)</h2>
-                            </div>
-
-                            <p className="text-gray-400 text-sm mb-6">
-                                Nuestra IA analiza tu catálogo y detecta oportunidades B2B automáticamente en tiempo real.
-                            </p>
-
-                            <div className="space-y-4 relative z-10">
-                                {[
-                                    { match: "Supermercados El Rey", reason: "Busca proveedores de empaques en tu región.", score: "98%" },
-                                    { match: "Hotel Paraíso", reason: "Su inventario de blancos coincide con tu stock.", score: "85%" },
-                                ].map((ai, i) => (
-                                    <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-4 backdrop-blur-sm">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <h4 className="font-semibold text-sm">{ai.match}</h4>
-                                            <span className="text-xs font-bold text-green-400 bg-green-400/10 px-2 py-0.5 rounded">Match {ai.score}</span>
-                                        </div>
-                                        <p className="text-xs text-gray-400">{ai.reason}</p>
-                                        <button className="mt-3 w-full py-1.5 bg-white/10 hover:bg-white/20 rounded text-xs font-medium transition-colors">
-                                            Contactar ahora
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="mt-6 pt-6 border-t border-white/10">
-                                <Link href="/registro" className="block w-full py-2.5 bg-primary hover:bg-primary-600 text-center rounded-xl text-sm font-bold shadow-[0_0_15px_rgba(27,127,60,0.4)] transition-all">
-                                    Activar IA en mi Empresa
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </main>
+
+            <style jsx global>{`
+                @keyframes shimmer {
+                    100% { transform: translateX(100%); }
+                }
+                .custom-scrollbar::-webkit-scrollbar { width: 3px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.1); border-radius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(16, 185, 129, 0.3); }
+            `}</style>
         </div>
     );
 }

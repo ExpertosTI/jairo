@@ -9,13 +9,13 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#fb7701',
+  themeColor: '#10b981',
 };
 
 export const metadata: Metadata = {
-  title: "JairoApp - Plataforma B2B Empresarial",
-  description: "Conecta tu empresa con nuevos mercados. La red empresarial B2B líder para proveedores, distribuidores y socios comerciales.",
-  keywords: "B2B, networking, empresas, directorio empresarial, proveedores, distribuidores",
+  title: "JairoApp - Plataforma B2B Estratégica Premium",
+  description: "Ecosistema de sinergia empresarial y control de networking de alta fidelidad. Conecte su empresa con socios estratégicos y mercados globales.",
+  keywords: "B2B, networking estratégico, inteligencia de mercado, sinergia empresarial, plataforma premium",
   authors: [{ name: "JairoApp" }],
   manifest: "/manifest.json",
   appleWebApp: {
@@ -31,12 +31,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/logo.svg", type: "image/svg+xml" },
     ],
-    shortcut: "/icon-192.png",
+    shortcut: "/logo.svg",
     apple: [
-      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/logo.svg", type: "image/svg+xml" },
     ],
   },
 };
@@ -50,6 +49,7 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/logo.svg" type="image/svg+xml" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
