@@ -101,6 +101,7 @@ export default function RecepcionCommandCenter() {
     const [aiProcessing, setAiProcessing] = useState(false);
     const [aiComplete, setAiComplete] = useState(false);
     const [cargandoDB, setCargandoDB] = useState(true);
+    const [draggingGuest, setDraggingGuest] = useState<Invitado | null>(null);
 
     // --- Cargar estado real desde la DB ---
     useEffect(() => {
@@ -173,6 +174,12 @@ export default function RecepcionCommandCenter() {
         }
     };
 
+    const handleMoveGuest = (guestId: string, targetMesa: string) => {
+        setInvitados(prev => prev.map(inv => 
+            inv.id === guestId ? { ...inv, mesa: targetMesa } : inv
+        ));
+    };
+
     const filteredInvitados = invitados.filter(inv => {
         const matchesSearch = inv.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
                              inv.empresa.toLowerCase().includes(searchTerm.toLowerCase());
@@ -182,108 +189,146 @@ export default function RecepcionCommandCenter() {
         return matchesSearch;
     });
 
-    const mesas = Array.from(new Set(invitados.map(i => i.mesa))).sort((a,b) => parseInt(a) - parseInt(b));
+    const mesasIds = Array.from(new Set(invitados.map(i => i.mesa))).sort((a,b) => parseInt(a) - parseInt(b));
 
     return (
-        <div className="min-h-screen bg-[#020408] text-white font-sans selection:bg-emerald-500/30 flex flex-col relative overflow-hidden">
+        <div className="min-h-screen bg-[#05070a] text-white font-sans selection:bg-emerald-500/30 flex flex-col relative overflow-hidden">
             
-            {/* --- TOP NAV --- */}
-            <nav className="h-20 border-b border-white/[0.03] bg-[#020408]/80 backdrop-blur-2xl flex items-center justify-between px-10 z-50">
+            {/* --- BACKGROUND CINEMÁTICO (FÁCIL DE CAMBIAR) --- */}
+            <div className="absolute inset-0 z-0">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#10b98115,transparent_50%)]" />
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-emerald-500/5 via-transparent to-black/80" />
+            </div>
+
+            {/* --- TOP NAV GLASS --- */}
+            <nav className="h-20 border-b border-white/[0.05] bg-black/40 backdrop-blur-3xl flex items-center justify-between px-10 z-50 sticky top-0">
                 <div className="flex items-center gap-12">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                            <Fingerprint className="w-6 h-6 text-white" />
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.1)]">
+                            <Fingerprint className="w-7 h-7 text-emerald-500" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-xl font-black tracking-tight leading-none uppercase">JairoAcceso</span>
-                            <span className="text-[10px] font-bold text-emerald-500/70 tracking-[0.3em] uppercase mt-1">Command Center</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-2xl font-black tracking-tighter leading-none uppercase bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">JairoAcceso</span>
+                                <div className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-md text-[8px] font-black text-emerald-500 tracking-tighter">B2B PRO</div>
+                            </div>
+                            <span className="text-[9px] font-black text-gray-500 tracking-[0.4em] uppercase mt-1">Strategic Command Center</span>
                         </div>
+                    </div>
+
+                    <div className="relative w-96 group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 group-focus-within:text-emerald-500 transition-colors" />
+                        <input 
+                            type="text"
+                            placeholder="Buscar por ID, nombre o empresa..."
+                            className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all font-medium placeholder:text-gray-700"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
                     </div>
                 </div>
 
-                <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2 p-1 bg-white/[0.02] border border-white/5 rounded-xl">
+                <div className="flex items-center gap-8">
+                    <div className="flex items-center gap-2 p-1 bg-white/[0.03] border border-white/5 rounded-2xl">
                         <button 
                             onClick={() => setView('directory')}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black transition-all ${view === 'directory' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-gray-500 hover:text-gray-300'}`}
+                            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black transition-all tracking-widest ${view === 'directory' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'text-gray-500 hover:text-gray-300'}`}
                         >
-                            <List className="w-3.5 h-3.5" />
+                            <List className="w-4 h-4" />
                             DIRECTORIO
                         </button>
                         <button 
                             onClick={() => setView('tables')}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black transition-all ${view === 'tables' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-gray-500 hover:text-gray-300'}`}
+                            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black transition-all tracking-widest ${view === 'tables' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'text-gray-500 hover:text-gray-300'}`}
                         >
-                            <LayoutGrid className="w-3.5 h-3.5" />
+                            <LayoutGrid className="w-4 h-4" />
                             MESAS
                         </button>
                     </div>
+                    <button className="flex items-center gap-3 px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black tracking-widest hover:bg-white/10 transition-all">
+                        <Zap className="w-4 h-4 text-emerald-500" />
+                        INITIALIZE SCANNER
+                    </button>
                 </div>
             </nav>
 
-            <div className="flex flex-1 overflow-hidden">
-                {/* --- TELEMETRY SIDEBAR --- */}
-                <aside className="w-80 border-r border-white/[0.03] p-8 flex flex-col gap-8 bg-[#020408]/50 backdrop-blur-xl">
+            <div className="flex flex-1 overflow-hidden z-10">
+                {/* --- TELEMETRY SIDEBAR GLASS --- */}
+                <aside className="w-80 border-r border-white/[0.05] p-8 flex flex-col gap-8 bg-black/20 backdrop-blur-md">
                     <div className="space-y-6">
-                        <div className="space-y-1">
-                            <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Live Telemetry</p>
-                            <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                <span className="text-xs font-bold text-gray-400">Stream Conectado</span>
+                        <div className="flex items-center justify-between">
+                            <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Live Telemetry</p>
+                            <div className="flex gap-1">
+                                <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                                <div className="w-1 h-1 rounded-full bg-emerald-500/50" />
+                                <div className="w-1 h-1 rounded-full bg-emerald-500/20" />
                             </div>
                         </div>
 
-                        {/* Metric: Manifest */}
-                        <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 relative group">
-                            <div className="flex justify-between items-start mb-2">
-                                <Users className="w-5 h-5 text-blue-500/50" />
-                                <span className="text-[8px] font-black text-blue-500/80 uppercase tracking-widest">Target</span>
+                        {/* Metric Cards */}
+                        <div className="grid gap-4">
+                            <div className="p-6 rounded-[2.5rem] bg-white/[0.02] border border-white/5 group hover:border-blue-500/30 transition-all">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="w-10 h-10 bg-blue-500/10 rounded-2xl flex items-center justify-center">
+                                        <Users className="w-5 h-5 text-blue-500" />
+                                    </div>
+                                    <span className="text-[9px] font-black text-blue-500/50 uppercase tracking-widest">Target</span>
+                                </div>
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Manifest</p>
+                                <p className="text-5xl font-black mt-2 tracking-tighter">70</p>
                             </div>
-                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Manifesto Total</p>
-                            <p className="text-5xl font-black mt-1 tracking-tighter">70</p>
-                        </div>
 
-                        {/* Metric: Cleared */}
-                        <div className="p-6 rounded-[2rem] bg-emerald-500/[0.03] border border-emerald-500/10 relative group shadow-[0_0_40px_rgba(16,185,129,0.05)]">
-                            <div className="flex justify-between items-start mb-2">
-                                <CheckCircle2 className="w-5 h-5 text-emerald-500/50" />
-                                <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Cleared</span>
+                            <div className="p-6 rounded-[2.5rem] bg-white/[0.02] border border-white/5 group hover:border-emerald-500/30 transition-all">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="w-10 h-10 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
+                                        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                                    </div>
+                                    <span className="text-[9px] font-black text-emerald-500/50 uppercase tracking-widest">Cleared</span>
+                                </div>
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Access Granted</p>
+                                <div className="flex items-end gap-3 mt-2">
+                                    <p className="text-5xl font-black tracking-tighter text-emerald-500">
+                                        {invitados.filter(i => i.status === 'cleared').length}
+                                    </p>
+                                    <p className="text-xs font-bold text-emerald-500/40 mb-2">0%</p>
+                                </div>
                             </div>
-                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Accesos Concedidos</p>
-                            <p className="text-5xl font-black mt-1 tracking-tighter text-emerald-500">{invitados.filter(i => i.status === 'cleared').length}</p>
+
+                            <div className="p-6 rounded-[2.5rem] bg-white/[0.02] border border-white/5 group hover:border-orange-500/30 transition-all">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="w-10 h-10 bg-orange-500/10 rounded-2xl flex items-center justify-center">
+                                        <Clock className="w-5 h-5 text-orange-500" />
+                                    </div>
+                                    <span className="text-[9px] font-black text-orange-500/50 uppercase tracking-widest">Inbound</span>
+                                </div>
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Pending Entry</p>
+                                <p className="text-5xl font-black mt-2 tracking-tighter text-orange-500">
+                                    {70 - invitados.filter(i => i.status === 'cleared').length}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </aside>
 
-                {/* --- MAIN CONTENT AREA --- */}
-                <main className="flex-1 flex flex-col bg-[#020408]">
+                {/* --- MAIN CONTENT GLASS --- */}
+                <main className="flex-1 flex flex-col bg-transparent">
                     
-                    <div className="p-8 border-b border-white/[0.03] flex items-center justify-between">
-                        <div className="flex items-center gap-4 p-1.5 bg-white/[0.02] border border-white/5 rounded-2xl">
+                    <div className="p-8 border-b border-white/[0.05] flex items-center justify-between bg-black/10 backdrop-blur-sm">
+                        <div className="flex items-center gap-2 p-1 bg-white/[0.03] border border-white/5 rounded-2xl">
                             {['all', 'pending', 'cleared', 'vip'].map((f) => (
                                 <button 
                                     key={f}
                                     onClick={() => setFilter(f as any)}
-                                    className={`px-5 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all uppercase ${filter === f ? 'bg-white text-black shadow-xl' : 'text-gray-500 hover:text-white'}`}
+                                    className={`px-6 py-2.5 rounded-xl text-[10px] font-black tracking-widest transition-all uppercase ${filter === f ? 'bg-white text-black shadow-2xl' : 'text-gray-500 hover:text-white'}`}
                                 >
-                                    {f === 'all' ? 'Todos' : f === 'pending' ? 'Esperando' : f === 'cleared' ? 'Validados' : 'VIP Lounge'}
+                                    {f === 'all' ? 'All Records' : f === 'pending' ? 'Awaiting Entry' : f === 'cleared' ? 'Cleared' : 'VIP Lounge'}
                                 </button>
                             ))}
                         </div>
-
-                        <div className="relative w-80 group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 group-focus-within:text-emerald-500 transition-colors" />
-                            <input 
-                                type="text"
-                                placeholder="Filtrar por nombre o empresa..."
-                                className="w-full bg-white/[0.02] border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-8 bg-[#03060c]">
+                    <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
                         {view === 'directory' ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                 {filteredInvitados.map((inv) => (
@@ -291,41 +336,78 @@ export default function RecepcionCommandCenter() {
                                         key={inv.id}
                                         layoutId={inv.id}
                                         onClick={() => setSelectedGuest(inv)}
-                                        className={`group p-6 rounded-[2.5rem] border transition-all cursor-pointer relative overflow-hidden ${
-                                            inv.status === 'cleared' ? 'bg-emerald-500/[0.04] border-emerald-500/20' : 'bg-white/[0.02] border-white/5 hover:border-emerald-500/30'
+                                        className={`group p-8 rounded-[3rem] border transition-all cursor-pointer relative overflow-hidden backdrop-blur-xl ${
+                                            inv.status === 'cleared' ? 'bg-emerald-500/[0.05] border-emerald-500/30' : 'bg-white/[0.03] border-white/5 hover:border-emerald-500/50'
                                         }`}
                                     >
-                                        <div className="flex justify-between items-start mb-6">
-                                            <div className="px-3 py-1 bg-white/[0.05] rounded-full text-[8px] font-black tracking-widest text-gray-400 group-hover:text-emerald-400 transition-colors uppercase">
-                                                Mesa {inv.mesa}
+                                        <div className="flex justify-between items-start mb-8">
+                                            <div className="px-4 py-1.5 bg-black/40 border border-white/5 rounded-full text-[8px] font-black tracking-[0.2em] text-gray-500 group-hover:text-emerald-400 transition-colors uppercase">
+                                                MESA {inv.mesa}
                                             </div>
-                                            {inv.isVIP && <Star className="w-4 h-4 text-emerald-500 fill-emerald-500" />}
+                                            {inv.isVIP ? (
+                                                <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                                                    <Star className="w-4 h-4 text-emerald-500 fill-emerald-500" />
+                                                </div>
+                                            ) : (
+                                                <div className="w-2 h-2 rounded-full bg-gray-800" />
+                                            )}
                                         </div>
-                                        <h3 className="text-xl font-black tracking-tight leading-none group-hover:text-emerald-400 transition-colors uppercase">{inv.nombre}</h3>
-                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2">{inv.empresa}</p>
+                                        <h3 className="text-2xl font-black tracking-tighter leading-none group-hover:text-emerald-400 transition-colors uppercase">{inv.nombre}</h3>
+                                        <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em] mt-3">{inv.empresa}</p>
                                     </motion.div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                                {mesas.map((mesaId) => {
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10 items-start">
+                                {mesasIds.map((mesaId) => {
                                     const mesaInvitados = invitados.filter(i => i.mesa === mesaId);
                                     return (
-                                        <div key={mesaId} className="bg-white/[0.02] border border-white/5 rounded-[2.5rem] p-6">
-                                            <div className="flex justify-between items-center mb-6 px-2">
-                                                <h3 className="text-lg font-black uppercase tracking-tight">Mesa {mesaId}</h3>
-                                            </div>
-                                            <div className="space-y-2">
-                                                {mesaInvitados.map(inv => (
-                                                    <div 
-                                                        key={inv.id}
-                                                        onClick={() => setSelectedGuest(inv)}
-                                                        className="p-4 rounded-2xl bg-white/[0.03] border border-transparent hover:border-emerald-500/20 hover:bg-emerald-500/[0.02] transition-all cursor-pointer flex items-center justify-between"
-                                                    >
-                                                        <div className="text-xs font-bold uppercase">{inv.nombre}</div>
-                                                        <div className={`w-2 h-2 rounded-full ${inv.status === 'cleared' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-gray-800'}`} />
+                                        <div 
+                                            key={mesaId} 
+                                            className="bg-white/[0.02] border border-white/10 rounded-[3rem] p-8 backdrop-blur-2xl relative group"
+                                            onDragOver={(e) => e.preventDefault()}
+                                            onDrop={() => draggingGuest && handleMoveGuest(draggingGuest.id, mesaId)}
+                                        >
+                                            <div className="flex justify-between items-center mb-8 px-2">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-white/5 rounded-2xl flex items-center justify-center">
+                                                        <LayoutGrid className="w-5 h-5 text-gray-500" />
                                                     </div>
+                                                    <h3 className="text-xl font-black uppercase tracking-tighter">Mesa {mesaId}</h3>
+                                                </div>
+                                                <div className="flex flex-col items-end">
+                                                    <span className="text-[10px] font-black text-emerald-500/50 uppercase tracking-widest">{mesaInvitados.length} / 4</span>
+                                                    <span className="text-[8px] font-bold text-gray-600 uppercase tracking-widest mt-1">Occupancy</span>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-4">
+                                                {mesaInvitados.map(inv => (
+                                                    <motion.div 
+                                                        key={inv.id}
+                                                        draggable
+                                                        onDragStart={() => setDraggingGuest(inv)}
+                                                        onDragEnd={() => setDraggingGuest(null)}
+                                                        onClick={() => setSelectedGuest(inv)}
+                                                        className={`p-6 rounded-[2rem] bg-black/40 border transition-all cursor-pointer flex items-center justify-between group/item ${
+                                                            inv.status === 'cleared' ? 'border-emerald-500/20 bg-emerald-500/[0.02]' : 'border-white/5 hover:border-emerald-500/40'
+                                                        }`}
+                                                    >
+                                                        <div className="flex flex-col gap-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className={`w-1.5 h-1.5 rounded-full ${inv.status === 'cleared' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-gray-700'}`} />
+                                                                <div className="text-xs font-black uppercase tracking-tight">{inv.nombre}</div>
+                                                            </div>
+                                                            <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest pl-3">{inv.empresa}</div>
+                                                        </div>
+                                                        {inv.isVIP && <Star className="w-3 h-3 text-emerald-500 fill-emerald-500" />}
+                                                    </motion.div>
                                                 ))}
+                                                {mesaInvitados.length === 0 && (
+                                                    <div className="py-12 border-2 border-dashed border-white/5 rounded-[2rem] flex flex-col items-center justify-center gap-3">
+                                                        <Plus className="w-6 h-6 text-gray-800" />
+                                                        <span className="text-[10px] font-black text-gray-700 uppercase tracking-widest">Espacio Disponible</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     );
@@ -336,72 +418,75 @@ export default function RecepcionCommandCenter() {
                 </main>
             </div>
 
-            {/* --- MODAL DE CHECK-IN PREMIUM (CAPTURAS 2 + WOW EFFECT) --- */}
+            {/* --- MODAL DE CHECK-IN PREMIUM --- */}
             <AnimatePresence>
                 {selectedGuest && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/60">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/80">
                         <motion.div 
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            initial={{ opacity: 0, scale: 0.95, y: 30 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="w-full max-w-[900px] bg-[#0a0f18] rounded-[3rem] border border-white/[0.05] overflow-hidden shadow-[0_0_100px_rgba(16,185,129,0.1)] relative"
+                            exit={{ opacity: 0, scale: 0.95, y: 30 }}
+                            className="w-full max-w-[1000px] bg-[#0a0f18] rounded-[4rem] border border-white/[0.1] overflow-hidden shadow-[0_0_150px_rgba(0,0,0,0.8)] relative"
                         >
-                            <div className="flex h-[550px]">
-                                {/* Panel Izquierdo (Identidad) */}
-                                <div className="w-[45%] bg-gradient-to-br from-emerald-600/10 to-transparent p-12 border-r border-white/[0.05]">
-                                    <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full inline-flex items-center gap-2 mb-10">
-                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Protocolo de Seguridad</span>
+                            <div className="flex h-[600px]">
+                                {/* Panel Izquierdo */}
+                                <div className="w-[40%] bg-gradient-to-br from-emerald-600/20 via-transparent to-transparent p-16 border-r border-white/[0.05]">
+                                    <div className="px-5 py-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full inline-flex items-center gap-3 mb-12">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
+                                        <span className="text-[11px] font-black text-emerald-500 uppercase tracking-[0.3em]">Protocolo de Seguridad</span>
                                     </div>
 
-                                    <h2 className="text-5xl font-black tracking-tighter mb-4 uppercase">{selectedGuest.nombre}</h2>
-                                    <div className="px-4 py-2 bg-white/[0.05] rounded-xl inline-flex items-center gap-2 mb-12">
-                                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                                        <span className="text-xs font-bold text-gray-300 uppercase tracking-widest">Nivel de Acceso: {selectedGuest.nivel || 'Invitado'}</span>
+                                    <h2 className="text-6xl font-black tracking-tighter mb-6 uppercase leading-none">{selectedGuest.nombre}</h2>
+                                    <div className="px-5 py-2.5 bg-white/[0.05] rounded-2xl inline-flex items-center gap-3 mb-16">
+                                        <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                                        <span className="text-xs font-black text-gray-300 uppercase tracking-widest">Nivel {selectedGuest.nivel || 'Invitado'}</span>
                                     </div>
 
                                     <div className="space-y-6">
-                                        <div className="p-6 bg-black/40 rounded-3xl border border-white/5 relative overflow-hidden group">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                                                    <MapPin className="w-5 h-5 text-emerald-500" />
+                                        <div className="p-8 bg-black/40 rounded-[2.5rem] border border-white/10 relative overflow-hidden group">
+                                            <div className="flex items-center gap-5">
+                                                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                                                    <MapPin className="w-6 h-6 text-emerald-500" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest leading-none">Asignación de Zona</p>
-                                                    <p className="text-xl font-black mt-1 uppercase tracking-tight">Mesa {selectedGuest.mesa}</p>
+                                                    <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Zona Asignada</p>
+                                                    <p className="text-2xl font-black uppercase tracking-tight">Mesa {selectedGuest.mesa}</p>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Panel Derecho (Formulario / WOW Overlay) */}
-                                <div className="flex-1 p-12 flex flex-col relative bg-[#0a0f18] overflow-hidden">
-                                    <div className="flex justify-between items-center mb-12">
-                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Confirmación de Contacto</p>
-                                        <button onClick={() => setSelectedGuest(null)} className="w-10 h-10 rounded-full bg-white/[0.05] flex items-center justify-center hover:bg-white/[0.1] transition-all">
-                                            <X className="w-5 h-5" />
+                                {/* Panel Derecho */}
+                                <div className="flex-1 p-16 flex flex-col relative bg-[#0a0f18] overflow-hidden">
+                                    <div className="flex justify-between items-center mb-16">
+                                        <div className="flex flex-col">
+                                            <p className="text-[11px] font-black text-gray-500 uppercase tracking-[0.4em]">Data Enrichment</p>
+                                            <div className="w-12 h-1 bg-emerald-500 mt-2" />
+                                        </div>
+                                        <button onClick={() => setSelectedGuest(null)} className="w-12 h-12 rounded-full bg-white/[0.05] border border-white/10 flex items-center justify-center hover:bg-white/[0.1] transition-all">
+                                            <X className="w-6 h-6" />
                                         </button>
                                     </div>
 
-                                    <div className="flex-1 space-y-8">
-                                        <div className="space-y-3">
-                                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Número de Contacto</p>
-                                            <input type="text" placeholder="+1 (000) 000-0000" className="w-full bg-white text-black h-16 rounded-2xl px-6 font-bold text-lg focus:outline-none" />
+                                    <div className="flex-1 space-y-10">
+                                        <div className="space-y-4">
+                                            <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] pl-2">Contacto Directo</p>
+                                            <input type="text" placeholder="+1 (809) 000-0000" className="w-full bg-white text-black h-20 rounded-3xl px-8 font-black text-2xl focus:outline-none placeholder:text-gray-300 shadow-xl" />
                                         </div>
-                                        <div className="space-y-3">
-                                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Correo Corporativo</p>
-                                            <input type="email" placeholder="ejecutivo@empresa.com" className="w-full bg-white text-black h-16 rounded-2xl px-6 font-bold text-lg focus:outline-none" />
+                                        <div className="space-y-4">
+                                            <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] pl-2">Email Corporativo</p>
+                                            <input type="email" placeholder="ceo@empresa.com" className="w-full bg-white text-black h-20 rounded-3xl px-8 font-black text-2xl focus:outline-none placeholder:text-gray-300 shadow-xl" />
                                         </div>
                                     </div>
 
-                                    <div className="mt-auto pt-8 flex items-center justify-between">
-                                        <button onClick={() => setSelectedGuest(null)} className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Cancelar</button>
+                                    <div className="mt-auto pt-10 flex items-center justify-between">
+                                        <button onClick={() => setSelectedGuest(null)} className="text-[11px] font-black text-gray-500 uppercase tracking-widest hover:text-white transition-colors">Cancelar Protocolo</button>
                                         <button 
                                             onClick={handleGrantAccess}
-                                            className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-3 shadow-2xl shadow-emerald-900/40 transition-all"
+                                            className="px-16 py-6 bg-emerald-600 hover:bg-emerald-500 rounded-3xl text-sm font-black uppercase tracking-[0.2em] flex items-center gap-4 shadow-[0_20px_50px_rgba(16,185,129,0.3)] transition-all transform hover:-translate-y-1 active:scale-95"
                                         >
-                                            Conceder Acceso
+                                            Conceder Acceso <ChevronRight className="w-5 h-5" />
                                         </button>
                                     </div>
 
@@ -410,47 +495,42 @@ export default function RecepcionCommandCenter() {
                                         {aiProcessing && (
                                             <motion.div 
                                                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                                className="absolute inset-0 z-50 bg-[#0a0f18]/95 backdrop-blur-3xl flex flex-col items-center justify-center p-12 text-center"
+                                                className="absolute inset-0 z-50 bg-[#0a0f18]/98 backdrop-blur-3xl flex flex-col items-center justify-center p-16 text-center"
                                             >
                                                 {!aiComplete ? (
-                                                    <div className="flex flex-col items-center gap-8">
+                                                    <div className="flex flex-col items-center gap-10">
                                                         <div className="relative">
-                                                            <Loader2 className="w-20 h-20 text-emerald-500 animate-spin" />
-                                                            <Sparkles className="absolute inset-0 m-auto w-8 h-8 text-emerald-500 animate-pulse" />
+                                                            <div className="w-32 h-32 rounded-full border-4 border-emerald-500/10 border-t-emerald-500 animate-spin" />
+                                                            <Fingerprint className="absolute inset-0 m-auto w-12 h-12 text-emerald-500 animate-pulse" />
                                                         </div>
-                                                        <div className="space-y-3">
-                                                            <p className="text-3xl font-black tracking-tighter uppercase italic text-emerald-500">Sincronizando AI...</p>
-                                                            <p className="text-[10px] font-bold text-emerald-500/40 uppercase tracking-[0.5em]">Insforge Semantic Match Engine</p>
+                                                        <div className="space-y-4">
+                                                            <p className="text-4xl font-black tracking-tighter uppercase italic text-emerald-500">Analizando Sinergia B2B...</p>
+                                                            <p className="text-[11px] font-bold text-emerald-500/40 uppercase tracking-[0.6em]">Insforge Engine v4.0</p>
                                                         </div>
                                                     </div>
                                                 ) : (
-                                                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full h-full flex flex-col justify-center">
-                                                        <div className="mb-12">
-                                                            <div className="w-24 h-24 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 mx-auto flex items-center justify-center text-4xl font-black text-emerald-500 shadow-[0_0_50px_rgba(16,185,129,0.2)]">
+                                                    <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full h-full flex flex-col justify-center">
+                                                        <div className="mb-16">
+                                                            <div className="w-32 h-32 rounded-full border-8 border-emerald-500/10 border-t-emerald-500 mx-auto flex items-center justify-center text-5xl font-black text-emerald-500 shadow-[0_0_80px_rgba(16,185,129,0.3)]">
                                                                 98%
                                                             </div>
-                                                            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] mt-4">Match B2B Detectado</p>
+                                                            <p className="text-[11px] font-black text-emerald-500 uppercase tracking-[0.4em] mt-6">Match Estratégico Detectado</p>
                                                         </div>
 
-                                                        <div className="bg-white/[0.03] border border-emerald-500/20 p-8 rounded-[2rem] text-left relative overflow-hidden group mb-8">
-                                                            <div className="absolute top-0 right-0 p-4 opacity-20"><Zap className="w-6 h-6 text-emerald-500" /></div>
-                                                            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-4">Resumen de Sinergia</p>
-                                                            <p className="text-lg font-bold text-gray-300 leading-relaxed italic">
-                                                                "Alto potencial estratégico. Líder en infraestructura con capacidad de escala inmediata para el sector logístico de su red."
+                                                        <div className="bg-white/[0.03] border border-emerald-500/30 p-10 rounded-[3rem] text-left relative overflow-hidden mb-12 shadow-2xl">
+                                                            <div className="absolute top-0 right-0 p-6 opacity-30"><Zap className="w-8 h-8 text-emerald-500" /></div>
+                                                            <p className="text-[11px] font-black text-emerald-500 uppercase tracking-widest mb-6">AI Insight</p>
+                                                            <p className="text-2xl font-bold text-gray-200 leading-tight italic">
+                                                                "Invitado de alto valor. Su infraestructura logística en la región central es el engranaje perfecto para tu expansión trimestral."
                                                             </p>
                                                         </div>
 
-                                                        <div className="flex flex-wrap gap-2 justify-center">
-                                                            {['High Value', 'SaaS', 'Corporate', 'Strategic'].map(tag => (
-                                                                <span key={tag} className="px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-[8px] font-black text-emerald-500 uppercase tracking-widest">
+                                                        <div className="flex flex-wrap gap-3 justify-center">
+                                                            {['High Value', 'Tier 1 Partner', 'Corporate', 'Logistics'].map(tag => (
+                                                                <span key={tag} className="px-6 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-[10px] font-black text-emerald-500 uppercase tracking-widest">
                                                                     {tag}
                                                                 </span>
                                                             ))}
-                                                        </div>
-
-                                                        <div className="mt-12 flex items-center justify-center gap-3 text-[10px] font-bold text-gray-600 uppercase tracking-[0.3em]">
-                                                            <Lock className="w-4 h-4" />
-                                                            Acceso Confirmado por Sistema
                                                         </div>
                                                     </motion.div>
                                                 )}
@@ -465,9 +545,16 @@ export default function RecepcionCommandCenter() {
             </AnimatePresence>
 
             <style jsx global>{`
-                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 20px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
             `}</style>
         </div>
     );
 }
+
+const Plus = ({ className }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+    </svg>
+);
