@@ -76,6 +76,17 @@ export const eventAttendance = pgTable('event_attendance', {
     createdAt: timestamp('created_at').defaultNow(),
 });
 
+// Users Table
+export const users = pgTable('users', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: varchar('email', { length: 255 }).unique().notNull(),
+    password: varchar('password', { length: 255 }).notNull(),
+    name: varchar('name', { length: 200 }),
+    role: userRoleEnum('role').default('user'),
+    companyId: uuid('company_id').references(() => companies.id),
+    createdAt: timestamp('created_at').defaultNow(),
+});
+
 // Type exports
 export type Sector = typeof sectors.$inferSelect;
 export type CompanyType = typeof companyTypes.$inferSelect;
