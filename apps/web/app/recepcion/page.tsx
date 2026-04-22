@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 // --- CONFIGURACIÓN ESTRATÉGICA ---
 const API_BASE = '/api'; 
 const EVENT_ID = 'evt_circulo_001';
+const SYNC_PATH = `${API_BASE}/actividades/attendance`; // Ajustado según rutas de NestJS registradas
 
 const ROLES_ESTRATEGICOS = ["CEO", "Estrategia", "Tecnología", "Operaciones", "Socio", "Invitado Especial"];
 const EMPRESAS_DOMINIOS: Record<string, string> = {
@@ -155,7 +156,7 @@ export default function RecepcionCommandCenter() {
     const syncAttendance = useCallback(async () => {
         const start = Date.now();
         try {
-            const res = await fetch(`${API_BASE}/events/${EVENT_ID}/attendance`, { cache: 'no-store' });
+            const res = await fetch(`${SYNC_PATH}`, { cache: 'no-store' });
             if (res.ok) {
                 const data = await res.json();
                 setNetworkLatency(Date.now() - start);
@@ -200,7 +201,7 @@ export default function RecepcionCommandCenter() {
         setStatus('loading');
         
         try {
-            const res = await fetch(`${API_BASE}/events/${EVENT_ID}/attendance`, {
+            const res = await fetch(`${SYNC_PATH}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -210,7 +211,8 @@ export default function RecepcionCommandCenter() {
                     role: formData.rol,
                     phone: formData.telefono,
                     email: formData.correo,
-                    mesa: selectedGuest.mesa
+                    mesa: selectedGuest.mesa,
+                    eventId: EVENT_ID
                 })
             });
 
@@ -394,7 +396,7 @@ export default function RecepcionCommandCenter() {
                                         <input 
                                             value={formData.nombre} 
                                             onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                                            className="text-6xl lg:text-9xl bg-transparent font-black uppercase leading-[0.8] tracking-tighter outline-none w-full border-b-2 border-white/5 focus:border-emerald-500/60 pb-8 transition-all"
+                                            className="text-[clamp(2rem,10vw,8rem)] bg-transparent font-black uppercase leading-[0.8] tracking-tighter outline-none w-full border-b-2 border-white/5 focus:border-emerald-500/60 pb-8 transition-all overflow-hidden text-ellipsis whitespace-nowrap"
                                             placeholder="EDITAR NOMBRE"
                                         />
                                     </div>
