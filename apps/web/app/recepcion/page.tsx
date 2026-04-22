@@ -13,7 +13,6 @@ import { motion, AnimatePresence } from "framer-motion";
 // --- CONFIGURACIÓN ESTRATÉGICA ---
 const API_BASE = '/api'; 
 const EVENT_ID = 'evt_circulo_001';
-const SYNC_PATH = `${API_BASE}/actividades/attendance`; // Ajustado según rutas de NestJS registradas
 
 const ROLES_ESTRATEGICOS = ["CEO", "Estrategia", "Tecnología", "Operaciones", "Socio", "Invitado Especial"];
 const EMPRESAS_DOMINIOS: Record<string, string> = {
@@ -156,7 +155,7 @@ export default function RecepcionCommandCenter() {
     const syncAttendance = useCallback(async () => {
         const start = Date.now();
         try {
-            const res = await fetch(`${SYNC_PATH}`, { cache: 'no-store' });
+            const res = await fetch(`${API_BASE}/events/${EVENT_ID}/attendance`, { cache: 'no-store' });
             if (res.ok) {
                 const data = await res.json();
                 setNetworkLatency(Date.now() - start);
@@ -201,18 +200,19 @@ export default function RecepcionCommandCenter() {
         setStatus('loading');
         
         try {
-            const res = await fetch(`${SYNC_PATH}`, {
+            const res = await fetch(`${API_BASE}/events/attendance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    guestId: selectedGuest.id,
-                    guestName: formData.nombre,
-                    companyName: formData.empresa,
-                    role: formData.rol,
-                    phone: formData.telefono,
-                    email: formData.correo,
-                    mesa: selectedGuest.mesa,
-                    eventId: EVENT_ID
+                    eventId: EVENT_ID,
+                    guestId: Number(selectedGuest.id),
+                    metadata: {
+                        name: formData.nombre,
+                        company: formData.empresa,
+                        email: formData.correo,
+                        mesa: selectedGuest.mesa,
+                        timestamp: new Date().toISOString()
+                    }
                 })
             });
 
@@ -224,8 +224,7 @@ export default function RecepcionCommandCenter() {
                     setStatus('idle');
                 }, 2000);
             } else { 
-                // FALLBACK ESTRATÉGICO: Si la API falla, guardamos localmente y permitimos el acceso
-                console.warn("RESERVA_TACTICA: Servidor no responde. Guardando en Vault Local.");
+                // FALLBACK ESTRATÉGICO
                 const localData = JSON.parse(localStorage.getItem(`offline_attendance_${EVENT_ID}`) || '[]');
                 localData.push(selectedGuest.id);
                 localStorage.setItem(`offline_attendance_${EVENT_ID}`, JSON.stringify(localData));
@@ -238,7 +237,7 @@ export default function RecepcionCommandCenter() {
                 }, 2000);
             }
         } catch (e) { 
-            // FALLBACK ANTE CORTE TOTAL DE RED
+            // FALLBACK TOTAL
             const localData = JSON.parse(localStorage.getItem(`offline_attendance_${EVENT_ID}`) || '[]');
             localData.push(selectedGuest.id);
             localStorage.setItem(`offline_attendance_${EVENT_ID}`, JSON.stringify(localData));
