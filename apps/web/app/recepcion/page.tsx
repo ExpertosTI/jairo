@@ -4,11 +4,10 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { 
     Fingerprint, LayoutGrid, Search, CheckCircle2, X, Layers, Phone, Mail, 
     Radar, Cpu, Building2, Briefcase, Crown, Music, Coffee, ChevronRight, 
-    WifiOff, RefreshCw, Edit3, ShieldCheck, Zap
+    WifiOff, RefreshCw, Edit3, ShieldCheck, Zap, Maximize2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// --- CONFIGURACIÓN ---
 const API_BASE = '/api'; 
 const EVENT_ID = 'evt_circulo_001';
 
@@ -19,7 +18,6 @@ const EMPRESAS_DOMINIOS: Record<string, string> = {
     "gmail.com": "Invitado Particular"
 };
 
-// --- MANIFIESTO ESTRATÉGICO (107 NODOS) ---
 const INITIAL_MANIFEST: any[] = [
     { id: "1", nombre: "Angel Flores", empresa: "Invitado", mesa: "1", status: 'pending' },
     { id: "2", nombre: "Eduardo Lama", empresa: "Invitado", mesa: "2", status: 'pending' },
@@ -133,13 +131,9 @@ export default function RecepcionPage() {
     const [selectedGuest, setSelectedGuest] = useState<any>(null);
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
-    const [formData, setFormData] = useState({
-        nombre: "",
-        empresa: "",
-        correo: "",
-        telefono: "",
-        rol: "Invitado"
-    });
+    const [formData, setFormData] = useState({ nombre: "", empresa: "", correo: "", telefono: "", rol: "Invitado" });
+    const [isEditingMesa, setIsEditingMesa] = useState(false);
+    const [tempMesa, setTempMesa] = useState("");
 
     const handleSync = useCallback(async () => {
         try {
@@ -158,23 +152,16 @@ export default function RecepcionPage() {
 
     useEffect(() => {
         if (selectedGuest) {
-            setFormData({
-                nombre: selectedGuest.nombre,
-                empresa: selectedGuest.empresa,
-                correo: "",
-                telefono: "",
-                rol: "Invitado"
-            });
+            setFormData({ nombre: selectedGuest.nombre, empresa: selectedGuest.empresa, correo: "", telefono: "", rol: "Invitado" });
+            setTempMesa(selectedGuest.mesa);
+            setIsEditingMesa(false);
         }
     }, [selectedGuest]);
 
-    // Detección por dominio
     useEffect(() => {
         if (formData.correo.includes("@")) {
             const domain = formData.correo.split("@")[1].toLowerCase();
-            if (EMPRESAS_DOMINIOS[domain]) {
-                setFormData(f => ({ ...f, empresa: EMPRESAS_DOMINIOS[domain] }));
-            }
+            if (EMPRESAS_DOMINIOS[domain]) setFormData(f => ({ ...f, empresa: EMPRESAS_DOMINIOS[domain] }));
         }
     }, [formData.correo]);
 
@@ -192,91 +179,66 @@ export default function RecepcionPage() {
                     email: formData.correo,
                     phone: formData.telefono,
                     role: formData.rol,
-                    mesa: selectedGuest.mesa
+                    mesa: tempMesa // Usamos la mesa editada
                 })
             });
             if (res.ok) {
                 setStatus('success');
-                setInvitados(prev => prev.map(inv => inv.id === selectedGuest.id ? { ...inv, status: 'cleared', nombre: formData.nombre, empresa: formData.empresa } : inv));
+                setInvitados(prev => prev.map(inv => inv.id === selectedGuest.id ? { ...inv, status: 'cleared', nombre: formData.nombre, empresa: formData.empresa, mesa: tempMesa } : inv));
                 setTimeout(() => { setSelectedGuest(null); setStatus('idle'); }, 2000);
             } else { setStatus('error'); }
         } catch (e) { setStatus('error'); }
     };
 
     const filtered = useMemo(() => invitados.filter(i => 
-        i.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        i.empresa.toLowerCase().includes(searchTerm.toLowerCase())
+        i.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || i.empresa.toLowerCase().includes(searchTerm.toLowerCase())
     ), [searchTerm, invitados]);
 
-    const mesas = useMemo(() => Array.from(new Set(invitados.map(i => i.mesa))).sort((a,b) => parseInt(a) - parseInt(b)), [invitados]);
+    const mesasIds = useMemo(() => Array.from(new Set(invitados.map(i => i.mesa))).sort((a,b) => parseInt(a) - parseInt(b)), [invitados]);
 
     return (
-        <div className="min-h-screen bg-[#020408] text-white font-sans overflow-hidden flex flex-col selection:bg-emerald-500/30">
-            
-            {/* Background Telemetry */}
-            <div className="fixed inset-0 pointer-events-none opacity-10">
-                <Radar className="absolute -top-20 -right-20 w-96 h-96 text-emerald-500 animate-pulse" />
-            </div>
-
-            {/* Nav */}
-            <nav className="h-20 border-b border-white/5 bg-[#020408]/90 backdrop-blur-2xl flex items-center justify-between px-6 md:px-12 z-50 sticky top-0">
+        <div className="min-h-screen bg-[#020408] text-white flex flex-col overflow-hidden">
+            <nav className="h-20 border-b border-white/5 bg-[#020408]/90 backdrop-blur-2xl flex items-center justify-between px-6 md:px-12 z-50">
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-600/20">
-                        <Fingerprint className="w-6 h-6" />
-                    </div>
+                    <Fingerprint className="w-8 h-8 text-emerald-500" />
                     <span className="text-xl font-black italic tracking-tighter uppercase hidden sm:block">Jairo_OS</span>
                 </div>
-
-                <div className="flex-1 max-w-md mx-6">
-                    <div className="relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                        <input 
-                            value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Identificar invitado..."
-                            className="w-full bg-white/5 border border-white/10 rounded-full py-3 pl-12 pr-6 text-sm focus:border-emerald-500/50 outline-none transition-all"
-                        />
-                    </div>
+                <div className="flex-1 max-w-md mx-6 relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Identificar..." className="w-full bg-white/5 border border-white/10 rounded-full py-3 pl-12 pr-6 text-sm focus:border-emerald-500/50 outline-none" />
                 </div>
-
                 <div className="flex gap-2">
-                    <button onClick={() => setView('grid')} className={`p-3 rounded-xl transition-all ${view === 'grid' ? 'bg-emerald-600' : 'bg-white/5 text-gray-500'}`}><LayoutGrid className="w-5 h-5" /></button>
-                    <button onClick={() => setView('tables')} className={`p-3 rounded-xl transition-all ${view === 'tables' ? 'bg-emerald-600' : 'bg-white/5 text-gray-500'}`}><Layers className="w-5 h-5" /></button>
+                    <button onClick={() => setView('grid')} className={`p-3 rounded-xl ${view === 'grid' ? 'bg-emerald-600' : 'bg-white/5'}`}><LayoutGrid className="w-5 h-5" /></button>
+                    <button onClick={() => setView('tables')} className={`p-3 rounded-xl ${view === 'tables' ? 'bg-emerald-600' : 'bg-white/5'}`}><Layers className="w-5 h-5" /></button>
                 </div>
             </nav>
 
-            {/* Content */}
             <main className="flex-1 overflow-y-auto p-6 md:p-12 custom-scrollbar">
                 {view === 'grid' ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filtered.map(inv => (
-                            <div 
-                                key={inv.id} onClick={() => setSelectedGuest(inv)}
-                                className={`p-8 rounded-[2rem] border transition-all cursor-pointer relative overflow-hidden group hover:scale-[1.02] active:scale-[0.98] ${inv.status === 'cleared' ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/[0.01] border-white/5 hover:border-emerald-500/30'}`}
-                            >
+                            <div key={inv.id} onClick={() => setSelectedGuest(inv)} className={`p-8 rounded-[2rem] border transition-all cursor-pointer group ${inv.status === 'cleared' ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/[0.01] border-white/5 hover:border-emerald-500/30'}`}>
                                 <div className="flex justify-between items-start mb-6">
-                                    <div className="px-3 py-1 bg-white/5 rounded-md text-[10px] font-black text-gray-500 uppercase tracking-widest">Mesa {inv.mesa}</div>
+                                    <div className="px-3 py-1 bg-white/5 rounded-md text-[10px] font-black text-gray-500 uppercase">Mesa {inv.mesa}</div>
                                     {inv.status === 'cleared' && <CheckCircle2 className="w-6 h-6 text-emerald-500" />}
                                 </div>
-                                <h3 className="text-xl font-black uppercase leading-tight group-hover:text-emerald-400 transition-colors">{inv.nombre}</h3>
+                                <h3 className="text-xl font-black uppercase leading-tight group-hover:text-emerald-400">{inv.nombre}</h3>
                                 <p className="text-[10px] text-gray-600 font-black mt-3 uppercase tracking-widest italic">{inv.empresa}</p>
                             </div>
                         ))}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
-                        {mesas.map(m => {
+                        {mesasIds.map(m => {
                             const guests = filtered.filter(i => i.mesa === m);
                             if (guests.length === 0) return null;
                             return (
                                 <div key={m} className="bg-white/[0.01] border border-white/5 rounded-[2.5rem] p-8">
-                                    <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
-                                        <h3 className="text-2xl font-black italic uppercase">Mesa {m}</h3>
-                                        <span className="text-[10px] text-emerald-500/40 font-black tracking-widest">{guests.length} NODOS</span>
-                                    </div>
+                                    <h3 className="text-2xl font-black italic uppercase mb-8 border-b border-white/5 pb-4">Mesa {m}</h3>
                                     <div className="space-y-4">
                                         {guests.map(inv => (
                                             <div key={inv.id} onClick={() => setSelectedGuest(inv)} className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl hover:border-emerald-500/30 transition-all cursor-pointer flex justify-between items-center">
-                                                <span className="text-sm font-black uppercase tracking-tight">{inv.nombre}</span>
+                                                <span className="text-sm font-black uppercase">{inv.nombre}</span>
                                                 {inv.status === 'cleared' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
                                             </div>
                                         ))}
@@ -288,70 +250,40 @@ export default function RecepcionPage() {
                 )}
             </main>
 
-            {/* Modal Responsivo - Arquitectura Segura */}
             <AnimatePresence>
                 {selectedGuest && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-12 backdrop-blur-3xl bg-black/80">
-                        <motion.div 
-                            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
-                            className="w-full max-w-4xl bg-[#0a0d14] border border-white/10 rounded-[3rem] shadow-2xl flex flex-col max-h-[95vh] relative overflow-hidden"
-                        >
-                            <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-                                <div className="flex items-center gap-4">
-                                    <ShieldCheck className="text-emerald-500 w-6 h-6" />
-                                    <span className="text-[11px] font-black tracking-[0.4em] uppercase text-emerald-500">Protocolo de Acceso</span>
-                                </div>
-                                <button onClick={() => setSelectedGuest(null)} className="p-3 hover:bg-white/5 rounded-full transition-colors"><X className="w-7 h-7 text-gray-500" /></button>
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="w-full max-w-4xl bg-[#0a0d14] border border-white/10 rounded-[3rem] shadow-2xl flex flex-col max-h-[95vh] relative overflow-hidden">
+                            <div className="p-8 border-b border-white/5 flex justify-between items-center">
+                                <span className="text-[11px] font-black tracking-[0.4em] uppercase text-emerald-500 flex items-center gap-4"><ShieldCheck className="w-6 h-6" /> Protocolo de Acceso</span>
+                                <button onClick={() => setSelectedGuest(null)} className="p-3 hover:bg-white/5 rounded-full"><X className="w-7 h-7 text-gray-500" /></button>
                             </div>
 
                             <div className="flex-1 overflow-y-auto p-8 md:p-16 space-y-12 custom-scrollbar">
-                                {/* Nombre */}
                                 <div className="space-y-4">
-                                    <label className="text-[11px] font-black text-gray-600 tracking-[0.3em] uppercase">Identidad del Nodo</label>
-                                    <div className="relative">
-                                        <Edit3 className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 text-white/5" />
-                                        <input 
-                                            value={formData.nombre} onChange={(e) => setFormData(f => ({ ...f, nombre: e.target.value }))}
-                                            className="w-full bg-transparent border-b-2 border-white/10 text-4xl md:text-6xl font-black uppercase py-4 outline-none focus:border-emerald-500/60 transition-all tracking-tighter italic"
-                                        />
-                                    </div>
+                                    <label className="text-[11px] font-black text-gray-600 uppercase">Identidad del Nodo</label>
+                                    <input value={formData.nombre} onChange={(e) => setFormData(f => ({ ...f, nombre: e.target.value }))} className="w-full bg-transparent border-b-2 border-white/10 text-4xl md:text-6xl font-black uppercase py-4 outline-none focus:border-emerald-500/60 transition-all italic" />
                                 </div>
 
-                                {/* Grilla de Datos */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                     <div className="space-y-8">
                                         <div className="space-y-2">
-                                            <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Identificador (Correo)</label>
-                                            <input 
-                                                value={formData.correo} onChange={(e) => setFormData(f => ({ ...f, correo: e.target.value }))}
-                                                placeholder="ejemplo@dominio.com"
-                                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 font-bold focus:border-emerald-500/50 outline-none transition-all"
-                                            />
+                                            <label className="text-[11px] font-black text-gray-600 uppercase">Identificador (Correo)</label>
+                                            <input value={formData.correo} onChange={(e) => setFormData(f => ({ ...f, correo: e.target.value }))} placeholder="ejemplo@dominio.com" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 font-bold focus:border-emerald-500/50 outline-none" />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Organización</label>
-                                            <input 
-                                                value={formData.empresa} onChange={(e) => setFormData(f => ({ ...f, empresa: e.target.value }))}
-                                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 font-bold focus:border-emerald-500/50 outline-none transition-all"
-                                            />
+                                            <label className="text-[11px] font-black text-gray-600 uppercase">Organización</label>
+                                            <input value={formData.empresa} onChange={(e) => setFormData(f => ({ ...f, empresa: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 font-bold focus:border-emerald-500/50 outline-none" />
                                         </div>
                                     </div>
-
                                     <div className="space-y-8">
                                         <div className="space-y-2">
-                                            <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Contacto (WhatsApp)</label>
-                                            <input 
-                                                value={formData.telefono} onChange={(e) => setFormData(f => ({ ...f, telefono: e.target.value }))}
-                                                placeholder="809-000-0000"
-                                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 font-bold focus:border-emerald-500/50 outline-none transition-all"
-                                            />
+                                            <label className="text-[11px] font-black text-gray-600 uppercase">Contacto (WhatsApp)</label>
+                                            <input value={formData.telefono} onChange={(e) => setFormData(f => ({ ...f, telefono: e.target.value }))} placeholder="809-000-0000" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 font-bold focus:border-emerald-500/50 outline-none" />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Rol Táctico</label>
-                                            <select 
-                                                value={formData.rol} onChange={(e) => setFormData(f => ({ ...f, rol: e.target.value }))}
-                                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 font-bold focus:border-emerald-500/50 outline-none transition-all appearance-none"
-                                            >
+                                            <label className="text-[11px] font-black text-gray-600 uppercase">Rol Táctico</label>
+                                            <select value={formData.rol} onChange={(e) => setFormData(f => ({ ...f, rol: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 font-bold focus:border-emerald-500/50 outline-none appearance-none">
                                                 <option value="Invitado">Invitado Particular</option>
                                                 <option value="CEO">CEO / Directivo</option>
                                                 <option value="Socio">Socio Estratégico</option>
@@ -360,54 +292,38 @@ export default function RecepcionPage() {
                                     </div>
                                 </div>
 
-                                {/* Mesa Footer */}
-                                <div className="p-8 bg-emerald-500/5 border border-emerald-500/20 rounded-[2rem] flex items-center justify-between">
+                                {/* Mando de Mesa (RECUPERADO) */}
+                                <div className="p-8 bg-emerald-500/5 border border-emerald-500/20 rounded-[2rem] flex items-center justify-between group">
                                     <div className="flex items-center gap-6">
                                         <div className="w-14 h-14 bg-emerald-600/20 rounded-xl flex items-center justify-center border border-emerald-500/20"><Coffee className="text-emerald-500" /></div>
                                         <div>
-                                            <span className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest">Ubicación Confirmada</span>
-                                            <p className="text-3xl font-black italic uppercase">Sector_Mesa {selectedGuest.mesa}</p>
+                                            <span className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest">Ubicación Estratégica</span>
+                                            {!isEditingMesa ? (
+                                                <p className="text-3xl font-black italic uppercase">Sector_Mesa {tempMesa}</p>
+                                            ) : (
+                                                <input autoFocus type="number" value={tempMesa} onChange={(e) => setTempMesa(e.target.value)} className="bg-white/10 border-2 border-emerald-500 rounded-lg px-4 py-1 text-2xl font-black w-24 outline-none" />
+                                            )}
                                         </div>
                                     </div>
-                                    <Zap className="text-emerald-500/20 w-8 h-8" />
+                                    <button onClick={() => setIsEditingMesa(!isEditingMesa)} className="p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-all">
+                                        {isEditingMesa ? <CheckCircle2 className="w-6 h-6 text-emerald-500" /> : <Edit3 className="w-6 h-6 text-gray-500" />}
+                                    </button>
                                 </div>
                             </div>
 
-                            {/* Acciones */}
                             <div className="p-8 md:p-12 bg-white/[0.02] border-t border-white/5 flex flex-col md:flex-row gap-6 items-center justify-between">
-                                <button onClick={() => setSelectedGuest(null)} className="text-[12px] font-black text-gray-700 hover:text-white tracking-widest uppercase transition-colors">Cancelar_Nodo</button>
+                                <button onClick={() => setSelectedGuest(null)} className="text-[12px] font-black text-gray-700 hover:text-white uppercase transition-colors">Cancelar</button>
                                 <button onClick={handleGrantAccess} className="w-full md:w-auto px-16 py-6 bg-emerald-600 hover:bg-emerald-500 rounded-2xl text-xl font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-4 group">
                                     Validar Acceso <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
                                 </button>
                             </div>
 
-                            {/* Status Overlay */}
                             <AnimatePresence>
                                 {status !== 'idle' && (
                                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[150] bg-black/95 flex flex-col items-center justify-center p-12 text-center">
-                                        {status === 'loading' && (
-                                            <div className="space-y-8">
-                                                <div className="w-20 h-20 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mx-auto" />
-                                                <p className="text-2xl font-black uppercase tracking-widest animate-pulse text-emerald-500">Sincronizando con el Stack...</p>
-                                            </div>
-                                        )}
-                                        {status === 'success' && (
-                                            <div className="space-y-8">
-                                                <div className="w-24 h-24 bg-emerald-500 rounded-[2rem] flex items-center justify-center mx-auto shadow-[0_0_50px_#10b981]"><CheckCircle2 className="w-12 h-12 text-white" /></div>
-                                                <p className="text-5xl font-black uppercase tracking-tighter italic">LISTO</p>
-                                                <p className="text-gray-500 font-bold">Acceso autorizado y persistido.</p>
-                                            </div>
-                                        )}
-                                        {status === 'error' && (
-                                            <div className="space-y-8">
-                                                <div className="w-24 h-24 bg-red-500/20 rounded-[2rem] flex items-center justify-center mx-auto border-2 border-red-500/50 shadow-2xl"><WifiOff className="w-12 h-12 text-red-500" /></div>
-                                                <p className="text-5xl font-black text-red-500 tracking-tighter uppercase">Fallo_de_Red</p>
-                                                <div className="max-w-md space-y-6">
-                                                    <p className="text-gray-500 font-bold leading-relaxed">No se pudo contactar con la API (404). Por favor, verifica la configuración de Traefik y los middlewares en el servidor.</p>
-                                                    <button onClick={() => setStatus('idle')} className="w-full py-5 bg-red-500 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all"><RefreshCw className="w-5 h-5" /> Reintentar</button>
-                                                </div>
-                                            </div>
-                                        )}
+                                        {status === 'loading' && <div className="space-y-8"><div className="w-20 h-20 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mx-auto" /><p className="text-2xl font-black uppercase italic text-emerald-500">Sincronizando...</p></div>}
+                                        {status === 'success' && <div className="space-y-8"><div className="w-24 h-24 bg-emerald-500 rounded-[2rem] flex items-center justify-center mx-auto shadow-[0_0_50px_#10b981]"><CheckCircle2 className="w-12 h-12 text-white" /></div><p className="text-5xl font-black italic uppercase">LISTO</p></div>}
+                                        {status === 'error' && <div className="space-y-8"><div className="w-24 h-24 bg-red-500/20 rounded-[2rem] flex items-center justify-center mx-auto border-2 border-red-500/50"><WifiOff className="w-12 h-12 text-red-500" /></div><p className="text-5xl font-black text-red-500 uppercase">Fallo_de_Red</p><p className="text-gray-500 font-bold max-w-md">No se pudo contactar con la API (404). Verifica logs del servidor.</p><button onClick={() => setStatus('idle')} className="w-full py-5 bg-red-500 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all"><RefreshCw className="w-5 h-5" /> Reintentar</button></div>}
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -415,12 +331,7 @@ export default function RecepcionPage() {
                     </div>
                 )}
             </AnimatePresence>
-
-            <style jsx global>{`
-                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.1); border-radius: 10px; }
-                input, select { -webkit-appearance: none; }
-            `}</style>
+            <style jsx global>{`.custom-scrollbar::-webkit-scrollbar { width: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.1); border-radius: 10px; } input, select { -webkit-appearance: none; }`}</style>
         </div>
     );
 }
