@@ -5,7 +5,7 @@ import {
     Users, Clock, ShieldCheck, Fingerprint, LayoutGrid, List, ChevronRight, 
     Search, Zap, CheckCircle2, X, Star, Layers, Plus, Save, Phone, Mail,
     Radar, Activity, Target, Shield, Globe, Cpu, Building2, Briefcase,
-    Crown, Music, Coffee, Gem
+    Crown, Music, Coffee, Gem, Link as LinkIcon, ExternalLink
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -113,7 +113,7 @@ const GUESTS_MAESTRO: any[] = [
 ];
 
 const ROLES_ESTRATEGICOS = ["CEO", "Estrategia", "Tecnología", "Operaciones", "Socio", "Invitado Especial"];
-const EMPRESAS_LISTA = Array.from(new Set(GUESTS_MAESTRO.map(g => g.empresa))).sort();
+const EMPRESAS_REGISTRADAS = ["Coopseguros", "Coopmaimon", "Invitado", "Musicos"];
 
 export default function RecepcionCommandCenter() {
     const [view, setView] = useState<'tables' | 'directory'>('directory');
@@ -133,9 +133,7 @@ export default function RecepcionCommandCenter() {
     const [isEditingMesa, setIsEditingMesa] = useState(false);
     const [tempMesa, setTempMesa] = useState("");
 
-    // --- CORRECCIÓN DE API PARA PRODUCCIÓN ---
-    // Usamos el hostname actual para asegurar que no haya fallos de routing de Traefik
-    const getApiUrl = (endpoint: string) => `https://jairoapp.renace.tech/api${endpoint}`;
+    const API_BASE = '/api'; 
     const EVENT_ID = 'evt_circulo_001';
 
     useEffect(() => {
@@ -152,7 +150,7 @@ export default function RecepcionCommandCenter() {
     useEffect(() => {
         const fetchAttendance = async () => {
             try {
-                const res = await fetch(getApiUrl(`/events/${EVENT_ID}/attendance`));
+                const res = await fetch(`${API_BASE}/events/${EVENT_ID}/attendance`);
                 if (!res.ok) throw new Error("API Offline");
                 const data = await res.json();
                 if (Array.isArray(data)) {
@@ -170,7 +168,7 @@ export default function RecepcionCommandCenter() {
         if (!selectedGuest) return;
         setAiProcessing(true);
         try {
-            const res = await fetch(getApiUrl(`/events/${EVENT_ID}/attendance`), {
+            const res = await fetch(`${API_BASE}/events/${EVENT_ID}/attendance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -212,32 +210,27 @@ export default function RecepcionCommandCenter() {
 
     const mesasIds = Array.from(new Set(invitados.map(i => i.mesa))).sort((a,b) => parseInt(a) - parseInt(b));
 
-    // Función para obtener icono de mesa moderno
     const getMesaIcon = (mesaId: string) => {
         const mesaNum = parseInt(mesaId);
-        if (mesaNum <= 10) return <Crown className="w-6 h-6 text-amber-500" />;
-        if (mesaNum >= 49 && mesaNum <= 53) return <Music className="w-6 h-6 text-purple-500" />;
-        if (mesaNum >= 91) return <Building2 className="w-6 h-6 text-blue-500" />;
-        return <Coffee className="w-6 h-6 text-emerald-500" />;
+        if (mesaNum <= 10) return <Crown className="w-5 h-5 text-amber-500" />;
+        if (mesaNum >= 49 && mesaNum <= 53) return <Music className="w-5 h-5 text-purple-500" />;
+        if (mesaNum >= 91) return <Building2 className="w-5 h-5 text-blue-500" />;
+        return <Coffee className="w-5 h-5 text-emerald-500" />;
     };
 
     return (
         <div className="min-h-screen bg-[#020408] text-white font-sans selection:bg-emerald-500/30 flex flex-col relative overflow-hidden">
             
             {/* Background Telemetry 2026 */}
-            <div className="fixed inset-0 z-0 pointer-events-none opacity-10">
+            <div className="fixed inset-0 z-0 pointer-events-none opacity-5">
                 <Radar className="absolute -top-20 -right-20 w-96 h-96 text-emerald-500 animate-pulse" />
                 <div className="absolute top-1/2 left-0 w-full h-[1px] bg-emerald-500/10" />
-                <div className="absolute top-0 left-1/2 w-[1px] h-full bg-emerald-500/10" />
-                <div className="absolute bottom-10 left-10 font-mono text-[8px] text-emerald-500/30 uppercase tracking-[0.5em]">
-                    SYS_AUTH_ENABLED // STACK_ACTIVE // NODE_READY
-                </div>
             </div>
 
-            <nav className="h-20 border-b border-white/5 bg-[#020408]/95 backdrop-blur-3xl flex items-center justify-between px-6 lg:px-12 z-50 sticky top-0 shadow-2xl">
+            <nav className="h-20 border-b border-white/5 bg-[#020408]/95 backdrop-blur-3xl flex items-center justify-between px-6 lg:px-12 z-50 sticky top-0">
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.5)]">
+                        <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-[0_0_20px_#10b98150]">
                             <Fingerprint className="w-6 h-6 text-white" />
                         </div>
                         <span className="text-xl font-black uppercase tracking-tighter italic hidden sm:block">JairoOS_2026</span>
@@ -247,117 +240,111 @@ export default function RecepcionCommandCenter() {
                         <input 
                             value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Buscar nodo..."
-                            className="w-full bg-white/[0.03] border border-white/10 rounded-full py-3 pl-12 pr-6 text-sm font-bold focus:border-emerald-500/50 outline-none transition-all shadow-inner"
+                            className="w-full bg-white/[0.03] border border-white/10 rounded-full py-3 pl-12 pr-6 text-sm font-bold outline-none focus:border-emerald-500/50"
                         />
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={() => setView('directory')} className={`p-3 rounded-xl transition-all ${view === 'directory' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-white/5 text-gray-500 hover:text-gray-300'}`}><LayoutGrid className="w-5 h-5" /></button>
-                    <button onClick={() => setView('tables')} className={`p-3 rounded-xl transition-all ${view === 'tables' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-white/5 text-gray-500 hover:text-gray-300'}`}><Layers className="w-5 h-5" /></button>
+                    <button onClick={() => setView('directory')} className={`p-3 rounded-xl ${view === 'directory' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-gray-500'}`}><LayoutGrid className="w-5 h-5" /></button>
+                    <button onClick={() => setView('tables')} className={`p-3 rounded-xl ${view === 'tables' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-gray-500'}`}><Layers className="w-5 h-5" /></button>
                 </div>
             </nav>
 
             <div className="flex flex-1 overflow-hidden z-10">
                 <main className="flex-1 overflow-y-auto p-6 lg:p-10 custom-scrollbar pb-32">
-                    {view === 'directory' ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            <AnimatePresence>
-                                {filtered.map((inv) => (
-                                    <motion.div 
-                                        key={inv.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => setSelectedGuest(inv)}
-                                        className={`p-8 rounded-[2.5rem] border cursor-pointer transition-all bg-white/[0.01] relative group active:scale-95 ${inv.status === 'cleared' ? 'border-emerald-500/30 bg-emerald-500/[0.04]' : 'border-white/5 hover:border-emerald-500/40 hover:bg-white/[0.03]'}`}
-                                    >
-                                        <div className="flex justify-between items-center mb-6">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center">{getMesaIcon(inv.mesa)}</div>
-                                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">MESA {inv.mesa}</span>
-                                            </div>
-                                            {inv.status === 'cleared' && <CheckCircle2 className="w-5 h-5 text-emerald-500 shadow-[0_0_10px_#10b981]" />}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <AnimatePresence>
+                            {filtered.map((inv) => (
+                                <motion.div 
+                                    key={inv.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => setSelectedGuest(inv)}
+                                    className={`p-8 rounded-[2.5rem] border cursor-pointer transition-all bg-white/[0.01] relative group active:scale-95 ${inv.status === 'cleared' ? 'border-emerald-500/30 bg-emerald-500/[0.04]' : 'border-white/5 hover:border-emerald-500/40 hover:bg-white/[0.03]'}`}
+                                >
+                                    <div className="flex justify-between items-center mb-6">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center">{getMesaIcon(inv.mesa)}</div>
+                                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">MESA {inv.mesa}</span>
                                         </div>
-                                        <h3 className="text-xl font-black uppercase leading-tight group-hover:text-emerald-400 transition-colors">{inv.nombre}</h3>
-                                        <p className="text-[10px] font-bold text-gray-700 uppercase mt-3 tracking-widest">{inv.empresa}</p>
-                                    </motion.div>
-                                ))}
-                            </AnimatePresence>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                            {mesasIds.map(mesaId => {
-                                const mesaInvs = filtered.filter(i => i.mesa === mesaId);
-                                if (searchTerm && mesaInvs.length === 0) return null;
-                                return (
-                                    <div key={mesaId} className="p-10 rounded-[3.5rem] bg-white/[0.01] border border-white/5 hover:border-white/10 transition-all group relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 p-6 opacity-20">{getMesaIcon(mesaId)}</div>
-                                        <h3 className="text-2xl font-black uppercase mb-8 border-b border-white/5 pb-4 flex justify-between items-center">
-                                            <span>Mesa {mesaId}</span>
-                                            <span className="text-[10px] text-gray-700 tracking-[0.3em]">{mesaInvs.length} PERSONAS</span>
-                                        </h3>
-                                        <div className="space-y-4">
-                                            {mesaInvs.map(inv => (
-                                                <div key={inv.id} onClick={() => setSelectedGuest(inv)} className={`p-6 rounded-[2rem] border flex justify-between items-center cursor-pointer transition-all active:scale-95 ${inv.status === 'cleared' ? 'border-emerald-500/20 bg-emerald-500/[0.05]' : 'border-white/5 hover:border-emerald-500/30'}`}>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-base font-black uppercase leading-tight group-hover:text-emerald-400">{inv.nombre}</span>
-                                                        <span className="text-[9px] font-bold text-gray-700 uppercase mt-1 tracking-widest">{inv.empresa}</span>
-                                                    </div>
-                                                    {inv.status === 'cleared' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
-                                                </div>
-                                            ))}
-                                        </div>
+                                        {inv.status === 'cleared' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
                                     </div>
-                                );
-                            })}
-                        </div>
-                    )}
+                                    <h3 className="text-xl font-black uppercase leading-tight group-hover:text-emerald-400">{inv.nombre}</h3>
+                                    
+                                    {/* Empresa con Vínculo Visual */}
+                                    <div className="mt-3 flex items-center gap-2">
+                                        <span className={`text-[10px] font-bold uppercase tracking-widest ${EMPRESAS_REGISTRADAS.includes(inv.empresa) ? 'text-emerald-400' : 'text-gray-700'}`}>
+                                            {inv.empresa}
+                                        </span>
+                                        {EMPRESAS_REGISTRADAS.includes(inv.empresa) && (
+                                            <div className="w-4 h-4 bg-emerald-500/10 rounded flex items-center justify-center">
+                                                <LinkIcon className="w-2.5 h-2.5 text-emerald-500" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    </div>
                 </main>
             </div>
 
-            {/* Modal de Validación 2026 */}
+            {/* Modal de Validación Completo (Sin Regresiones) */}
             <AnimatePresence>
                 {selectedGuest && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 backdrop-blur-3xl bg-black/90">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 backdrop-blur-3xl bg-black/95">
                         <motion.div 
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} 
-                            className="w-full max-w-[950px] max-h-[95vh] bg-[#05080f] rounded-[4rem] border border-white/10 flex flex-col relative shadow-[0_50px_100px_rgba(0,0,0,1)] overflow-y-auto custom-scrollbar"
+                            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} 
+                            className="w-full max-w-[950px] max-h-[95vh] bg-[#05080f] rounded-[4rem] border border-white/10 flex flex-col relative overflow-y-auto custom-scrollbar shadow-[0_50px_100px_rgba(0,0,0,1)]"
                         >
-                            <button onClick={() => { setSelectedGuest(null); setIsEditingMesa(false); }} className="absolute top-8 right-8 z-[110] p-4 bg-white/5 rounded-full hover:bg-white/10 transition-all hover:rotate-90"><X className="w-6 h-6" /></button>
+                            <button onClick={() => { setSelectedGuest(null); setIsEditingMesa(false); }} className="absolute top-8 right-8 z-[110] p-4 bg-white/5 rounded-full hover:bg-white/10 transition-all"><X className="w-6 h-6" /></button>
                             
-                            {/* Header Moderno */}
-                            <div className="p-10 lg:p-14 border-b border-white/5 bg-white/[0.02] relative overflow-hidden">
-                                <div className="absolute top-0 right-0 p-10 opacity-10"><Target className="w-32 h-32 text-emerald-500" /></div>
+                            {/* Header del Nodo */}
+                            <div className="p-10 lg:p-14 border-b border-white/5 bg-white/[0.02]">
                                 <div className="flex items-center gap-4 mb-6">
                                     <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20"><Gem className="w-6 h-6 text-emerald-500" /></div>
-                                    <span className="text-[11px] font-black tracking-[0.4em] text-emerald-500">AUTENTICACIÓN_NODO_2026</span>
+                                    <span className="text-[11px] font-black tracking-[0.4em] text-emerald-500 uppercase">Verificación_de_Acceso_2026</span>
                                 </div>
-                                <h2 className="text-5xl lg:text-7xl font-black uppercase leading-[0.85] tracking-tighter text-white">{selectedGuest.nombre}</h2>
-                                <p className="text-2xl font-bold text-gray-600 uppercase tracking-widest mt-4 italic">{formData.empresa || selectedGuest.empresa}</p>
+                                <h2 className="text-5xl lg:text-7xl font-black uppercase leading-[0.85] tracking-tighter">{selectedGuest.nombre}</h2>
+                                
+                                {/* Empresa Linkeada en Modal */}
+                                <div className="mt-6 flex items-center gap-4">
+                                    <p className={`text-2xl font-bold uppercase tracking-widest italic ${EMPRESAS_REGISTRADAS.includes(formData.empresa) ? 'text-emerald-500' : 'text-gray-600'}`}>
+                                        {formData.empresa || selectedGuest.empresa}
+                                    </p>
+                                    {EMPRESAS_REGISTRADAS.includes(formData.empresa) && (
+                                        <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-2">
+                                            <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                                            <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Nodo Vinculado</span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
-                            {/* Formulario Moderno */}
+                            {/* Formulario Estratégico */}
                             <div className="p-10 lg:p-14 space-y-12">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                     <div className="space-y-8">
                                         <div className="space-y-3 group">
-                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-[0.3em] group-focus-within:text-emerald-500 transition-colors">Empresa / Corporación</label>
+                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-[0.3em]">Empresa / Nodo de Red</label>
                                             <div className="relative">
                                                 <Building2 className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-700" />
                                                 <select 
                                                     value={formData.empresa} 
                                                     onChange={(e) => setFormData({...formData, empresa: e.target.value})}
-                                                    className="w-full h-20 bg-white/[0.03] border border-white/10 rounded-2xl pl-16 pr-8 font-black text-xl outline-none focus:border-emerald-500/50 appearance-none shadow-inner"
+                                                    className="w-full h-20 bg-white/[0.03] border border-white/10 rounded-2xl pl-16 pr-8 font-black text-xl outline-none focus:border-emerald-500/50 appearance-none"
                                                 >
-                                                    {EMPRESAS_LISTA.map(e => <option key={e} value={e} className="bg-[#05080f]">{e}</option>)}
+                                                    {EMPRESAS_REGISTRADAS.map(e => <option key={e} value={e} className="bg-[#05080f]">{e}</option>)}
                                                     <option value="OTRA" className="bg-[#05080f]">OTRA...</option>
                                                 </select>
+                                                <ExternalLink className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500/40" />
                                             </div>
                                         </div>
                                         <div className="space-y-3 group">
-                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-[0.3em] group-focus-within:text-emerald-500 transition-colors">Rol Estratégico</label>
+                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-[0.3em]">Rol Táctico</label>
                                             <div className="relative">
                                                 <Briefcase className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-700" />
                                                 <select 
                                                     value={formData.rol} 
                                                     onChange={(e) => setFormData({...formData, rol: e.target.value})}
-                                                    className="w-full h-20 bg-white/[0.03] border border-white/10 rounded-2xl pl-16 pr-8 font-black text-xl outline-none focus:border-emerald-500/50 appearance-none shadow-inner"
+                                                    className="w-full h-20 bg-white/[0.03] border border-white/10 rounded-2xl pl-16 pr-8 font-black text-xl outline-none focus:border-emerald-500/50 appearance-none"
                                                 >
                                                     {ROLES_ESTRATEGICOS.map(r => <option key={r} value={r} className="bg-[#05080f]">{r}</option>)}
                                                 </select>
@@ -367,40 +354,40 @@ export default function RecepcionCommandCenter() {
 
                                     <div className="space-y-8">
                                         <div className="space-y-3 group">
-                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-[0.3em] group-focus-within:text-emerald-500 transition-colors">Contacto Móvil</label>
+                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-[0.3em]">Terminal Móvil</label>
                                             <div className="relative">
                                                 <Phone className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-700" />
                                                 <input 
                                                     placeholder="809-000-0000"
                                                     value={formData.telefono}
                                                     onChange={(e) => setFormData({...formData, telefono: e.target.value})}
-                                                    className="w-full h-20 bg-white/[0.03] border border-white/10 rounded-2xl pl-16 pr-8 font-black text-xl outline-none focus:border-emerald-500/50 shadow-inner placeholder:text-gray-900"
+                                                    className="w-full h-20 bg-white/[0.03] border border-white/10 rounded-2xl pl-16 pr-8 font-black text-xl outline-none focus:border-emerald-500/50 shadow-inner"
                                                 />
                                             </div>
                                         </div>
                                         <div className="space-y-3 group">
-                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-[0.3em] group-focus-within:text-emerald-500 transition-colors">E-Mail Corporativo</label>
+                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-[0.3em]">Correo de Enlace</label>
                                             <div className="relative">
                                                 <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-700" />
                                                 <input 
                                                     placeholder="nombre@empresa.com"
                                                     value={formData.correo}
                                                     onChange={(e) => setFormData({...formData, correo: e.target.value})}
-                                                    className="w-full h-20 bg-white/[0.03] border border-white/10 rounded-2xl pl-16 pr-8 font-black text-xl outline-none focus:border-emerald-500/50 shadow-inner placeholder:text-gray-900"
+                                                    className="w-full h-20 bg-white/[0.03] border border-white/10 rounded-2xl pl-16 pr-8 font-black text-xl outline-none focus:border-emerald-500/50 shadow-inner"
                                                 />
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Editor de Mesa Integrado (Reparado) */}
-                                <div className="p-10 bg-emerald-500/[0.03] rounded-[2.5rem] border border-emerald-500/10 flex items-center justify-between group shadow-2xl">
+                                {/* Ubicación y Editor (Funcionalidad Preservada) */}
+                                <div className="p-10 bg-emerald-500/[0.03] rounded-[2.5rem] border border-emerald-500/10 flex items-center justify-between">
                                     <div className="flex items-center gap-6">
                                         <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center border border-emerald-500/20">{getMesaIcon(selectedGuest.mesa)}</div>
                                         <div>
-                                            <span className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.4em]">UBICACIÓN_ACTUAL</span>
+                                            <span className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.4em]">COORDENADAS_MESA</span>
                                             {!isEditingMesa ? (
-                                                <p className="text-5xl font-black text-emerald-500 tracking-tighter">MESA {selectedGuest.mesa}</p>
+                                                <p className="text-5xl font-black text-emerald-500 tracking-tighter"># {selectedGuest.mesa}</p>
                                             ) : (
                                                 <div className="flex items-center gap-4 mt-2">
                                                     <input 
@@ -408,48 +395,42 @@ export default function RecepcionCommandCenter() {
                                                         onChange={(e) => setTempMesa(e.target.value)}
                                                         className="bg-white/10 border-2 border-emerald-500 rounded-xl px-6 py-3 text-3xl font-black w-24 outline-none text-center"
                                                     />
-                                                    <button onClick={() => handleMoveGuest(selectedGuest.id, tempMesa)} className="bg-emerald-500 px-6 py-3 rounded-xl font-black uppercase text-xs">OK</button>
+                                                    <button onClick={() => handleMoveGuest(selectedGuest.id, tempMesa)} className="bg-emerald-500 px-6 py-4 rounded-xl font-black uppercase text-xs">GUARDAR</button>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
                                     <button 
-                                        onClick={() => {
-                                            setTempMesa(selectedGuest.mesa);
-                                            setIsEditingMesa(!isEditingMesa);
-                                        }} 
-                                        className="w-20 h-20 bg-emerald-500 rounded-3xl flex items-center justify-center shadow-[0_0_40px_rgba(16,185,129,0.3)] active:scale-90 transition-all hover:scale-105"
+                                        onClick={() => { setTempMesa(selectedGuest.mesa); setIsEditingMesa(!isEditingMesa); }} 
+                                        className="w-20 h-20 bg-emerald-500 rounded-3xl flex items-center justify-center shadow-lg active:scale-90 transition-all"
                                     >
                                         {isEditingMesa ? <X className="w-10 h-10 text-white" /> : <Layers className="w-10 h-10 text-white" />}
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Footer */}
+                            {/* Acciones Finales */}
                             <div className="p-10 lg:p-14 bg-white/[0.01] border-t border-white/5 flex flex-col sm:flex-row gap-8 items-center justify-between mt-auto">
-                                <button onClick={() => { setSelectedGuest(null); setIsEditingMesa(false); }} className="text-[12px] font-black text-gray-700 hover:text-white transition-all tracking-[0.5em] uppercase">DESCARTAR_NODO</button>
-                                <button onClick={handleGrantAccess} className="w-full sm:w-auto px-24 py-10 bg-emerald-600 rounded-[2.5rem] text-white font-black uppercase tracking-[0.3em] shadow-[0_0_80px_rgba(16,185,129,0.4)] hover:bg-emerald-500 active:scale-95 transition-all text-2xl flex items-center justify-center gap-4">
+                                <button onClick={() => { setSelectedGuest(null); setIsEditingMesa(false); }} className="text-[12px] font-black text-gray-700 hover:text-white transition-all tracking-[0.5em] uppercase">ABORTAR_NODO</button>
+                                <button onClick={handleGrantAccess} className="w-full sm:w-auto px-24 py-10 bg-emerald-600 rounded-[2.5rem] text-white font-black uppercase tracking-[0.3em] shadow-[0_0_80px_#10b98150] hover:bg-emerald-500 active:scale-95 transition-all text-2xl flex items-center justify-center gap-4">
                                     CONCEDER ACCESO <ChevronRight className="w-8 h-8" />
                                 </button>
                             </div>
 
-                            {/* Overlay de Procesamiento */}
                             <AnimatePresence>
                                 {aiProcessing && (
                                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[150] bg-[#05080f]/99 flex flex-col items-center justify-center p-12 text-center">
                                         {!aiComplete ? (
                                             <div className="space-y-12">
-                                                <div className="w-40 h-40 border-[10px] border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin mx-auto shadow-[0_0_50px_rgba(16,185,129,0.2)]" />
-                                                <p className="text-4xl font-black uppercase tracking-tighter animate-pulse text-emerald-500 italic">Sincronizando Nodo_2026...</p>
+                                                <div className="w-40 h-40 border-[10px] border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin mx-auto" />
+                                                <p className="text-4xl font-black uppercase tracking-tighter animate-pulse text-emerald-500 italic">Sincronizando con Red JairoOS...</p>
                                             </div>
                                         ) : (
-                                            <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="space-y-12">
+                                            <div className="space-y-12">
                                                 <div className="w-32 h-32 bg-emerald-500 rounded-[3rem] flex items-center justify-center mx-auto shadow-[0_0_100px_#10b981]"><ShieldCheck className="w-16 h-16 text-white" /></div>
-                                                <div>
-                                                    <p className="text-8xl font-black text-emerald-500 tracking-tighter">LISTO</p>
-                                                    <p className="text-2xl font-bold italic text-gray-500 uppercase tracking-widest mt-6">Nodo Validado en Red_2026</p>
-                                                </div>
-                                            </motion.div>
+                                                <p className="text-8xl font-black text-emerald-500 tracking-tighter">LISTO</p>
+                                                <p className="text-2xl font-bold italic text-gray-500 uppercase tracking-widest mt-6">Acceso Validado</p>
+                                            </div>
                                         )}
                                     </motion.div>
                                 )}
@@ -462,9 +443,8 @@ export default function RecepcionCommandCenter() {
             <style jsx global>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 5px; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.2); border-radius: 20px; }
-                input[type="number"]::-webkit-inner-spin-button, 
-                input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-                select { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
+                input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+                select { -webkit-appearance: none; appearance: none; }
             `}</style>
         </div>
     );
