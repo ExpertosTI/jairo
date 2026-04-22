@@ -4,11 +4,11 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { 
     Fingerprint, LayoutGrid, Search, CheckCircle2, X, Layers, Phone, Mail, 
     Radar, Cpu, Building2, Briefcase, Crown, Music, Coffee, ChevronRight, 
-    WifiOff, RefreshCw, Edit3, ShieldCheck
+    WifiOff, RefreshCw, Edit3, ShieldCheck, Zap
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// --- CONFIGURACIÓN ESTRATÉGICA ---
+// --- CONFIGURACIÓN ---
 const API_BASE = '/api'; 
 const EVENT_ID = 'evt_circulo_001';
 
@@ -133,7 +133,6 @@ export default function RecepcionPage() {
     const [selectedGuest, setSelectedGuest] = useState<any>(null);
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
-    // Estado del Formulario
     const [formData, setFormData] = useState({
         nombre: "",
         empresa: "",
@@ -142,7 +141,6 @@ export default function RecepcionPage() {
         rol: "Invitado"
     });
 
-    // --- LÓGICA DE NEGOCIO ---
     const handleSync = useCallback(async () => {
         try {
             const res = await fetch(`${API_BASE}/events/${EVENT_ID}/attendance`);
@@ -170,7 +168,7 @@ export default function RecepcionPage() {
         }
     }, [selectedGuest]);
 
-    // Detección de Empresa por Dominio
+    // Detección por dominio
     useEffect(() => {
         if (formData.correo.includes("@")) {
             const domain = formData.correo.split("@")[1].toLowerCase();
@@ -213,72 +211,72 @@ export default function RecepcionPage() {
     const mesas = useMemo(() => Array.from(new Set(invitados.map(i => i.mesa))).sort((a,b) => parseInt(a) - parseInt(b)), [invitados]);
 
     return (
-        <div className="min-h-screen bg-[#05070a] text-white font-sans selection:bg-emerald-500/30 overflow-hidden flex flex-col">
+        <div className="min-h-screen bg-[#020408] text-white font-sans overflow-hidden flex flex-col selection:bg-emerald-500/30">
             
-            {/* Background Decor */}
-            <div className="fixed inset-0 pointer-events-none opacity-20">
+            {/* Background Telemetry */}
+            <div className="fixed inset-0 pointer-events-none opacity-10">
                 <Radar className="absolute -top-20 -right-20 w-96 h-96 text-emerald-500 animate-pulse" />
             </div>
 
-            {/* Header Responsivo */}
-            <header className="h-20 border-b border-white/5 bg-[#05070a]/80 backdrop-blur-xl flex items-center justify-between px-6 md:px-12 z-50">
+            {/* Nav */}
+            <nav className="h-20 border-b border-white/5 bg-[#020408]/90 backdrop-blur-2xl flex items-center justify-between px-6 md:px-12 z-50 sticky top-0">
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.4)]">
+                    <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-600/20">
                         <Fingerprint className="w-6 h-6" />
                     </div>
-                    <h1 className="text-xl font-black tracking-tighter uppercase italic hidden sm:block">Jairo_Reception</h1>
+                    <span className="text-xl font-black italic tracking-tighter uppercase hidden sm:block">Jairo_OS</span>
                 </div>
 
                 <div className="flex-1 max-w-md mx-6">
-                    <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-emerald-500 transition-colors" />
+                    <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                         <input 
                             value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Buscar invitado..."
-                            className="w-full bg-white/5 border border-white/10 rounded-full py-2.5 pl-12 pr-6 text-sm focus:border-emerald-500/50 outline-none transition-all"
+                            placeholder="Identificar invitado..."
+                            className="w-full bg-white/5 border border-white/10 rounded-full py-3 pl-12 pr-6 text-sm focus:border-emerald-500/50 outline-none transition-all"
                         />
                     </div>
                 </div>
 
                 <div className="flex gap-2">
-                    <button onClick={() => setView('grid')} className={`p-2.5 rounded-lg transition-all ${view === 'grid' ? 'bg-emerald-600' : 'bg-white/5 text-gray-500'}`}><LayoutGrid className="w-5 h-5" /></button>
-                    <button onClick={() => setView('tables')} className={`p-2.5 rounded-lg transition-all ${view === 'tables' ? 'bg-emerald-600' : 'bg-white/5 text-gray-500'}`}><Layers className="w-5 h-5" /></button>
+                    <button onClick={() => setView('grid')} className={`p-3 rounded-xl transition-all ${view === 'grid' ? 'bg-emerald-600' : 'bg-white/5 text-gray-500'}`}><LayoutGrid className="w-5 h-5" /></button>
+                    <button onClick={() => setView('tables')} className={`p-3 rounded-xl transition-all ${view === 'tables' ? 'bg-emerald-600' : 'bg-white/5 text-gray-500'}`}><Layers className="w-5 h-5" /></button>
                 </div>
-            </header>
+            </nav>
 
-            {/* Main Content */}
-            <main className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar">
+            {/* Content */}
+            <main className="flex-1 overflow-y-auto p-6 md:p-12 custom-scrollbar">
                 {view === 'grid' ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filtered.map(inv => (
                             <div 
                                 key={inv.id} onClick={() => setSelectedGuest(inv)}
-                                className={`p-6 rounded-2xl border transition-all cursor-pointer group hover:scale-[1.02] active:scale-[0.98] ${inv.status === 'cleared' ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/[0.02] border-white/5 hover:border-emerald-500/30'}`}
+                                className={`p-8 rounded-[2rem] border transition-all cursor-pointer relative overflow-hidden group hover:scale-[1.02] active:scale-[0.98] ${inv.status === 'cleared' ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/[0.01] border-white/5 hover:border-emerald-500/30'}`}
                             >
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="px-3 py-1 bg-white/5 rounded-md text-[10px] font-black tracking-widest text-gray-400">MESA {inv.mesa}</div>
-                                    {inv.status === 'cleared' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                                <div className="flex justify-between items-start mb-6">
+                                    <div className="px-3 py-1 bg-white/5 rounded-md text-[10px] font-black text-gray-500 uppercase tracking-widest">Mesa {inv.mesa}</div>
+                                    {inv.status === 'cleared' && <CheckCircle2 className="w-6 h-6 text-emerald-500" />}
                                 </div>
-                                <h3 className="text-lg font-black uppercase tracking-tight group-hover:text-emerald-400 transition-colors">{inv.nombre}</h3>
-                                <p className="text-xs text-gray-500 font-bold mt-2 uppercase">{inv.empresa}</p>
+                                <h3 className="text-xl font-black uppercase leading-tight group-hover:text-emerald-400 transition-colors">{inv.nombre}</h3>
+                                <p className="text-[10px] text-gray-600 font-black mt-3 uppercase tracking-widest italic">{inv.empresa}</p>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
                         {mesas.map(m => {
                             const guests = filtered.filter(i => i.mesa === m);
                             if (guests.length === 0) return null;
                             return (
-                                <div key={m} className="bg-white/[0.02] border border-white/5 rounded-3xl p-6">
-                                    <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
-                                        <h3 className="text-xl font-black italic">Mesa {m}</h3>
-                                        <span className="text-[10px] text-gray-600 font-black tracking-widest">{guests.length} NODOS</span>
+                                <div key={m} className="bg-white/[0.01] border border-white/5 rounded-[2.5rem] p-8">
+                                    <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
+                                        <h3 className="text-2xl font-black italic uppercase">Mesa {m}</h3>
+                                        <span className="text-[10px] text-emerald-500/40 font-black tracking-widest">{guests.length} NODOS</span>
                                     </div>
-                                    <div className="space-y-3">
+                                    <div className="space-y-4">
                                         {guests.map(inv => (
-                                            <div key={inv.id} onClick={() => setSelectedGuest(inv)} className="p-4 bg-white/[0.02] border border-white/5 rounded-xl hover:border-emerald-500/30 transition-all cursor-pointer flex justify-between items-center">
-                                                <span className="text-sm font-bold uppercase">{inv.nombre}</span>
+                                            <div key={inv.id} onClick={() => setSelectedGuest(inv)} className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl hover:border-emerald-500/30 transition-all cursor-pointer flex justify-between items-center">
+                                                <span className="text-sm font-black uppercase tracking-tight">{inv.nombre}</span>
                                                 {inv.status === 'cleared' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
                                             </div>
                                         ))}
@@ -290,133 +288,123 @@ export default function RecepcionPage() {
                 )}
             </main>
 
-            {/* Modal Profesional Responsivo */}
+            {/* Modal Responsivo - Arquitectura Segura */}
             <AnimatePresence>
                 {selectedGuest && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10 backdrop-blur-2xl bg-black/80">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-12 backdrop-blur-3xl bg-black/80">
                         <motion.div 
-                            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-                            className="w-full max-w-4xl bg-[#0a0d14] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+                            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+                            className="w-full max-w-4xl bg-[#0a0d14] border border-white/10 rounded-[3rem] shadow-2xl flex flex-col max-h-[95vh] relative overflow-hidden"
                         >
                             <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
                                 <div className="flex items-center gap-4">
                                     <ShieldCheck className="text-emerald-500 w-6 h-6" />
-                                    <span className="text-[10px] font-black tracking-[0.3em] uppercase text-emerald-500">Protocolo de Acceso</span>
+                                    <span className="text-[11px] font-black tracking-[0.4em] uppercase text-emerald-500">Protocolo de Acceso</span>
                                 </div>
-                                <button onClick={() => setSelectedGuest(null)} className="p-2 hover:bg-white/5 rounded-full transition-colors"><X className="w-6 h-6 text-gray-500" /></button>
+                                <button onClick={() => setSelectedGuest(null)} className="p-3 hover:bg-white/5 rounded-full transition-colors"><X className="w-7 h-7 text-gray-500" /></button>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-8 md:p-12 space-y-10 custom-scrollbar">
-                                {/* Nombre Editable */}
+                            <div className="flex-1 overflow-y-auto p-8 md:p-16 space-y-12 custom-scrollbar">
+                                {/* Nombre */}
                                 <div className="space-y-4">
-                                    <label className="text-[10px] font-black text-gray-600 tracking-widest uppercase">Corregir Nombre del Invitado</label>
-                                    <div className="relative group">
-                                        <Edit3 className="absolute right-6 top-1/2 -translate-y-1/2 w-6 h-6 text-white/10 group-focus-within:text-emerald-500 transition-colors" />
+                                    <label className="text-[11px] font-black text-gray-600 tracking-[0.3em] uppercase">Identidad del Nodo</label>
+                                    <div className="relative">
+                                        <Edit3 className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 text-white/5" />
                                         <input 
                                             value={formData.nombre} onChange={(e) => setFormData(f => ({ ...f, nombre: e.target.value }))}
-                                            className="w-full bg-transparent border-b-2 border-white/10 text-3xl md:text-5xl font-black uppercase py-4 outline-none focus:border-emerald-500/50 transition-all tracking-tighter"
+                                            className="w-full bg-transparent border-b-2 border-white/10 text-4xl md:text-6xl font-black uppercase py-4 outline-none focus:border-emerald-500/60 transition-all tracking-tighter italic"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="space-y-6">
+                                {/* Grilla de Datos */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                    <div className="space-y-8">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-600 tracking-widest uppercase">Correo Electrónico</label>
-                                            <div className="relative">
-                                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-700" />
-                                                <input 
-                                                    value={formData.correo} onChange={(e) => setFormData(f => ({ ...f, correo: e.target.value }))}
-                                                    placeholder="ejemplo@dominio.com"
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-6 outline-none focus:border-emerald-500/50"
-                                                />
-                                            </div>
+                                            <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Identificador (Correo)</label>
+                                            <input 
+                                                value={formData.correo} onChange={(e) => setFormData(f => ({ ...f, correo: e.target.value }))}
+                                                placeholder="ejemplo@dominio.com"
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 font-bold focus:border-emerald-500/50 outline-none transition-all"
+                                            />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-600 tracking-widest uppercase">Empresa / Institución</label>
-                                            <div className="relative">
-                                                <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-700" />
-                                                <input 
-                                                    value={formData.empresa} onChange={(e) => setFormData(f => ({ ...f, empresa: e.target.value }))}
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-6 outline-none focus:border-emerald-500/50"
-                                                />
-                                            </div>
+                                            <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Organización</label>
+                                            <input 
+                                                value={formData.empresa} onChange={(e) => setFormData(f => ({ ...f, empresa: e.target.value }))}
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 font-bold focus:border-emerald-500/50 outline-none transition-all"
+                                            />
                                         </div>
                                     </div>
 
-                                    <div className="space-y-6">
+                                    <div className="space-y-8">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-600 tracking-widest uppercase">Teléfono de Contacto</label>
-                                            <div className="relative">
-                                                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-700" />
-                                                <input 
-                                                    value={formData.telefono} onChange={(e) => setFormData(f => ({ ...f, telefono: e.target.value }))}
-                                                    placeholder="809-000-0000"
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-6 outline-none focus:border-emerald-500/50"
-                                                />
-                                            </div>
+                                            <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Contacto (WhatsApp)</label>
+                                            <input 
+                                                value={formData.telefono} onChange={(e) => setFormData(f => ({ ...f, telefono: e.target.value }))}
+                                                placeholder="809-000-0000"
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 font-bold focus:border-emerald-500/50 outline-none transition-all"
+                                            />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-600 tracking-widest uppercase">Rol Estratégico</label>
-                                            <div className="relative">
-                                                <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-700" />
-                                                <select 
-                                                    value={formData.rol} onChange={(e) => setFormData(f => ({ ...f, rol: e.target.value }))}
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-6 outline-none focus:border-emerald-500/50 appearance-none italic"
-                                                >
-                                                    <option value="Invitado">Invitado Particular</option>
-                                                    <option value="CEO">CEO / Directivo</option>
-                                                    <option value="Socio">Socio Estratégico</option>
-                                                    <option value="Prensa">Prensa / Media</option>
-                                                </select>
-                                            </div>
+                                            <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Rol Táctico</label>
+                                            <select 
+                                                value={formData.rol} onChange={(e) => setFormData(f => ({ ...f, rol: e.target.value }))}
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 font-bold focus:border-emerald-500/50 outline-none transition-all appearance-none"
+                                            >
+                                                <option value="Invitado">Invitado Particular</option>
+                                                <option value="CEO">CEO / Directivo</option>
+                                                <option value="Socio">Socio Estratégico</option>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-emerald-600/20 rounded-lg flex items-center justify-center border border-emerald-500/20"><Coffee className="text-emerald-500" /></div>
+                                {/* Mesa Footer */}
+                                <div className="p-8 bg-emerald-500/5 border border-emerald-500/20 rounded-[2rem] flex items-center justify-between">
+                                    <div className="flex items-center gap-6">
+                                        <div className="w-14 h-14 bg-emerald-600/20 rounded-xl flex items-center justify-center border border-emerald-500/20"><Coffee className="text-emerald-500" /></div>
                                         <div>
-                                            <span className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest">Ubicación Asignada</span>
-                                            <p className="text-2xl font-black italic">MESA {selectedGuest.mesa}</p>
+                                            <span className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest">Ubicación Confirmada</span>
+                                            <p className="text-3xl font-black italic uppercase">Sector_Mesa {selectedGuest.mesa}</p>
                                         </div>
                                     </div>
-                                    <div className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Sector Central</div>
+                                    <Zap className="text-emerald-500/20 w-8 h-8" />
                                 </div>
                             </div>
 
-                            <div className="p-8 bg-white/[0.02] border-t border-white/5 flex flex-col md:flex-row gap-4 items-center justify-between">
-                                <button onClick={() => setSelectedGuest(null)} className="text-[10px] font-black text-gray-600 hover:text-white tracking-widest uppercase">Cancelar</button>
-                                <button onClick={handleGrantAccess} className="w-full md:w-auto px-12 py-5 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-3 text-lg">
-                                    Conceder Acceso <ChevronRight className="w-6 h-6" />
+                            {/* Acciones */}
+                            <div className="p-8 md:p-12 bg-white/[0.02] border-t border-white/5 flex flex-col md:flex-row gap-6 items-center justify-between">
+                                <button onClick={() => setSelectedGuest(null)} className="text-[12px] font-black text-gray-700 hover:text-white tracking-widest uppercase transition-colors">Cancelar_Nodo</button>
+                                <button onClick={handleGrantAccess} className="w-full md:w-auto px-16 py-6 bg-emerald-600 hover:bg-emerald-500 rounded-2xl text-xl font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-4 group">
+                                    Validar Acceso <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
                                 </button>
                             </div>
 
-                            {/* Status Overlays */}
+                            {/* Status Overlay */}
                             <AnimatePresence>
                                 {status !== 'idle' && (
-                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[150] bg-black/95 flex flex-col items-center justify-center p-10 text-center">
+                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[150] bg-black/95 flex flex-col items-center justify-center p-12 text-center">
                                         {status === 'loading' && (
-                                            <div className="space-y-6">
-                                                <div className="w-16 h-16 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mx-auto" />
-                                                <p className="text-xl font-black uppercase italic animate-pulse text-emerald-500">Sincronizando Nodo...</p>
+                                            <div className="space-y-8">
+                                                <div className="w-20 h-20 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mx-auto" />
+                                                <p className="text-2xl font-black uppercase tracking-widest animate-pulse text-emerald-500">Sincronizando con el Stack...</p>
                                             </div>
                                         )}
                                         {status === 'success' && (
-                                            <div className="space-y-6">
-                                                <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-[0_0_40px_#10b981]"><CheckCircle2 className="w-10 h-10 text-white" /></div>
-                                                <p className="text-4xl font-black uppercase tracking-tighter">VALIDADO</p>
-                                                <p className="text-gray-500 font-bold">Registro persistido en el Stack Central</p>
+                                            <div className="space-y-8">
+                                                <div className="w-24 h-24 bg-emerald-500 rounded-[2rem] flex items-center justify-center mx-auto shadow-[0_0_50px_#10b981]"><CheckCircle2 className="w-12 h-12 text-white" /></div>
+                                                <p className="text-5xl font-black uppercase tracking-tighter italic">LISTO</p>
+                                                <p className="text-gray-500 font-bold">Acceso autorizado y persistido.</p>
                                             </div>
                                         )}
                                         {status === 'error' && (
-                                            <div className="space-y-6">
-                                                <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto border border-red-500/50"><WifiOff className="w-10 h-10 text-red-500" /></div>
-                                                <p className="text-4xl font-black text-red-500 tracking-tighter">FALLO_DE_RED</p>
-                                                <div className="max-w-xs space-y-4">
-                                                    <p className="text-sm text-gray-500">No se pudo conectar con la API (404). Por favor, verifica la configuración de Traefik en el servidor.</p>
-                                                    <button onClick={() => setStatus('idle')} className="w-full py-4 bg-red-500 rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2"><RefreshCw className="w-4 h-4" /> Reintentar</button>
+                                            <div className="space-y-8">
+                                                <div className="w-24 h-24 bg-red-500/20 rounded-[2rem] flex items-center justify-center mx-auto border-2 border-red-500/50 shadow-2xl"><WifiOff className="w-12 h-12 text-red-500" /></div>
+                                                <p className="text-5xl font-black text-red-500 tracking-tighter uppercase">Fallo_de_Red</p>
+                                                <div className="max-w-md space-y-6">
+                                                    <p className="text-gray-500 font-bold leading-relaxed">No se pudo contactar con la API (404). Por favor, verifica la configuración de Traefik y los middlewares en el servidor.</p>
+                                                    <button onClick={() => setStatus('idle')} className="w-full py-5 bg-red-500 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all"><RefreshCw className="w-5 h-5" /> Reintentar</button>
                                                 </div>
                                             </div>
                                         )}
@@ -430,7 +418,7 @@ export default function RecepcionPage() {
 
             <style jsx global>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.2); border-radius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.1); border-radius: 10px; }
                 input, select { -webkit-appearance: none; }
             `}</style>
         </div>
