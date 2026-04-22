@@ -1,358 +1,560 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { 
-  Users, Search, CheckCircle2, AlertCircle, 
-  RefreshCcw, UserPlus, ShieldCheck, Activity,
-  Database, Wifi, WifiOff, Edit3, X, Zap, 
-  ChevronRight, Fingerprint, Lock, Radio
-} from 'lucide-react'
+    Users, ShieldCheck, Fingerprint, LayoutGrid, Search, CheckCircle2, 
+    X, Star, Layers, Phone, Mail, Radar, Activity, Target, Globe, 
+    Cpu, Building2, Briefcase, Crown, Music, Coffee, Gem, Link as LinkIcon, 
+    ChevronRight, ExternalLink, AlertCircle, Edit3, WifiOff, RefreshCw,
+    Maximize2, Zap
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
-// --- CONFIGURACIÓN TÉCNICA ---
-const API_BASE = '/api';
-const EVENT_ID = 'evt_circulo_2026';
-const STORAGE_KEY = `jairo_vault_${EVENT_ID}`;
+// --- CONFIGURACIÓN ESTRATÉGICA ---
+const API_BASE = '/api'; 
+const EVENT_ID = 'evt_circulo_001';
 
-// --- MANIFIESTO DE DATOS ---
-interface GuestNode {
-  id: string;
-  name: string;
-  company: string;
-  email: string;
-  mesa: number | string;
-  category: 'VIP' | 'Socio' | 'General';
-}
+const ROLES_ESTRATEGICOS = ["CEO", "Estrategia", "Tecnología", "Operaciones", "Socio", "Invitado Especial"];
+const EMPRESAS_DOMINIOS: Record<string, string> = {
+    "coopseguros.com": "Coopseguros",
+    "coopmaimon.com": "Coopmaimon",
+    "renace.tech": "RenaceTech",
+    "gmail.com": "Invitado Particular",
+    "outlook.com": "Invitado Particular",
+    "apple.com": "Tecnología Global",
+    "google.com": "Tecnología Global"
+};
 
-const MASTER_GUEST_LIST: GuestNode[] = Array.from({ length: 107 }, (_, i) => {
-  const id = `NODE_${(i + 1).toString().padStart(3, '0')}`;
-  return {
-    id,
-    name: i === 0 ? "ADAVID FC" : i === 1 ? "RENSO CEPEDA" : `GUEST_ID_${i + 1}`,
-    company: i % 2 === 0 ? "RENACE_TECH" : "EXPERTOSTI_GLOBAL",
-    email: `ops_${i + 1}@domain.com`,
-    mesa: Math.floor(i / 8) + 1,
-    category: i < 20 ? 'VIP' : i < 60 ? 'Socio' : 'General'
-  };
-});
+// --- MANIFIESTO ESTRATÉGICO FINAL (107 NODOS) ---
+const INITIAL_MANIFEST: any[] = [
+    { id: "1", nombre: "Angel Flores", empresa: "Invitado", mesa: "1", status: 'pending' },
+    { id: "2", nombre: "Eduardo Lama", empresa: "Invitado", mesa: "2", status: 'pending' },
+    { id: "3", nombre: "Ivan Diaz", empresa: "Invitado", mesa: "3", status: 'pending' },
+    { id: "4", nombre: "Manuel Gutierrez", empresa: "Invitado", mesa: "4", status: 'pending' },
+    { id: "5", nombre: "Anaisa Perez", empresa: "Invitado", mesa: "5", status: 'pending' },
+    { id: "6", nombre: "Nelvis Taveras (50)", empresa: "Invitado", mesa: "6", status: 'pending' },
+    { id: "7", nombre: "Marigruz", empresa: "Invitado", mesa: "7", status: 'pending' },
+    { id: "8", nombre: "Josefina", empresa: "Invitado", mesa: "8", status: 'pending' },
+    { id: "9", nombre: "Burak Gulbahar", empresa: "Invitado", mesa: "9", status: 'pending' },
+    { id: "10", nombre: "Gilbert Ramirez (10)", empresa: "Invitado", mesa: "10", status: 'pending' },
+    { id: "11", nombre: "Carlos Antonio", empresa: "Invitado", mesa: "11", status: 'pending' },
+    { id: "12", nombre: "Ariel Lima", empresa: "Invitado", mesa: "12", status: 'pending' },
+    { id: "13", nombre: "Juan Acosta", empresa: "Invitado", mesa: "13", status: 'pending' },
+    { id: "14", nombre: "Engerberto Reynoso (Kike)", empresa: "Invitado", mesa: "14", status: 'pending' },
+    { id: "15", nombre: "Daylen Ventura", empresa: "Invitado", mesa: "1", status: 'pending' },
+    { id: "16", nombre: "Rafael Olacio (Renso)", empresa: "Invitado", mesa: "2", status: 'pending' },
+    { id: "17", nombre: "Yoco Oblate (Yaco)", empresa: "Invitado", mesa: "3", status: 'pending' },
+    { id: "18", nombre: "Maximo Alcantara", empresa: "Invitado", mesa: "4", status: 'pending' },
+    { id: "19", nombre: "Robinson Rodriguez", empresa: "Invitado", mesa: "5", status: 'pending' },
+    { id: "20", nombre: "Ruben Perez", empresa: "Invitado", mesa: "6", status: 'pending' },
+    { id: "21", nombre: "Jessica Duran", empresa: "Invitado", mesa: "7", status: 'pending' },
+    { id: "22", nombre: "Cuba Deranis Chiong", empresa: "Invitado", mesa: "8", status: 'pending' },
+    { id: "23", nombre: "Junior Baldera", empresa: "Invitado", mesa: "9", status: 'pending' },
+    { id: "24", nombre: "Wellentong Baldera", empresa: "Invitado", mesa: "10", status: 'pending' },
+    { id: "25", nombre: "Jose Baldera", empresa: "Invitado", mesa: "11", status: 'pending' },
+    { id: "26", nombre: "Giancarlos Reynoso", empresa: "Invitado", mesa: "12", status: 'pending' },
+    { id: "27", nombre: "Antonio Castillo (Maguiver)", empresa: "Invitado", mesa: "13", status: 'pending' },
+    { id: "28", nombre: "Ramon Campusano (Chuky)", empresa: "Invitado", mesa: "14", status: 'pending' },
+    { id: "29", nombre: "Felix Del Rosario (Chuky)", empresa: "Invitado", mesa: "1", status: 'pending' },
+    { id: "30", nombre: "Luis Pabolo", empresa: "Invitado", mesa: "2", status: 'pending' },
+    { id: "31", nombre: "Ramon Pascual (Mello)", empresa: "Invitado", mesa: "3", status: 'pending' },
+    { id: "32", nombre: "Mirtha E. Perez (Popy)", empresa: "Invitado", mesa: "4", status: 'pending' },
+    { id: "33", nombre: "Junior Santos", empresa: "Invitado", mesa: "5", status: 'pending' },
+    { id: "34", nombre: "Juan de los Santos (Niño)", empresa: "Invitado", mesa: "6", status: 'pending' },
+    { id: "35", nombre: "Ruben Mocana", empresa: "Invitado", mesa: "7", status: 'pending' },
+    { id: "36", nombre: "Edward Lorenzo", empresa: "Invitado", mesa: "8", status: 'pending' },
+    { id: "37", nombre: "Daniel Lorenzo", empresa: "Invitado", mesa: "9", status: 'pending' },
+    { id: "38", nombre: "Maria Vazquez", empresa: "Invitado", mesa: "10", status: 'pending' },
+    { id: "39", nombre: "Francisco Confesor", empresa: "Invitado", mesa: "11", status: 'pending' },
+    { id: "40", nombre: "Eliandy Confesor", empresa: "Invitado", mesa: "12", status: 'pending' },
+    { id: "41", nombre: "Mariely Andreina de la Cruz", empresa: "Invitado", mesa: "13", status: 'pending', isVIP: true },
+    { id: "42", nombre: "Miguel Herasme", empresa: "Invitado", mesa: "14", status: 'pending' },
+    { id: "43", nombre: "Sergio Calafat", empresa: "Invitado", mesa: "1", status: 'pending' },
+    { id: "44", nombre: "Bladimir Nuñez", empresa: "Invitado", mesa: "2", status: 'pending' },
+    { id: "45", nombre: "Alvaro Solano", empresa: "Invitado", mesa: "3", status: 'pending' },
+    { id: "46", nombre: "Claudia Flores", empresa: "Invitado", mesa: "4", status: 'pending' },
+    { id: "47", nombre: "Mark", empresa: "Invitado", mesa: "5", status: 'pending' },
+    { id: "48", nombre: "Abiattar Contreras", empresa: "Invitado", mesa: "6", status: 'pending' },
+    { id: "49", nombre: "Musico 1", empresa: "Musicos", mesa: "7", status: 'pending' },
+    { id: "50", nombre: "Musico 2", empresa: "Musicos", mesa: "8", status: 'pending' },
+    { id: "51", nombre: "Musico 3", empresa: "Musicos", mesa: "9", status: 'pending' },
+    { id: "52", nombre: "Musico 4", empresa: "Musicos", mesa: "10", status: 'pending' },
+    { id: "53", nombre: "Musico 5", empresa: "Musicos", mesa: "11", status: 'pending' },
+    { id: "54", nombre: "Adderly Marte", empresa: "Invitado", mesa: "12", status: 'pending' },
+    { id: "55", nombre: "Luciano", empresa: "Invitado", mesa: "13", status: 'pending' },
+    { id: "56", nombre: "Cespedes", empresa: "Invitado", mesa: "14", status: 'pending' },
+    { id: "57", nombre: "Anyra", empresa: "Invitado", mesa: "1", status: 'pending' },
+    { id: "58", nombre: "Isaisas", empresa: "Invitado", mesa: "2", status: 'pending' },
+    { id: "59", nombre: "Ass.", empresa: "Invitado", mesa: "3", status: 'pending' },
+    { id: "64", nombre: "Lucia Lopez", empresa: "Invitado", mesa: "4", status: 'pending' },
+    { id: "65", nombre: "Carvajal Claudio", empresa: "Invitado", mesa: "5", status: 'pending' },
+    { id: "66", nombre: "Carlos Bido", empresa: "Invitado", mesa: "6", status: 'pending' },
+    { id: "67", nombre: "Moscar Melo", empresa: "Invitado", mesa: "7", status: 'pending' },
+    { id: "68", nombre: "Moscar Soto", empresa: "Invitado", mesa: "8", status: 'pending' },
+    { id: "69", nombre: "Juan (Pan)", empresa: "Invitado", mesa: "9", status: 'pending' },
+    { id: "70", nombre: "Eliel Bassa", empresa: "Invitado", mesa: "10", status: 'pending' },
+    { id: "71", nombre: "Eduardo Dua", empresa: "Invitado", mesa: "11", status: 'pending' },
+    { id: "72", nombre: "Elsa Encarnacion", empresa: "Invitado", mesa: "12", status: 'pending' },
+    { id: "73", nombre: "J. Hanna Cordero", empresa: "Invitado", mesa: "13", status: 'pending', isVIP: true },
+    { id: "74", nombre: "Melda Adams", empresa: "Invitado", mesa: "14", status: 'pending' },
+    { id: "75", nombre: "Norman Lozano", empresa: "Invitado", mesa: "1", status: 'pending' },
+    { id: "76", nombre: "Jesus Osorio", empresa: "Invitado", mesa: "2", status: 'pending' },
+    { id: "77", nombre: "Ariel Peña", empresa: "Invitado", mesa: "3", status: 'pending' },
+    { id: "78", nombre: "Sindry Gomez", empresa: "Invitado", mesa: "4", status: 'pending' },
+    { id: "79", nombre: "Candida Duares", empresa: "Invitado", mesa: "5", status: 'pending' },
+    { id: "80", nombre: "Leonela Contreras", empresa: "Invitado", mesa: "6", status: 'pending' },
+    { id: "81", nombre: "Zailon", empresa: "Invitado", mesa: "7", status: 'pending' },
+    { id: "82", nombre: "Maniga", empresa: "Invitado", mesa: "8", status: 'pending' },
+    { id: "83", nombre: "Winston Santos", empresa: "Invitado", mesa: "9", status: 'pending' },
+    { id: "84", nombre: "Romelio", empresa: "Invitado", mesa: "10", status: 'pending' },
+    { id: "85", nombre: "Esmartin Mila", empresa: "Invitado", mesa: "11", status: 'pending' },
+    { id: "86", nombre: "Stacy Milan", empresa: "Invitado", mesa: "12", status: 'pending' },
+    { id: "87", nombre: "Morenito", empresa: "Invitado", mesa: "13", status: 'pending' },
+    { id: "88", nombre: "Socrates Noris", empresa: "Invitado", mesa: "14", status: 'pending' },
+    { id: "89", nombre: "Maximiliano Almonte", empresa: "Invitado", mesa: "1", status: 'pending' },
+    { id: "90", nombre: "Digna Sanchez", empresa: "Invitado", mesa: "2", status: 'pending' },
+    { id: "91", nombre: "Coopseguros 1", empresa: "Coopseguros", mesa: "3", status: 'pending' },
+    { id: "92", nombre: "Coopseguros 2", empresa: "Coopseguros", mesa: "4", status: 'pending' },
+    { id: "93", nombre: "Coopseguros 3", empresa: "Coopseguros", mesa: "5", status: 'pending' },
+    { id: "94", nombre: "Coopseguros 4", empresa: "Coopseguros", mesa: "6", status: 'pending' },
+    { id: "95", nombre: "Coopseguros 5", empresa: "Coopseguros", mesa: "7", status: 'pending' },
+    { id: "96", nombre: "Coopseguros 6", empresa: "Coopseguros", mesa: "8", status: 'pending' },
+    { id: "97", nombre: "Coopmaimon 1", empresa: "Coopmaimon", mesa: "9", status: 'pending' },
+    { id: "98", nombre: "Coopmaimon 2", empresa: "Coopmaimon", mesa: "10", status: 'pending' },
+    { id: "99", nombre: "Coopmaimon 3", empresa: "Coopmaimon", mesa: "11", status: 'pending' },
+    { id: "100", nombre: "Coopmaimon 4", empresa: "Coopmaimon", mesa: "12", status: 'pending' },
+    { id: "101", nombre: "Coopmaimon 5", empresa: "Coopmaimon", mesa: "13", status: 'pending' },
+    { id: "102", nombre: "Coopmaimon 6", empresa: "Coopmaimon", mesa: "14", status: 'pending' },
+    { id: "103", nombre: "Coopmaimon 7", empresa: "Coopmaimon", mesa: "1", status: 'pending' },
+    { id: "104", nombre: "Paul Martínez", empresa: "Invitado", mesa: "2", status: 'pending' },
+    { id: "105", nombre: "Thomas Bank", empresa: "Invitado", mesa: "3", status: 'pending' },
+    { id: "106", nombre: "Alexandra Núñez", empresa: "Invitado", mesa: "4", status: 'pending' },
+    { id: "107", nombre: "Ambra Montini", empresa: "Invitado", mesa: "5", status: 'pending' },
+];
 
-export default function RecepcionPortalPremium() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedGuest, setSelectedGuest] = useState<GuestNode | null>(null);
-  const [isEditingMesa, setIsEditingMesa] = useState(false);
-  const [tempMesa, setTempMesa] = useState('');
-  
-  // Persistencia Híbrida (Resiliencia Silenciosa)
-  const [attendance, setAttendance] = useState<Record<string, boolean>>({});
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSync, setLastSync] = useState<string | null>(null);
-
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) setAttendance(JSON.parse(saved));
-    setLastSync(new Date().toLocaleTimeString());
-  }, []);
-
-  const stats = useMemo(() => {
-    const active = Object.values(attendance).filter(v => v).length;
-    return { total: 107, active, percent: Math.round((active / 107) * 100) };
-  }, [attendance]);
-
-  const filteredGuests = useMemo(() => 
-    MASTER_GUEST_LIST.filter(g => 
-      g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      g.company.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  , [searchTerm]);
-
-  const handleCheckIn = async (guest: GuestNode) => {
-    setIsSyncing(true);
-    const updated = { ...attendance, [guest.id]: true };
+export default function RecepcionCommandCenter() {
+    const [view, setView] = useState<'tables' | 'directory'>('directory');
+    const [searchTerm, setSearchTerm] = useState("");
+    const [invitados, setInvitados] = useState(INITIAL_MANIFEST);
+    const [selectedGuest, setSelectedGuest] = useState<any>(null);
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [networkLatency, setNetworkLatency] = useState(0);
     
-    // Guardado Inmediato (Local)
-    setAttendance(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    const [formData, setFormData] = useState({
+        nombre: "",
+        empresa: "",
+        rol: "Estrategia",
+        telefono: "",
+        correo: ""
+    });
 
-    // Intento de Sincronización (Background)
-    try {
-      await fetch(`${API_BASE}/events/${EVENT_ID}/attendance`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...guest, timestamp: new Date().toISOString() })
-      });
-      setLastSync(new Date().toLocaleTimeString());
-    } catch (e) {
-      console.warn("SYNC_DELAY: Guardado en Bóveda Local");
-    } finally {
-      setIsSyncing(false);
-      setTimeout(() => setSelectedGuest(null), 800);
-    }
-  };
+    const [isEditingMesa, setIsEditingMesa] = useState(false);
+    const [tempMesa, setTempMesa] = useState("");
 
-  return (
-    <div className="min-h-screen bg-[#020406] text-slate-300 font-sans selection:bg-emerald-500/30 flex flex-col overflow-hidden">
-      
-      {/* HUD DE TELEMETRÍA (HEADER) */}
-      <nav className="h-24 border-b border-white/5 bg-black/80 backdrop-blur-2xl flex items-center justify-between px-8 z-50">
-        <div className="flex items-center gap-6">
-          <div className="relative">
-            <div className="absolute inset-0 bg-emerald-500 blur-2xl opacity-20 animate-pulse" />
-            <div className="relative w-14 h-14 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.3)]">
-              <Fingerprint className="text-black w-8 h-8" />
-            </div>
-          </div>
-          <div className="space-y-0.5">
-            <h1 className="text-2xl font-black tracking-tighter text-white flex items-center gap-2">
-              JAIRO_OS <span className="text-emerald-500 px-2 py-0.5 bg-emerald-500/10 rounded text-sm tracking-widest border border-emerald-500/20">RECEPTION_v4</span>
-            </h1>
-            <div className="flex items-center gap-3 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
-              <span className="flex items-center gap-1.5"><Radio className="w-3 h-3 text-emerald-500 animate-pulse" /> Uplink_Active</span>
-              <span className="w-1 h-1 bg-slate-700 rounded-full" />
-              <span className="flex items-center gap-1.5"><Lock className="w-3 h-3" /> Secure_Protocol_v26</span>
-            </div>
-          </div>
-        </div>
+    // Sincronización Maestra con el Stack Central
+    const syncAttendance = useCallback(async () => {
+        const start = Date.now();
+        try {
+            const res = await fetch(`${API_BASE}/events/${EVENT_ID}/attendance`, { cache: 'no-store' });
+            if (res.ok) {
+                const data = await res.json();
+                setNetworkLatency(Date.now() - start);
+                setInvitados(prev => prev.map(inv => {
+                    const cleared = data.find((a: any) => String(a.guestId) === String(inv.id));
+                    return cleared ? { ...inv, status: 'cleared' } : inv;
+                }));
+            }
+        } catch (e) { setStatus('error'); }
+    }, []);
 
-        {/* STATUS TILES */}
-        <div className="flex gap-4">
-          <div className="bg-white/5 border border-white/10 rounded-2xl px-6 py-2 flex items-center gap-8">
-            <div className="space-y-1">
-              <p className="text-[10px] text-slate-500 font-black tracking-widest uppercase">Nodes_Active</p>
-              <p className="text-xl font-mono text-white leading-none">{stats.active}<span className="text-slate-600 text-sm">/{stats.total}</span></p>
-            </div>
-            <div className="h-8 w-px bg-white/10" />
-            <div className="space-y-1">
-              <p className="text-[10px] text-emerald-500 font-black tracking-widest uppercase">Capacity</p>
-              <p className="text-xl font-mono text-emerald-400 leading-none">{stats.percent}%</p>
-            </div>
-          </div>
-        </div>
-      </nav>
+    useEffect(() => {
+        syncAttendance();
+        const interval = setInterval(syncAttendance, 15000); 
+        return () => clearInterval(interval);
+    }, [syncAttendance]);
 
-      {/* SEARCH ENGINE (GLASS) */}
-      <div className="px-8 py-6 bg-gradient-to-b from-black to-transparent">
-        <div className="relative max-w-5xl mx-auto group">
-          <div className="absolute inset-0 bg-emerald-500/5 blur-3xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-emerald-500/50 w-6 h-6 group-focus-within:text-emerald-500 transition-colors" />
-          <input 
-            type="text"
-            placeholder="SISTEMA DE IDENTIFICACIÓN: BUSCAR NODO..."
-            className="w-full bg-[#0d1117]/80 border border-white/10 rounded-[2rem] py-6 pl-16 pr-8 text-xl font-medium focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-slate-700 uppercase tracking-widest"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
+    // Inteligencia de Detección Proactiva
+    useEffect(() => {
+        if (formData.correo.includes("@")) {
+            const domain = formData.correo.split("@")[1].toLowerCase();
+            if (EMPRESAS_DOMINIOS[domain]) {
+                setFormData(prev => ({ ...prev, empresa: EMPRESAS_DOMINIOS[domain] }));
+            }
+        }
+    }, [formData.correo]);
 
-      {/* TACTICAL GRID */}
-      <main className="flex-1 overflow-y-auto px-8 pb-12 custom-scrollbar">
-        <div className="max-w-[1800px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
-          {filteredGuests.map(guest => (
-            <div
-              key={guest.id}
-              onClick={() => setSelectedGuest(guest)}
-              className={`relative group h-40 rounded-[2rem] border p-6 transition-all cursor-pointer overflow-hidden
-                ${attendance[guest.id] 
-                  ? 'bg-emerald-500/10 border-emerald-500/40 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]' 
-                  : 'bg-white/[0.02] border-white/5 hover:border-emerald-500/30 hover:bg-white/[0.05] shadow-xl'
-                }`}
-            >
-              {attendance[guest.id] && (
-                <div className="absolute top-0 right-0 p-3">
-                  <div className="bg-emerald-500/20 text-emerald-500 p-1.5 rounded-full border border-emerald-500/30">
-                    <CheckCircle2 className="w-5 h-5" />
-                  </div>
-                </div>
-              )}
+    useEffect(() => {
+        if (selectedGuest) {
+            setFormData({
+                nombre: selectedGuest.nombre,
+                empresa: selectedGuest.empresa,
+                rol: "Estrategia",
+                telefono: "",
+                correo: ""
+            });
+        }
+    }, [selectedGuest]);
 
-              <div className="flex flex-col h-full justify-between relative z-10">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10px] font-black text-slate-500 tracking-[0.2em]">{guest.id}</span>
-                  </div>
-                  <h3 className="text-xl font-bold text-white truncate group-hover:text-emerald-400 transition-colors uppercase">
-                    {guest.name}
-                  </h3>
-                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest truncate">
-                    {guest.company}
-                  </p>
-                </div>
+    const handleGrantAccess = async () => {
+        if (!selectedGuest) return;
+        setStatus('loading');
+        
+        try {
+            const res = await fetch(`${API_BASE}/events/${EVENT_ID}/attendance`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    guestId: selectedGuest.id,
+                    guestName: formData.nombre,
+                    companyName: formData.empresa,
+                    role: formData.rol,
+                    phone: formData.telefono,
+                    email: formData.correo,
+                    mesa: selectedGuest.mesa
+                })
+            });
 
-                <div className="flex items-center justify-between mt-4">
-                  <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/5">
-                    <Activity className="w-3 h-3 text-emerald-500" />
-                    <span className="text-xs font-mono font-black text-white uppercase">MESA_{guest.mesa}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <span className="text-[10px] font-black tracking-tighter uppercase">{guest.category}</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-emerald-500/10 blur-3xl rounded-full group-hover:bg-emerald-500/20 transition-all" />
-            </div>
-          ))}
-        </div>
-      </main>
-
-      {/* MODAL DE ACCESO TÁCTICO */}
-      {selectedGuest && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-end p-6">
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-xl animate-in fade-in duration-500" onClick={() => setSelectedGuest(null)} />
-          
-          <div className="relative w-full max-w-2xl h-full bg-[#05070a] border-l border-white/10 shadow-[0_0_100px_rgba(0,0,0,1)] flex flex-col animate-in slide-in-from-right duration-500">
-            
-            <div className="p-12 space-y-12 flex-1 flex flex-col justify-center">
-              
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="h-px flex-1 bg-gradient-to-r from-transparent to-emerald-500/50" />
-                  <span className="text-[12px] font-black tracking-[0.5em] text-emerald-500 uppercase">Verifying_Node</span>
-                  <div className="h-px w-12 bg-emerald-500/50" />
-                </div>
+            if (res.ok) {
+                setStatus('success');
+                setInvitados(prev => prev.map(inv => inv.id === selectedGuest.id ? { ...inv, status: 'cleared', nombre: formData.nombre, empresa: formData.empresa } : inv));
+                setTimeout(() => {
+                    setSelectedGuest(null);
+                    setStatus('idle');
+                }, 2000);
+            } else { 
+                // FALLBACK ESTRATÉGICO: Si la API falla, guardamos localmente y permitimos el acceso
+                console.warn("RESERVA_TACTICA: Servidor no responde. Guardando en Vault Local.");
+                const localData = JSON.parse(localStorage.getItem(`offline_attendance_${EVENT_ID}`) || '[]');
+                localData.push(selectedGuest.id);
+                localStorage.setItem(`offline_attendance_${EVENT_ID}`, JSON.stringify(localData));
                 
-                <h2 className="text-[8vw] font-black leading-[0.8] text-white tracking-tighter uppercase break-words">
-                  {selectedGuest.name}
-                </h2>
-                <div className="flex items-center gap-4 py-2">
-                  <div className="bg-white/10 px-4 py-2 rounded-lg border border-white/10">
-                    <span className="text-xl font-mono font-bold text-white tracking-widest uppercase">{selectedGuest.company}</span>
-                  </div>
-                  <span className="text-slate-500 text-lg font-medium">{selectedGuest.email}</span>
-                </div>
-              </div>
+                setStatus('success');
+                setInvitados(prev => prev.map(inv => inv.id === selectedGuest.id ? { ...inv, status: 'cleared', nombre: formData.nombre, empresa: formData.empresa } : inv));
+                setTimeout(() => {
+                    setSelectedGuest(null);
+                    setStatus('idle');
+                }, 2000);
+            }
+        } catch (e) { 
+            // FALLBACK ANTE CORTE TOTAL DE RED
+            const localData = JSON.parse(localStorage.getItem(`offline_attendance_${EVENT_ID}`) || '[]');
+            localData.push(selectedGuest.id);
+            localStorage.setItem(`offline_attendance_${EVENT_ID}`, JSON.stringify(localData));
 
-              <div className="grid grid-cols-2 gap-6">
-                <div className="bg-white/[0.03] border border-white/5 rounded-[2.5rem] p-8 space-y-4 hover:bg-white/[0.05] transition-all group">
-                  <p className="text-xs font-black text-slate-500 tracking-[0.3em] uppercase">Sector_Asignado</p>
-                  <div className="flex items-end justify-between">
-                    {isEditingMesa ? (
-                      <div className="flex items-center gap-4">
-                        <input 
-                          autoFocus
-                          type="number"
-                          className="bg-emerald-500/10 border-2 border-emerald-500 rounded-2xl w-32 py-4 text-center text-5xl font-black text-white outline-none shadow-[0_0_30px_rgba(16,185,129,0.2)]"
-                          value={tempMesa}
-                          onChange={(e) => setTempMesa(e.target.value)}
-                        />
-                        <button 
-                          onClick={() => { selectedGuest.mesa = tempMesa; setIsEditingMesa(false); }}
-                          className="w-16 h-16 bg-emerald-500 text-black rounded-2xl flex items-center justify-center font-black"
-                        >OK</button>
-                      </div>
-                    ) : (
-                      <div 
-                        className="cursor-pointer group-hover:scale-110 transition-transform"
-                        onClick={() => { setIsEditingMesa(true); setTempMesa(String(selectedGuest.mesa)); }}
-                      >
-                        <p className="text-8xl font-black text-white leading-none tracking-tighter">
-                          {selectedGuest.mesa.toString().padStart(2, '0')}
-                        </p>
-                      </div>
-                    )}
-                    {!isEditingMesa && <Edit3 className="text-emerald-500/50 group-hover:text-emerald-500 w-8 h-8" />}
-                  </div>
-                </div>
+            setStatus('success');
+            setInvitados(prev => prev.map(inv => inv.id === selectedGuest.id ? { ...inv, status: 'cleared', nombre: formData.nombre, empresa: formData.empresa } : inv));
+            setTimeout(() => {
+                setSelectedGuest(null);
+                setStatus('idle');
+            }, 2000);
+        }
+    };
 
-                <div className="bg-white/[0.03] border border-white/5 rounded-[2.5rem] p-8 space-y-4">
-                  <p className="text-xs font-black text-slate-500 tracking-[0.3em] uppercase">Node_Status</p>
-                  <div className="flex flex-col h-full justify-center">
+    const handleMesaUpdate = (guestId: string, newMesa: string) => {
+        setInvitados(prev => prev.map(inv => inv.id === guestId ? { ...inv, mesa: newMesa } : inv));
+        if (selectedGuest?.id === guestId) setSelectedGuest({ ...selectedGuest, mesa: newMesa });
+        setIsEditingMesa(false);
+    };
+
+    const filtered = useMemo(() => invitados.filter(inv => 
+        inv.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        inv.empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inv.mesa.includes(searchTerm)
+    ), [searchTerm, invitados]);
+
+    const mesasIds = useMemo(() => Array.from(new Set(invitados.map(i => i.mesa))).sort((a,b) => parseInt(a) - parseInt(b)), [invitados]);
+
+    const getIcon = (mesa: string) => {
+        const m = parseInt(mesa);
+        if (m <= 2) return <Crown className="text-amber-500 w-5 h-5" />;
+        if (m >= 7 && m <= 11) return <Music className="text-purple-500 w-5 h-5" />;
+        return <Coffee className="text-emerald-500 w-5 h-5" />;
+    };
+
+    return (
+        <div className="min-h-screen bg-[#020408] text-white selection:bg-emerald-500/30 flex flex-col overflow-hidden relative">
+            
+            {/* Background Telemetry 2026 */}
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <Radar className="absolute -top-60 -right-60 w-[50rem] h-[50rem] text-emerald-500/5 animate-pulse" />
+                <div className="absolute top-1/2 left-0 w-full h-[1px] bg-emerald-500/10 shadow-[0_0_20px_#10b98120]" />
+            </div>
+
+            {/* Nav Mando Táctico */}
+            <nav className="h-20 border-b border-white/10 bg-[#020408]/95 backdrop-blur-3xl flex items-center justify-between px-6 lg:px-12 z-50 sticky top-0 shadow-2xl">
+                <div className="flex items-center gap-6">
                     <div className="flex items-center gap-3">
-                      <Zap className={`w-8 h-8 ${attendance[selectedGuest.id] ? 'text-emerald-500' : 'text-slate-700'}`} />
-                      <span className={`text-2xl font-black ${attendance[selectedGuest.id] ? 'text-white' : 'text-slate-800'}`}>
-                        {attendance[selectedGuest.id] ? 'ACTIVE' : 'STANDBY'}
-                      </span>
+                        <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center border border-emerald-400/20 shadow-[0_0_25px_rgba(16,185,129,0.3)]">
+                            <Fingerprint className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="hidden md:block">
+                            <span className="text-xl font-black uppercase tracking-tighter italic">JairoOS_v2</span>
+                            <div className="flex items-center gap-2">
+                                <div className={`w-1.5 h-1.5 rounded-full ${status === 'error' ? 'bg-red-500' : 'bg-emerald-500 animate-pulse'}`} />
+                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">
+                                    {status === 'error' ? 'SYSTEM_OFFLINE' : `LINK_STABLE_${networkLatency}MS`}
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                  </div>
+                    <div className="relative w-[220px] md:w-[450px]">
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-700" />
+                        <input 
+                            value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Identificar nodo..."
+                            className="w-full bg-white/[0.03] border border-white/10 rounded-full py-4 pl-14 pr-8 text-sm font-bold focus:border-emerald-500/50 outline-none transition-all shadow-inner"
+                        />
+                    </div>
                 </div>
-              </div>
+                <div className="flex gap-3">
+                    <button onClick={() => setView('directory')} className={`p-4 rounded-2xl transition-all ${view === 'directory' ? 'bg-emerald-600 shadow-[0_0_20px_rgba(16,185,129,0.4)] text-white' : 'bg-white/5 text-gray-600 hover:bg-white/10'}`}><LayoutGrid className="w-5 h-5" /></button>
+                    <button onClick={() => setView('tables')} className={`p-4 rounded-2xl transition-all ${view === 'tables' ? 'bg-emerald-600 shadow-[0_0_20px_rgba(16,185,129,0.4)] text-white' : 'bg-white/5 text-gray-600 hover:bg-white/10'}`}><Layers className="w-5 h-5" /></button>
+                </div>
+            </nav>
 
-              <button
-                disabled={attendance[selectedGuest.id] || isSyncing}
-                onClick={() => handleCheckIn(selectedGuest)}
-                className={`group relative w-full py-10 rounded-[3rem] text-4xl font-black transition-all overflow-hidden
-                  ${attendance[selectedGuest.id] 
-                    ? 'bg-emerald-500/10 text-emerald-500 border-2 border-emerald-500/30' 
-                    : 'bg-emerald-500 text-black hover:scale-[1.02] active:scale-95 shadow-[0_0_50px_rgba(16,185,129,0.3)]'
-                  }`}
-              >
-                {isSyncing ? (
-                  <RefreshCcw className="animate-spin w-12 h-12 mx-auto" />
-                ) : attendance[selectedGuest.id] ? (
-                  <div className="flex items-center justify-center gap-4 uppercase">
-                    <ShieldCheck className="w-12 h-12" />
-                    ACCESS_GRANTED
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-4 tracking-tighter uppercase">
-                    INICIAR_ACCESO
-                    <ChevronRight className="w-12 h-12 group-hover:translate-x-4 transition-transform" />
-                  </div>
+            {/* Listado de Nodos */}
+            <main className="flex-1 overflow-y-auto p-6 lg:p-14 z-10 custom-scrollbar pb-40">
+                <AnimatePresence mode="wait">
+                    {view === 'directory' ? (
+                        <motion.div key="grid" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                            {filtered.map((inv) => (
+                                <motion.div 
+                                    key={inv.id} layout initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={() => setSelectedGuest(inv)}
+                                    className={`p-10 rounded-[3rem] border transition-all bg-white/[0.01] relative group active:scale-95 flex flex-col h-full ${inv.status === 'cleared' ? 'border-emerald-500/40 bg-emerald-500/[0.05] shadow-[0_20px_50px_rgba(16,185,129,0.05)]' : 'border-white/5 hover:border-emerald-500/30 hover:bg-white/[0.03]'}`}
+                                >
+                                    <div className="flex justify-between items-center mb-8">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 bg-white/5 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">{getIcon(inv.mesa)}</div>
+                                            <span className="text-[11px] font-black text-gray-600 uppercase tracking-[0.3em] italic">SEC_# {inv.mesa}</span>
+                                        </div>
+                                        {inv.status === 'cleared' && <CheckCircle2 className="w-6 h-6 text-emerald-500 shadow-[0_0_15px_#10b981]" />}
+                                    </div>
+                                    <h3 className="text-3xl font-black uppercase leading-[0.9] tracking-tighter group-hover:text-emerald-400 transition-colors mb-4">{inv.nombre}</h3>
+                                    <div className="mt-auto pt-6 flex items-center gap-3">
+                                        <span className={`text-[11px] font-bold uppercase tracking-[0.2em] ${EMPRESAS_DOMINIOS[inv.empresa.toLowerCase()] || inv.empresa !== 'Invitado' ? 'text-emerald-500/60' : 'text-gray-700'}`}>
+                                            {inv.empresa}
+                                        </span>
+                                        {(EMPRESAS_DOMINIOS[inv.empresa.toLowerCase()] || inv.empresa !== 'Invitado') && <Zap className="w-3 h-3 text-emerald-500/40" />}
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </motion.div>
+                    ) : (
+                        <motion.div key="tables" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-12">
+                            {mesasIds.map(mesaId => {
+                                const mesaInvs = filtered.filter(i => i.mesa === mesaId);
+                                if (searchTerm && mesaInvs.length === 0) return null;
+                                return (
+                                    <div key={mesaId} className="p-12 rounded-[4rem] bg-white/[0.01] border border-white/5 hover:border-white/10 transition-all group relative flex flex-col h-full shadow-2xl">
+                                        <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none group-hover:scale-125 transition-transform">{getIcon(mesaId)}</div>
+                                        <h3 className="text-4xl font-black uppercase mb-12 border-b border-white/10 pb-8 flex justify-between items-end">
+                                            <span className="tracking-tighter italic">Mesa {mesaId}</span>
+                                            <span className="text-[10px] text-emerald-500/30 tracking-[0.5em] font-black">{mesaInvs.length} NODOS</span>
+                                        </h3>
+                                        <div className="space-y-5 flex-1">
+                                            {mesaInvs.map(inv => (
+                                                <div key={inv.id} onClick={() => setSelectedGuest(inv)} className={`p-7 rounded-[2.5rem] border flex justify-between items-center cursor-pointer transition-all active:scale-95 group/item ${inv.status === 'cleared' ? 'border-emerald-500/20 bg-emerald-500/[0.05]' : 'border-white/5 hover:border-emerald-500/40 hover:bg-white/[0.04]'}`}>
+                                                    <div className="flex flex-col text-left">
+                                                        <span className="text-xl font-black uppercase leading-none tracking-tighter group-hover/item:text-emerald-400 transition-colors">{inv.nombre}</span>
+                                                        <span className="text-[10px] font-bold text-gray-700 uppercase mt-2 tracking-widest">{inv.empresa}</span>
+                                                    </div>
+                                                    {inv.status === 'cleared' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </main>
+
+            {/* Centro de Mando: Modal Táctico Final */}
+            <AnimatePresence>
+                {selectedGuest && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-12 backdrop-blur-[50px] bg-black/98">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.98, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+                            className="w-full max-w-[1000px] max-h-[92vh] bg-[#05080f] rounded-[5rem] border border-white/10 flex flex-col relative overflow-hidden shadow-[0_100px_250px_rgba(0,0,0,1)]"
+                        >
+                            <button onClick={() => { setSelectedGuest(null); setStatus('idle'); }} className="absolute top-10 right-10 z-[110] p-6 bg-white/5 rounded-full hover:bg-white/10 text-gray-600 hover:text-white transition-all active:scale-90"><X className="w-8 h-8" /></button>
+                            
+                            <div className="flex-1 overflow-y-auto custom-scrollbar">
+                                {/* Zona Identidad */}
+                                <div className="p-14 lg:p-20 border-b border-white/5 bg-white/[0.01] relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-16 opacity-5 pointer-events-none animate-pulse"><Fingerprint className="w-64 h-64" /></div>
+                                    <div className="flex items-center gap-5 mb-10">
+                                        <div className="p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20"><ShieldCheck className="w-8 h-8 text-emerald-500" /></div>
+                                        <span className="text-[12px] font-black tracking-[0.6em] text-emerald-500 uppercase italic">Verificación_Master_2026</span>
+                                    </div>
+                                    
+                                    <div className="group relative max-w-3xl">
+                                        <Edit3 className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 text-white/5 group-focus-within:text-emerald-500/50 transition-all pointer-events-none" />
+                                        <input 
+                                            value={formData.nombre} 
+                                            onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+                                            className="text-6xl lg:text-9xl bg-transparent font-black uppercase leading-[0.8] tracking-tighter outline-none w-full border-b-2 border-white/5 focus:border-emerald-500/60 pb-8 transition-all"
+                                            placeholder="EDITAR NOMBRE"
+                                        />
+                                    </div>
+                                    
+                                    <div className="mt-12 flex items-center gap-8">
+                                        <p className={`text-3xl font-black uppercase tracking-[0.2em] italic ${EMPRESAS_DOMINIOS[formData.correo.split("@")[1]?.toLowerCase()] ? 'text-emerald-500' : 'text-gray-700'}`}>
+                                            {formData.empresa || selectedGuest.empresa}
+                                        </p>
+                                        {EMPRESAS_DOMINIOS[formData.correo.split("@")[1]?.toLowerCase()] && (
+                                            <div className="px-6 py-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center gap-3 shadow-[0_0_30px_#10b98110]">
+                                                <Cpu className="w-5 h-5 text-emerald-500" />
+                                                <span className="text-[11px] font-black text-emerald-500 uppercase tracking-[0.3em]">Red_Detectada</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Zona de Datos Inteligentes */}
+                                <div className="p-14 lg:p-20 space-y-16">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-14">
+                                        <div className="space-y-10">
+                                            <div className="space-y-4">
+                                                <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest flex items-center gap-3">Identificador Digital <Mail className="w-4 h-4" /></label>
+                                                <div className="relative group">
+                                                    <div className="absolute left-7 top-1/2 -translate-y-1/2 text-xl font-black text-gray-700 group-focus-within:text-emerald-500 transition-colors">@</div>
+                                                    <input 
+                                                        placeholder="mail@dominio.com" value={formData.correo} 
+                                                        onChange={(e) => setFormData({...formData, correo: e.target.value})}
+                                                        className="w-full h-24 bg-white/[0.02] border border-white/10 rounded-[2.5rem] pl-16 pr-10 font-black text-2xl outline-none focus:border-emerald-500/50 shadow-inner"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Organización Validada</label>
+                                                <div className="relative">
+                                                    <Building2 className="absolute left-7 top-1/2 -translate-y-1/2 w-8 h-8 text-gray-700" />
+                                                    <input 
+                                                        value={formData.empresa} onChange={(e) => setFormData({...formData, empresa: e.target.value})}
+                                                        className="w-full h-24 bg-white/[0.02] border border-white/10 rounded-[2.5rem] pl-20 pr-10 font-black text-2xl outline-none focus:border-emerald-500/50 shadow-inner"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-10">
+                                            <div className="space-y-4">
+                                                <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Enlace Móvil (WhatsApp)</label>
+                                                <div className="relative group">
+                                                    <Phone className="absolute left-7 top-1/2 -translate-y-1/2 w-8 h-8 text-gray-700 group-focus-within:text-emerald-500 transition-colors" />
+                                                    <input 
+                                                        placeholder="849-000-0000" value={formData.telefono} 
+                                                        onChange={(e) => setFormData({...formData, telefono: e.target.value})}
+                                                        className="w-full h-24 bg-white/[0.02] border border-white/10 rounded-[2.5rem] pl-20 pr-10 font-black text-2xl outline-none focus:border-emerald-500/50 shadow-inner"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Rol de Estrategia</label>
+                                                <div className="relative">
+                                                    <Briefcase className="absolute left-7 top-1/2 -translate-y-1/2 w-8 h-8 text-gray-700" />
+                                                    <select 
+                                                        value={formData.rol} onChange={(e) => setFormData({...formData, rol: e.target.value})}
+                                                        className="w-full h-24 bg-white/[0.02] border border-white/10 rounded-[2.5rem] pl-20 pr-10 font-black text-2xl outline-none focus:border-emerald-500/50 appearance-none italic shadow-inner"
+                                                    >
+                                                        {ROLES_ESTRATEGICOS.map(r => <option key={r} value={r} className="bg-[#05080f] text-white">{r}</option>)}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Mando de Mesa Consolidado */}
+                                    <div className="p-14 bg-emerald-500/[0.03] rounded-[4rem] border border-emerald-500/10 flex items-center justify-between shadow-2xl relative group/mesa">
+                                        <div className="absolute top-4 right-4"><Maximize2 className="w-4 h-4 text-emerald-500/20 group-hover/mesa:text-emerald-500 transition-colors" /></div>
+                                        <div className="flex items-center gap-10">
+                                            <div className="w-24 h-24 bg-emerald-600/10 rounded-[2rem] flex items-center justify-center border border-emerald-500/20 shadow-2xl group-hover/mesa:scale-110 transition-transform">{getIcon(selectedGuest.mesa)}</div>
+                                            <div>
+                                                <span className="text-[12px] font-black text-emerald-600 uppercase tracking-[0.6em] italic">Configuración_Mesa (1-14)</span>
+                                                {!isEditingMesa ? (
+                                                    <p className="text-7xl font-black text-emerald-500 tracking-tighter">MESA {selectedGuest.mesa}</p>
+                                                ) : (
+                                                    <div className="flex items-center gap-8 mt-5">
+                                                        <input 
+                                                            autoFocus type="number" min="1" max="14" value={tempMesa} 
+                                                            onChange={(e) => setTempMesa(e.target.value)}
+                                                            className="bg-white/10 border-4 border-emerald-500 rounded-3xl px-8 py-5 text-5xl font-black w-36 outline-none text-center shadow-[0_0_50px_#10b98150]"
+                                                        />
+                                                        <button onClick={() => handleMesaUpdate(selectedGuest.id, tempMesa)} className="bg-emerald-600 px-10 py-6 rounded-3xl font-black uppercase text-base tracking-[0.2em] hover:bg-emerald-500 shadow-xl transition-all">SINC_MESA</button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => { setTempMesa(selectedGuest.mesa); setIsEditingMesa(!isEditingMesa); }} 
+                                            className="w-28 h-28 bg-emerald-600 rounded-[3rem] flex items-center justify-center shadow-[0_20px_50px_#10b98140] active:scale-90 transition-all hover:scale-105 border border-white/20"
+                                        >
+                                            {isEditingMesa ? <X className="w-12 h-12 text-white" /> : <Layers className="w-12 h-12 text-white" />}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Acciones Maestras */}
+                            <div className="p-14 lg:p-20 bg-white/[0.01] border-t border-white/5 flex flex-col sm:flex-row gap-12 items-center justify-between mt-auto">
+                                <button onClick={() => { setSelectedGuest(null); setStatus('idle'); }} className="text-[13px] font-black text-gray-700 hover:text-white tracking-[0.8em] uppercase transition-all italic">Abortar_Registro</button>
+                                <button onClick={handleGrantAccess} className="w-full sm:w-auto px-32 py-12 bg-emerald-600 rounded-[3.5rem] text-white font-black uppercase tracking-[0.5em] shadow-[0_0_120px_#10b98160] hover:bg-emerald-500 active:scale-95 transition-all text-4xl flex items-center justify-center gap-8 group">
+                                    CONCEDER ACCESO <ChevronRight className="w-12 h-12 group-hover:translate-x-3 transition-transform" />
+                                </button>
+                            </div>
+
+                            {/* HUD de Estado de Red JairoOS */}
+                            <AnimatePresence>
+                                {status !== 'idle' && (
+                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[150] bg-[#05080f]/99 flex flex-col items-center justify-center p-16 text-center">
+                                        {status === 'loading' && (
+                                            <div className="space-y-16">
+                                                <div className="relative">
+                                                    <div className="w-64 h-64 border-[15px] border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin mx-auto shadow-[0_0_100px_#10b98110]" />
+                                                    <div className="absolute inset-0 flex items-center justify-center"><Fingerprint className="w-24 h-24 text-emerald-500/20 animate-pulse" /></div>
+                                                </div>
+                                                <p className="text-5xl font-black uppercase tracking-tighter animate-pulse text-emerald-500 italic">Sincronizando con Stack Central_2026...</p>
+                                            </div>
+                                        )}
+                                        {status === 'success' && (
+                                            <div className="space-y-16">
+                                                <div className="w-56 h-56 bg-emerald-500 rounded-[4.5rem] flex items-center justify-center mx-auto shadow-[0_0_150px_#10b981]"><CheckCircle2 className="w-28 h-28 text-white" /></div>
+                                                <p className="text-[10rem] font-black text-emerald-500 tracking-tighter leading-none">VALIDADO</p>
+                                                <p className="text-3xl font-bold italic text-gray-500 uppercase tracking-[0.3em] mt-10">Nodo Sincronizado Correctamente</p>
+                                            </div>
+                                        )}
+                                        {status === 'error' && (
+                                            <div className="space-y-16">
+                                                <div className="w-40 h-40 bg-red-500/10 border-4 border-red-500/50 rounded-[4rem] flex items-center justify-center mx-auto shadow-[0_0_100px_#ef444410]"><WifiOff className="w-20 h-20 text-red-500" /></div>
+                                                <p className="text-7xl font-black text-red-500 tracking-tighter uppercase leading-none">Fallo_de_Red</p>
+                                                <div className="bg-red-500/5 p-12 rounded-[3rem] border border-red-500/10 max-w-xl mx-auto shadow-inner">
+                                                    <p className="text-lg font-bold text-gray-500 mb-10 leading-relaxed italic">El Stack Central no responde. Por favor, verifica la conexión estratégica en el VPS de Producción.</p>
+                                                    <button onClick={() => setStatus('idle')} className="w-full py-8 bg-red-500 text-white font-black uppercase tracking-[0.4em] rounded-[2rem] flex items-center justify-center gap-5 active:scale-95 transition-all text-xl shadow-2xl hover:bg-red-600">
+                                                        <RefreshCw className="w-7 h-7" /> REINTENTAR_SINC
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </motion.div>
+                    </div>
                 )}
-                {!attendance[selectedGuest.id] && (
-                  <div className="absolute inset-0 w-2 bg-white/20 blur-xl skew-x-12 -translate-x-full group-hover:animate-scan" />
-                )}
-              </button>
-            </div>
+            </AnimatePresence>
 
-            <div className="p-8 border-t border-white/5 bg-black/40 flex justify-between items-center text-[10px] font-black text-slate-600 tracking-widest uppercase">
-              <div className="flex items-center gap-4">
-                <span>SECURITY_CLEARANCE: LEVEL_05</span>
-                <span className="w-1 h-1 bg-slate-800 rounded-full" />
-                <span>UPLINK: SECURE</span>
-              </div>
-              <button onClick={() => setSelectedGuest(null)} className="flex items-center gap-2 hover:text-white transition-colors">
-                <X className="w-4 h-4" /> ABORT_ACCESS
-              </button>
-            </div>
-          </div>
+            <style jsx global>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.2); border-radius: 20px; }
+                select { -webkit-appearance: none; appearance: none; }
+                input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+                @font-face {
+                    font-family: 'Outfit';
+                    src: url('https://fonts.googleapis.com/css2?family=Outfit:wght@900&display=swap');
+                }
+            `}</style>
         </div>
-      )}
-
-      {/* GLOBAL TELEMETRY FOOTER */}
-      <footer className="h-10 bg-black border-t border-white/5 px-8 flex items-center justify-between text-[10px] font-mono text-slate-700">
-        <div className="flex gap-8">
-          <div className="flex items-center gap-2">
-            <Database className="w-3 h-3" />
-            <span>VAULT_ID: {STORAGE_KEY}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Activity className="w-3 h-3" />
-            <span>LAST_SYNC: {lastSync || 'STANDALONE'}</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 uppercase font-black tracking-tighter">
-          <span>System_Engine</span>
-          <div className="w-20 h-1 bg-slate-900 rounded-full overflow-hidden">
-            <div className="h-full bg-emerald-500 w-2/3 animate-pulse" />
-          </div>
-          <span>Jairo_OS</span>
-        </div>
-      </footer>
-
-      <style jsx global>{`
-        @keyframes scan {
-          from { transform: translateX(-100%) skewX(-20deg); }
-          to { transform: translateX(500%) skewX(-20deg); }
-        }
-        .animate-scan {
-          animation: scan 3s infinite;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #000;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #111;
-          border-radius: 20px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #10b981;
-        }
-      `}</style>
-    </div>
-  );
+    );
 }
