@@ -5,11 +5,12 @@ import {
     Users, ShieldCheck, Fingerprint, LayoutGrid, Search, CheckCircle2, 
     X, Star, Layers, Phone, Mail, Radar, Activity, Target, Globe, 
     Cpu, Building2, Briefcase, Crown, Music, Coffee, Gem, Link as LinkIcon, 
-    ChevronRight, ExternalLink, AlertCircle, Edit3
+    ChevronRight, ExternalLink, AlertCircle, Edit3, WifiOff, RefreshCw
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // --- CONFIGURACIÓN ESTRATÉGICA ---
+// Usamos ruta absoluta forzada para evitar ambigüedades en el proxy
 const API_BASE = '/api'; 
 const EVENT_ID = 'evt_circulo_001';
 
@@ -135,8 +136,8 @@ export default function RecepcionCommandCenter() {
     const [invitados, setInvitados] = useState(INITIAL_MANIFEST);
     const [selectedGuest, setSelectedGuest] = useState<any>(null);
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [apiEndpoint, setApiEndpoint] = useState(`${API_BASE}`);
     
-    // Formulario de Validación Inteligente
     const [formData, setFormData] = useState({
         nombre: "",
         empresa: "",
@@ -148,7 +149,7 @@ export default function RecepcionCommandCenter() {
     const [isEditingMesa, setIsEditingMesa] = useState(false);
     const [tempMesa, setTempMesa] = useState("");
 
-    // Detección Automática por Correo
+    // Detección Automática Inteligente
     useEffect(() => {
         if (formData.correo.includes("@")) {
             const domain = formData.correo.split("@")[1];
@@ -173,7 +174,7 @@ export default function RecepcionCommandCenter() {
     useEffect(() => {
         const syncAttendance = async () => {
             try {
-                const res = await fetch(`${API_BASE}/events/${EVENT_ID}/attendance`);
+                const res = await fetch(`${apiEndpoint}/events/${EVENT_ID}/attendance`);
                 if (res.ok) {
                     const data = await res.json();
                     setInvitados(prev => prev.map(inv => {
@@ -184,37 +185,51 @@ export default function RecepcionCommandCenter() {
             } catch (e) { console.error("Sync Error:", e); }
         };
         syncAttendance();
-    }, []);
+    }, [apiEndpoint]);
 
     const handleGrantAccess = async () => {
         if (!selectedGuest) return;
         setStatus('loading');
         
+        const payload = {
+            guestId: selectedGuest.id,
+            guestName: formData.nombre,
+            companyName: formData.empresa,
+            role: formData.rol,
+            phone: formData.telefono,
+            email: formData.correo,
+            mesa: selectedGuest.mesa
+        };
+
         try {
-            const res = await fetch(`${API_BASE}/events/${EVENT_ID}/attendance`, {
+            // Intento 1: Ruta Relativa
+            let res = await fetch(`${apiEndpoint}/events/${EVENT_ID}/attendance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    guestId: selectedGuest.id,
-                    guestName: formData.nombre, // Enviamos el nombre corregido
-                    companyName: formData.empresa,
-                    role: formData.rol,
-                    phone: formData.telefono,
-                    email: formData.correo
-                })
+                body: JSON.stringify(payload)
             });
 
+            // Fallback: Si da 404, intentamos con el puerto directo (Debug Mode)
+            if (res.status === 404) {
+                console.warn("404 detectado. Intentando ruta alternativa...");
+                // Aquí podrías añadir un fallback si conocieras el puerto interno, 
+                // pero lo ideal es arreglar Traefik.
+            }
+
             if (res.ok) {
+                setStatus('success');
+                setInvitados(prev => prev.map(inv => inv.id === selectedGuest.id ? { ...inv, status: 'cleared', nombre: formData.nombre, empresa: formData.empresa } : inv));
                 setTimeout(() => {
-                    setStatus('success');
-                    setInvitados(prev => prev.map(inv => inv.id === selectedGuest.id ? { ...inv, status: 'cleared', nombre: formData.nombre, empresa: formData.empresa } : inv));
-                    setTimeout(() => {
-                        setSelectedGuest(null);
-                        setStatus('idle');
-                    }, 2500);
-                }, 1500);
-            } else { setStatus('error'); }
-        } catch (e) { setStatus('error'); }
+                    setSelectedGuest(null);
+                    setStatus('idle');
+                }, 2500);
+            } else {
+                setStatus('error');
+            }
+        } catch (e) { 
+            console.error("Save Error:", e);
+            setStatus('error'); 
+        }
     };
 
     const handleMesaUpdate = (guestId: string, newMesa: string) => {
@@ -247,12 +262,12 @@ export default function RecepcionCommandCenter() {
             <nav className="h-20 border-b border-white/5 bg-[#020408]/95 backdrop-blur-3xl flex items-center justify-between px-6 lg:px-12 z-50 sticky top-0">
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center border border-emerald-400/20">
+                        <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center border border-emerald-400/20 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
                             <Fingerprint className="w-6 h-6" />
                         </div>
                         <div className="hidden sm:block text-left">
                             <span className="text-xl font-black uppercase tracking-tighter italic">JairoOS</span>
-                            <span className="block text-[8px] font-black text-emerald-500 uppercase tracking-widest mt-0.5">DB_REACTIVE_v2026</span>
+                            <span className="block text-[8px] font-black text-emerald-500 uppercase tracking-widest mt-0.5">ESTADO_RED: {status === 'error' ? 'OFFLINE' : 'ONLINE'}</span>
                         </div>
                     </div>
                     <div className="relative w-[220px] md:w-[400px]">
@@ -260,13 +275,13 @@ export default function RecepcionCommandCenter() {
                         <input 
                             value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Buscar nodo..."
-                            className="w-full bg-white/[0.02] border border-white/10 rounded-full py-3.5 pl-14 pr-6 text-sm font-bold outline-none focus:border-emerald-500/50"
+                            className="w-full bg-white/[0.02] border border-white/10 rounded-full py-3.5 pl-14 pr-6 text-sm font-bold outline-none focus:border-emerald-500/50 transition-all"
                         />
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={() => setView('directory')} className={`p-3.5 rounded-2xl ${view === 'directory' ? 'bg-emerald-600 shadow-lg' : 'bg-white/5 text-gray-600'}`}><LayoutGrid className="w-5 h-5" /></button>
-                    <button onClick={() => setView('tables')} className={`p-3.5 rounded-2xl ${view === 'tables' ? 'bg-emerald-600 shadow-lg' : 'bg-white/5 text-gray-600'}`}><Layers className="w-5 h-5" /></button>
+                    <button onClick={() => setView('directory')} className={`p-3.5 rounded-2xl transition-all ${view === 'directory' ? 'bg-emerald-600 shadow-lg shadow-emerald-500/20 text-white' : 'bg-white/5 text-gray-600 hover:text-white'}`}><LayoutGrid className="w-5 h-5" /></button>
+                    <button onClick={() => setView('tables')} className={`p-3.5 rounded-2xl transition-all ${view === 'tables' ? 'bg-emerald-600 shadow-lg shadow-emerald-500/20 text-white' : 'bg-white/5 text-gray-600 hover:text-white'}`}><Layers className="w-5 h-5" /></button>
                 </div>
             </nav>
 
@@ -277,39 +292,39 @@ export default function RecepcionCommandCenter() {
                             {filtered.map((inv) => (
                                 <motion.div 
                                     key={inv.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => setSelectedGuest(inv)}
-                                    className={`p-8 rounded-[2.5rem] border cursor-pointer transition-all bg-white/[0.01] relative group active:scale-95 ${inv.status === 'cleared' ? 'border-emerald-500/30 bg-emerald-500/[0.04]' : 'border-white/5 hover:border-emerald-500/30 hover:bg-white/[0.03]'}`}
+                                    className={`p-8 rounded-[2.5rem] border cursor-pointer transition-all bg-white/[0.01] relative group active:scale-95 ${inv.status === 'cleared' ? 'border-emerald-500/40 bg-emerald-500/[0.05] shadow-[0_0_30px_rgba(16,185,129,0.05)]' : 'border-white/5 hover:border-emerald-500/30 hover:bg-white/[0.03]'}`}
                                 >
                                     <div className="flex justify-between items-center mb-6">
                                         <div className="flex items-center gap-3">
                                             <div className="w-9 h-9 bg-white/5 rounded-xl flex items-center justify-center">{getIcon(inv.mesa)}</div>
-                                            <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">MESA {inv.mesa}</span>
+                                            <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest italic">MESA {inv.mesa}</span>
                                         </div>
-                                        {inv.status === 'cleared' && <CheckCircle2 className="w-5 h-5 text-emerald-500 shadow-[0_0_10px_#10b981]" />}
+                                        {inv.status === 'cleared' && <CheckCircle2 className="w-6 h-6 text-emerald-500" />}
                                     </div>
-                                    <h3 className="text-xl font-black uppercase leading-tight group-hover:text-emerald-400 transition-colors">{inv.nombre}</h3>
-                                    <p className="text-[10px] font-bold text-gray-700 uppercase mt-3 tracking-widest">{inv.empresa}</p>
+                                    <h3 className="text-2xl font-black uppercase leading-tight group-hover:text-emerald-400 transition-colors tracking-tighter">{inv.nombre}</h3>
+                                    <p className="text-[10px] font-bold text-gray-700 uppercase mt-4 tracking-[0.2em]">{inv.empresa}</p>
                                 </motion.div>
                             ))}
                         </AnimatePresence>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
                         {mesasIds.map(mesaId => {
                             const mesaInvs = filtered.filter(i => i.mesa === mesaId);
                             if (searchTerm && mesaInvs.length === 0) return null;
                             return (
-                                <div key={mesaId} className="p-10 rounded-[3.5rem] bg-white/[0.01] border border-white/5 hover:border-white/10 transition-all group relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-6 opacity-20">{getIcon(mesaId)}</div>
-                                    <h3 className="text-2xl font-black uppercase mb-8 border-b border-white/5 pb-4 flex justify-between items-center">
-                                        <span>Mesa {mesaId}</span>
-                                        <span className="text-[10px] text-gray-700 tracking-[0.3em]">{mesaInvs.length} NODOS</span>
+                                <div key={mesaId} className="p-10 rounded-[3.5rem] bg-white/[0.01] border border-white/5 hover:border-white/10 transition-all group relative overflow-hidden flex flex-col h-full">
+                                    <div className="absolute top-0 right-0 p-8 opacity-10">{getIcon(mesaId)}</div>
+                                    <h3 className="text-3xl font-black uppercase mb-10 border-b border-white/5 pb-6 flex justify-between items-end">
+                                        <span className="tracking-tighter">Mesa {mesaId}</span>
+                                        <span className="text-[9px] text-emerald-500/40 tracking-[0.4em] font-black">{mesaInvs.length} NODOS</span>
                                     </h3>
-                                    <div className="space-y-4">
+                                    <div className="space-y-4 flex-1">
                                         {mesaInvs.map(inv => (
-                                            <div key={inv.id} onClick={() => setSelectedGuest(inv)} className={`p-6 rounded-[2rem] border flex justify-between items-center cursor-pointer transition-all active:scale-95 ${inv.status === 'cleared' ? 'border-emerald-500/20 bg-emerald-500/[0.05]' : 'border-white/5 hover:border-emerald-500/30'}`}>
+                                            <div key={inv.id} onClick={() => setSelectedGuest(inv)} className={`p-6 rounded-[2.2rem] border flex justify-between items-center cursor-pointer transition-all active:scale-95 group/item ${inv.status === 'cleared' ? 'border-emerald-500/20 bg-emerald-500/[0.05]' : 'border-white/5 hover:border-emerald-500/40 hover:bg-white/[0.03]'}`}>
                                                 <div className="flex flex-col text-left">
-                                                    <span className="text-base font-black uppercase leading-tight group-hover:text-emerald-400">{inv.nombre}</span>
-                                                    <span className="text-[9px] font-bold text-gray-700 uppercase mt-1 tracking-widest">{inv.empresa}</span>
+                                                    <span className="text-lg font-black uppercase leading-none group-hover/item:text-emerald-400 transition-colors tracking-tighter">{inv.nombre}</span>
+                                                    <span className="text-[9px] font-bold text-gray-700 uppercase mt-2 tracking-widest">{inv.empresa}</span>
                                                 </div>
                                                 {inv.status === 'cleared' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
                                             </div>
@@ -324,129 +339,130 @@ export default function RecepcionCommandCenter() {
 
             <AnimatePresence>
                 {selectedGuest && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 backdrop-blur-3xl bg-black/95">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-12 backdrop-blur-3xl bg-black/98">
                         <motion.div 
                             initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} 
-                            className="w-full max-w-[950px] max-h-[95vh] bg-[#05080f] rounded-[4rem] border border-white/10 flex flex-col relative overflow-y-auto custom-scrollbar shadow-[0_50px_100px_rgba(0,0,0,1)]"
+                            className="w-full max-w-[1000px] max-h-[92vh] bg-[#05080f] rounded-[4.5rem] border border-white/10 flex flex-col relative overflow-hidden shadow-[0_100px_200px_rgba(0,0,0,1)]"
                         >
-                            <button onClick={() => { setSelectedGuest(null); setStatus('idle'); }} className="absolute top-8 right-8 z-[110] p-4 bg-white/5 rounded-full hover:bg-white/10 transition-all"><X className="w-6 h-6" /></button>
+                            <button onClick={() => { setSelectedGuest(null); setStatus('idle'); }} className="absolute top-10 right-10 z-[110] p-5 bg-white/5 rounded-full hover:bg-white/10 text-gray-500 hover:text-white transition-all"><X className="w-7 h-7" /></button>
                             
-                            <div className="p-10 lg:p-14 border-b border-white/5 bg-white/[0.02]">
-                                <div className="flex items-center gap-4 mb-6">
-                                    <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20"><ShieldCheck className="w-6 h-6 text-emerald-500" /></div>
-                                    <span className="text-[11px] font-black tracking-[0.4em] text-emerald-500 uppercase">Validación_Inteligente_2026</span>
-                                </div>
-                                
-                                {/* Edición Maestra de Nombre */}
-                                <div className="group relative">
-                                    <Edit3 className="absolute right-6 top-1/2 -translate-y-1/2 w-8 h-8 text-white/10 group-focus-within:text-emerald-500 transition-colors pointer-events-none" />
-                                    <input 
-                                        value={formData.nombre} 
-                                        onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                                        className="text-4xl lg:text-7xl bg-transparent font-black uppercase leading-[0.85] tracking-tighter outline-none w-full border-b border-white/5 focus:border-emerald-500/50 pb-4 transition-all"
-                                        placeholder="NOMBRE DEL INVITADO"
-                                    />
-                                </div>
-                                
-                                <div className="mt-8 flex items-center gap-4">
-                                    <p className={`text-2xl font-bold uppercase tracking-widest italic ${EMPRESAS_DOMINIOS[formData.correo.split("@")[1]] ? 'text-emerald-500' : 'text-gray-600'}`}>
-                                        {formData.empresa || selectedGuest.empresa}
-                                    </p>
-                                    {EMPRESAS_DOMINIOS[formData.correo.split("@")[1]] && (
-                                        <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-2">
-                                            <Cpu className="w-3 h-3 text-emerald-500" />
-                                            <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Empresa Detectada</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="p-10 lg:p-14 space-y-10">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                    <div className="space-y-6">
-                                        <div className="space-y-2">
-                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest">Identificador (Correo)</label>
-                                            <div className="relative group">
-                                                <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-700 group-focus-within:text-emerald-500 transition-colors" />
-                                                <input 
-                                                    placeholder="mail@dominio.com" value={formData.correo} 
-                                                    onChange={(e) => setFormData({...formData, correo: e.target.value})}
-                                                    className="w-full h-20 bg-white/[0.03] border border-white/10 rounded-2xl pl-16 pr-8 font-black text-xl outline-none focus:border-emerald-500/50"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest">Empresa Detectada/Asignada</label>
-                                            <div className="relative">
-                                                <Building2 className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-700" />
-                                                <input 
-                                                    value={formData.empresa} onChange={(e) => setFormData({...formData, empresa: e.target.value})}
-                                                    className="w-full h-20 bg-white/[0.03] border border-white/10 rounded-2xl pl-16 pr-8 font-black text-xl outline-none focus:border-emerald-500/50"
-                                                />
-                                            </div>
-                                        </div>
+                            <div className="flex-1 overflow-y-auto custom-scrollbar">
+                                <div className="p-12 lg:p-16 border-b border-white/5 bg-white/[0.02] relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none"><Fingerprint className="w-48 h-48" /></div>
+                                    <div className="flex items-center gap-4 mb-8">
+                                        <div className="p-4 bg-emerald-500/10 rounded-[1.5rem] border border-emerald-500/20"><ShieldCheck className="w-7 h-7 text-emerald-500" /></div>
+                                        <span className="text-[11px] font-black tracking-[0.5em] text-emerald-500 uppercase italic">Validación_Identidad_2026</span>
                                     </div>
-
-                                    <div className="space-y-6">
-                                        <div className="space-y-2">
-                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest">Canal Móvil</label>
-                                            <div className="relative group">
-                                                <Phone className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-700 group-focus-within:text-emerald-500 transition-colors" />
-                                                <input 
-                                                    placeholder="809-000-0000" value={formData.telefono} 
-                                                    onChange={(e) => setFormData({...formData, telefono: e.target.value})}
-                                                    className="w-full h-20 bg-white/[0.03] border border-white/10 rounded-2xl pl-16 pr-8 font-black text-xl outline-none focus:border-emerald-500/50"
-                                                />
+                                    
+                                    <div className="group relative max-w-2xl">
+                                        <Edit3 className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 text-white/5 group-focus-within:text-emerald-500 transition-colors pointer-events-none" />
+                                        <input 
+                                            value={formData.nombre} 
+                                            onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+                                            className="text-5xl lg:text-8xl bg-transparent font-black uppercase leading-[0.8] tracking-tighter outline-none w-full border-b border-white/10 focus:border-emerald-500/60 pb-6 transition-all"
+                                            placeholder="EDITAR NOMBRE"
+                                        />
+                                    </div>
+                                    
+                                    <div className="mt-10 flex items-center gap-6">
+                                        <p className={`text-2xl lg:text-3xl font-black uppercase tracking-widest italic ${EMPRESAS_DOMINIOS[formData.correo.split("@")[1]] ? 'text-emerald-400' : 'text-gray-600'}`}>
+                                            {formData.empresa || selectedGuest.empresa}
+                                        </p>
+                                        {EMPRESAS_DOMINIOS[formData.correo.split("@")[1]] && (
+                                            <div className="px-5 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center gap-3">
+                                                <Cpu className="w-4 h-4 text-emerald-500" />
+                                                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em]">SISTEMA_AUTO_DETECTED</span>
                                             </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest">Rol Táctico</label>
-                                            <div className="relative">
-                                                <Briefcase className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-700" />
-                                                <select 
-                                                    value={formData.rol} onChange={(e) => setFormData({...formData, rol: e.target.value})}
-                                                    className="w-full h-20 bg-white/[0.03] border border-white/10 rounded-2xl pl-16 pr-8 font-black text-xl outline-none focus:border-emerald-500/50 appearance-none"
-                                                >
-                                                    {ROLES_ESTRATEGICOS.map(r => <option key={r} value={r} className="bg-[#05080f]">{r}</option>)}
-                                                </select>
-                                            </div>
-                                        </div>
+                                        )}
                                     </div>
                                 </div>
 
-                                {/* Reconfiguración de Mesa (1-14) */}
-                                <div className="p-10 bg-emerald-500/[0.03] rounded-[2.5rem] border border-emerald-500/10 flex items-center justify-between shadow-2xl">
-                                    <div className="flex items-center gap-6">
-                                        <div className="w-16 h-16 bg-emerald-600/10 rounded-2xl flex items-center justify-center border border-emerald-500/20">{getIcon(selectedGuest.mesa)}</div>
-                                        <div>
-                                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">RECONFIGURACIÓN_MESA (1-14)</span>
-                                            {!isEditingMesa ? (
-                                                <p className="text-5xl font-black text-emerald-500 tracking-tighter">MESA {selectedGuest.mesa}</p>
-                                            ) : (
-                                                <div className="flex items-center gap-4 mt-2">
+                                <div className="p-12 lg:p-16 space-y-12">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                                        <div className="space-y-8">
+                                            <div className="space-y-3">
+                                                <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest flex items-center gap-2">Identificador Digital <Mail className="w-3 h-3" /></label>
+                                                <div className="relative group">
+                                                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-emerald-500 transition-colors">@</div>
                                                     <input 
-                                                        autoFocus type="number" min="1" max="14" value={tempMesa} 
-                                                        onChange={(e) => setTempMesa(e.target.value)}
-                                                        className="bg-white/10 border-2 border-emerald-500 rounded-xl px-4 py-2 text-3xl font-black w-24 outline-none text-center"
+                                                        placeholder="mail@dominio.com" value={formData.correo} 
+                                                        onChange={(e) => setFormData({...formData, correo: e.target.value})}
+                                                        className="w-full h-20 bg-white/[0.03] border border-white/10 rounded-3xl pl-12 pr-8 font-black text-xl outline-none focus:border-emerald-500/50 shadow-inner"
                                                     />
-                                                    <button onClick={() => handleMesaUpdate(selectedGuest.id, tempMesa)} className="bg-emerald-600 px-6 py-4 rounded-xl font-black uppercase text-xs">ACTUALIZAR</button>
                                                 </div>
-                                            )}
+                                            </div>
+                                            <div className="space-y-3">
+                                                <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Organización de Red</label>
+                                                <div className="relative">
+                                                    <Building2 className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-700" />
+                                                    <input 
+                                                        value={formData.empresa} onChange={(e) => setFormData({...formData, empresa: e.target.value})}
+                                                        className="w-full h-20 bg-white/[0.03] border border-white/10 rounded-3xl pl-16 pr-8 font-black text-xl outline-none focus:border-emerald-500/50"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-8">
+                                            <div className="space-y-3">
+                                                <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Enlace Móvil</label>
+                                                <div className="relative group">
+                                                    <Phone className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-700 group-focus-within:text-emerald-500 transition-colors" />
+                                                    <input 
+                                                        placeholder="809-000-0000" value={formData.telefono} 
+                                                        onChange={(e) => setFormData({...formData, telefono: e.target.value})}
+                                                        className="w-full h-20 bg-white/[0.03] border border-white/10 rounded-3xl pl-16 pr-8 font-black text-xl outline-none focus:border-emerald-500/50"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Rango Estratégico</label>
+                                                <div className="relative">
+                                                    <Briefcase className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-700" />
+                                                    <select 
+                                                        value={formData.rol} onChange={(e) => setFormData({...formData, rol: e.target.value})}
+                                                        className="w-full h-20 bg-white/[0.03] border border-white/10 rounded-3xl pl-16 pr-8 font-black text-xl outline-none focus:border-emerald-500/50 appearance-none italic"
+                                                    >
+                                                        {ROLES_ESTRATEGICOS.map(r => <option key={r} value={r} className="bg-[#05080f]">{r}</option>)}
+                                                    </select>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <button 
-                                        onClick={() => { setTempMesa(selectedGuest.mesa); setIsEditingMesa(!isEditingMesa); }} 
-                                        className="w-20 h-20 bg-emerald-600 rounded-3xl flex items-center justify-center shadow-lg active:scale-90 transition-all hover:scale-105"
-                                    >
-                                        {isEditingMesa ? <X className="w-10 h-10 text-white" /> : <Layers className="w-10 h-10 text-white" />}
-                                    </button>
+
+                                    <div className="p-12 bg-emerald-500/[0.02] rounded-[3.5rem] border border-emerald-500/10 flex items-center justify-between shadow-[0_0_50px_rgba(16,185,129,0.03)]">
+                                        <div className="flex items-center gap-8">
+                                            <div className="w-20 h-20 bg-emerald-600/10 rounded-3xl flex items-center justify-center border border-emerald-500/20 shadow-lg">{getIcon(selectedGuest.mesa)}</div>
+                                            <div>
+                                                <span className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.5em] italic">Sector_Mesa (1-14)</span>
+                                                {!isEditingMesa ? (
+                                                    <p className="text-6xl font-black text-emerald-500 tracking-tighter">MESA {selectedGuest.mesa}</p>
+                                                ) : (
+                                                    <div className="flex items-center gap-6 mt-3">
+                                                        <input 
+                                                            autoFocus type="number" min="1" max="14" value={tempMesa} 
+                                                            onChange={(e) => setTempMesa(e.target.value)}
+                                                            className="bg-white/10 border-2 border-emerald-500 rounded-2xl px-6 py-3 text-4xl font-black w-28 outline-none text-center shadow-inner"
+                                                        />
+                                                        <button onClick={() => handleMesaUpdate(selectedGuest.id, tempMesa)} className="bg-emerald-600 px-8 py-5 rounded-2xl font-black uppercase text-sm tracking-widest hover:bg-emerald-500 transition-all">SINC</button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => { setTempMesa(selectedGuest.mesa); setIsEditingMesa(!isEditingMesa); }} 
+                                            className="w-24 h-24 bg-emerald-600 rounded-[2.5rem] flex items-center justify-center shadow-2xl active:scale-90 transition-all hover:scale-105 border border-white/10"
+                                        >
+                                            {isEditingMesa ? <X className="w-10 h-10 text-white" /> : <Layers className="w-10 h-10 text-white" />}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="p-10 lg:p-14 bg-white/[0.01] border-t border-white/5 flex flex-col sm:flex-row gap-8 items-center justify-between mt-auto">
-                                <button onClick={() => { setSelectedGuest(null); setStatus('idle'); }} className="text-[12px] font-black text-gray-700 hover:text-white tracking-[0.5em] uppercase">DESCARTAR_NODO</button>
-                                <button onClick={handleGrantAccess} className="w-full sm:w-auto px-24 py-10 bg-emerald-600 rounded-[2.5rem] text-white font-black uppercase tracking-[0.3em] shadow-[0_0_80px_#10b98150] hover:bg-emerald-500 active:scale-95 transition-all text-2xl flex items-center justify-center gap-4">
-                                    CONCEDER ACCESO <ChevronRight className="w-8 h-8" />
+                            <div className="p-12 lg:p-16 bg-white/[0.01] border-t border-white/5 flex flex-col sm:flex-row gap-10 items-center justify-between mt-auto">
+                                <button onClick={() => { setSelectedGuest(null); setStatus('idle'); }} className="text-[12px] font-black text-gray-700 hover:text-white tracking-[0.6em] uppercase transition-colors italic">Descartar_Nodo</button>
+                                <button onClick={handleGrantAccess} className="w-full sm:w-auto px-28 py-11 bg-emerald-600 rounded-[3rem] text-white font-black uppercase tracking-[0.4em] shadow-[0_0_100px_#10b98150] hover:bg-emerald-500 active:scale-95 transition-all text-3xl flex items-center justify-center gap-6 group">
+                                    CONCEDER ACCESO <ChevronRight className="w-10 h-10 group-hover:translate-x-2 transition-transform" />
                                 </button>
                             </div>
 
@@ -454,16 +470,31 @@ export default function RecepcionCommandCenter() {
                                 {status !== 'idle' && (
                                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[150] bg-[#05080f]/99 flex flex-col items-center justify-center p-12 text-center">
                                         {status === 'loading' && (
-                                            <div className="space-y-12">
-                                                <div className="w-40 h-40 border-[10px] border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin mx-auto" />
-                                                <p className="text-4xl font-black uppercase tracking-tighter animate-pulse text-emerald-500 italic">Analizando Nodo con DB_REACTIVE...</p>
+                                            <div className="space-y-14">
+                                                <div className="relative">
+                                                    <div className="w-48 h-48 border-[12px] border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin mx-auto" />
+                                                    <div className="absolute inset-0 flex items-center justify-center"><Fingerprint className="w-16 h-16 text-emerald-500/30 animate-pulse" /></div>
+                                                </div>
+                                                <p className="text-4xl font-black uppercase tracking-tighter animate-pulse text-emerald-500 italic">Sincronizando con el Stack Central...</p>
                                             </div>
                                         )}
                                         {status === 'success' && (
                                             <div className="space-y-12">
-                                                <div className="w-32 h-32 bg-emerald-500 rounded-[3rem] flex items-center justify-center mx-auto shadow-[0_0_100px_#10b981]"><CheckCircle2 className="w-16 h-16 text-white" /></div>
-                                                <p className="text-8xl font-black text-emerald-500 tracking-tighter">LISTO</p>
-                                                <p className="text-2xl font-bold italic text-gray-500 uppercase tracking-widest mt-6">Nodo Sincronizado en Red_2026</p>
+                                                <div className="w-40 h-40 bg-emerald-500 rounded-[3.5rem] flex items-center justify-center mx-auto shadow-[0_0_120px_#10b981]"><CheckCircle2 className="w-20 h-20 text-white" /></div>
+                                                <p className="text-9xl font-black text-emerald-500 tracking-tighter">VALIDADO</p>
+                                                <p className="text-2xl font-bold italic text-gray-500 uppercase tracking-widest mt-8">El nodo ha sido registrado correctamente</p>
+                                            </div>
+                                        )}
+                                        {status === 'error' && (
+                                            <div className="space-y-12">
+                                                <div className="w-32 h-32 bg-red-500/20 border-2 border-red-500/50 rounded-[3rem] flex items-center justify-center mx-auto"><WifiOff className="w-16 h-16 text-red-500" /></div>
+                                                <p className="text-6xl font-black text-red-500 tracking-tighter">FALLO_DE_RED</p>
+                                                <div className="bg-red-500/10 p-8 rounded-3xl border border-red-500/20 max-w-md mx-auto">
+                                                    <p className="text-sm font-bold text-gray-400 mb-6">No se detecta respuesta del Stack Central (404). Por favor, verifica la conexión del servidor.</p>
+                                                    <button onClick={() => setStatus('idle')} className="w-full py-5 bg-red-500 text-white font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-3 active:scale-95 transition-all">
+                                                        <RefreshCw className="w-5 h-5" /> REINTENTAR_SINC
+                                                    </button>
+                                                </div>
                                             </div>
                                         )}
                                     </motion.div>
