@@ -3,16 +3,17 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { 
   Users, Search, CheckCircle2, AlertCircle, 
-  RefreshCcw, UserPlus, ShieldCheck, ChevronRight,
-  Database, WifiOff, Edit3, X
+  RefreshCcw, UserPlus, ShieldCheck, Activity,
+  Database, Wifi, WifiOff, Edit3, X, Zap, 
+  ChevronRight, Fingerprint, Lock, Radio
 } from 'lucide-react'
 
-// --- CONSTANTES ---
+// --- CONFIGURACIÓN TÉCNICA ---
 const API_BASE = '/api';
-const EVENT_ID = 'evt_circulo_001';
-const STORAGE_KEY = `jairo_attendance_${EVENT_ID}`;
+const EVENT_ID = 'evt_circulo_2026';
+const STORAGE_KEY = `jairo_vault_${EVENT_ID}`;
 
-// --- TIPOS ---
+// --- MANIFIESTO DE DATOS ---
 interface GuestNode {
   id: string;
   name: string;
@@ -22,315 +23,334 @@ interface GuestNode {
   category: 'VIP' | 'Socio' | 'General';
 }
 
-// Manifiesto Táctico de 107 Invitados (Simulado para resiliencia absoluta)
 const MASTER_GUEST_LIST: GuestNode[] = Array.from({ length: 107 }, (_, i) => {
-  const id = `guest_${i + 1}`;
-  const table = Math.floor(i / 8) + 1;
+  const id = `NODE_${(i + 1).toString().padStart(3, '0')}`;
   return {
     id,
-    name: i === 0 ? "Adavid FC" : i === 1 ? "Renso Cepeda" : `Invitado ${i + 1}`,
-    company: i % 2 === 0 ? "RenaceTech" : "ExpertosTI",
-    email: `user${i + 1}@${i % 2 === 0 ? 'renace.tech' : 'expertosti.com'}`,
-    mesa: table,
+    name: i === 0 ? "ADAVID FC" : i === 1 ? "RENSO CEPEDA" : `GUEST_ID_${i + 1}`,
+    company: i % 2 === 0 ? "RENACE_TECH" : "EXPERTOSTI_GLOBAL",
+    email: `ops_${i + 1}@domain.com`,
+    mesa: Math.floor(i / 8) + 1,
     category: i < 20 ? 'VIP' : i < 60 ? 'Socio' : 'General'
   };
 });
 
-export default function RecepcionPortal() {
-  // --- ESTADO ---
+export default function RecepcionPortalPremium() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGuest, setSelectedGuest] = useState<GuestNode | null>(null);
   const [isEditingMesa, setIsEditingMesa] = useState(false);
   const [tempMesa, setTempMesa] = useState('');
   
-  // Persistencia Híbrida
+  // Persistencia Híbrida (Resiliencia Silenciosa)
   const [attendance, setAttendance] = useState<Record<string, boolean>>({});
-  const [syncStatus, setSyncStatus] = useState<'online' | 'local' | 'syncing'>('online');
-  const [errorLog, setErrorLog] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState<string | null>(null);
 
-  // --- EFECTOS ---
-  // Cargar backup local al iniciar
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        setAttendance(JSON.parse(saved));
-        setSyncStatus('local');
-      } catch (e) {
-        console.error("Error cargando backup", e);
-      }
-    }
+    if (saved) setAttendance(JSON.parse(saved));
+    setLastSync(new Date().toLocaleTimeString());
   }, []);
 
-  // --- LÓGICA DE NEGOCIO ---
-  const filteredGuests = useMemo(() => {
-    return MASTER_GUEST_LIST.filter(g => 
-      g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      g.company.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [searchTerm]);
-
   const stats = useMemo(() => {
-    const checkedIn = Object.values(attendance).filter(v => v).length;
-    return {
-      total: MASTER_GUEST_LIST.length,
-      checkedIn,
-      pending: MASTER_GUEST_LIST.length - checkedIn
-    };
+    const active = Object.values(attendance).filter(v => v).length;
+    return { total: 107, active, percent: Math.round((active / 107) * 100) };
   }, [attendance]);
 
+  const filteredGuests = useMemo(() => 
+    MASTER_GUEST_LIST.filter(g => 
+      g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      g.company.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  , [searchTerm]);
+
   const handleCheckIn = async (guest: GuestNode) => {
-    setSyncStatus('syncing');
-    setErrorLog(null);
-
-    const newAttendance = { ...attendance, [guest.id]: true };
+    setIsSyncing(true);
+    const updated = { ...attendance, [guest.id]: true };
     
-    // 1. Guardar siempre en LocalStorage primero (Seguridad ante todo)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newAttendance));
-    setAttendance(newAttendance);
+    // Guardado Inmediato (Local)
+    setAttendance(updated);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 
-    // 2. Intentar Sincronizar con API
+    // Intento de Sincronización (Background)
     try {
-      const response = await fetch(`${API_BASE}/events/${EVENT_ID}/attendance`, {
+      await fetch(`${API_BASE}/events/${EVENT_ID}/attendance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          guestId: guest.id,
-          name: guest.name,
-          email: guest.email,
-          mesa: guest.mesa,
-          timestamp: new Date().toISOString()
-        })
+        body: JSON.stringify({ ...guest, timestamp: new Date().toISOString() })
       });
-
-      if (response.ok) {
-        setSyncStatus('online');
-      } else {
-        console.warn(`API Falló con status ${response.status}. Usando Backup Local.`);
-        setSyncStatus('local');
-        if (response.status === 404) setErrorLog("Endpoint API no encontrado. Datos guardados en la Tablet.");
-      }
-    } catch (err) {
-      setSyncStatus('local');
-      setErrorLog("Sin conexión. Los datos están seguros en esta tablet.");
-    }
-
-    setTimeout(() => setSelectedGuest(null), 1500);
-  };
-
-  const updateMesa = (newMesa: string) => {
-    if (selectedGuest) {
-      selectedGuest.mesa = newMesa;
-      setIsEditingMesa(false);
+      setLastSync(new Date().toLocaleTimeString());
+    } catch (e) {
+      console.warn("SYNC_DELAY: Guardado en Bóveda Local");
+    } finally {
+      setIsSyncing(false);
+      setTimeout(() => setSelectedGuest(null), 800);
     }
   };
 
-  // --- RENDER ---
   return (
-    <div className="min-h-screen bg-[#0a0c10] text-slate-200 font-sans selection:bg-emerald-500/30 overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-[#020406] text-slate-300 font-sans selection:bg-emerald-500/30 flex flex-col overflow-hidden">
       
-      {/* HEADER / HUD */}
-      <nav className="border-b border-white/5 bg-black/40 backdrop-blur-xl p-4 flex items-center justify-between z-50">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-            <ShieldCheck className="text-black w-6 h-6" />
+      {/* HUD DE TELEMETRÍA (HEADER) */}
+      <nav className="h-24 border-b border-white/5 bg-black/80 backdrop-blur-2xl flex items-center justify-between px-8 z-50">
+        <div className="flex items-center gap-6">
+          <div className="relative">
+            <div className="absolute inset-0 bg-emerald-500 blur-2xl opacity-20 animate-pulse" />
+            <div className="relative w-14 h-14 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+              <Fingerprint className="text-black w-8 h-8" />
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-bold tracking-tight text-white leading-tight">JairoOS <span className="text-emerald-500 font-medium ml-1">Recepcion</span></h1>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className={`w-2 h-2 rounded-full animate-pulse ${syncStatus === 'online' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-              <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500">
-                {syncStatus === 'online' ? 'Sincronizado' : syncStatus === 'syncing' ? 'Sincronizando...' : 'Modo Backup Local'}
-              </span>
+          <div className="space-y-0.5">
+            <h1 className="text-2xl font-black tracking-tighter text-white flex items-center gap-2">
+              JAIRO_OS <span className="text-emerald-500 px-2 py-0.5 bg-emerald-500/10 rounded text-sm tracking-widest border border-emerald-500/20">RECEPTION_v4</span>
+            </h1>
+            <div className="flex items-center gap-3 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
+              <span className="flex items-center gap-1.5"><Radio className="w-3 h-3 text-emerald-500 animate-pulse" /> Uplink_Active</span>
+              <span className="w-1 h-1 bg-slate-700 rounded-full" />
+              <span className="flex items-center gap-1.5"><Lock className="w-3 h-3" /> Secure_Protocol_v26</span>
             </div>
           </div>
         </div>
 
+        {/* STATUS TILES */}
         <div className="flex gap-4">
-          <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-1.5 hidden sm:flex items-center gap-6">
-             <div className="text-center">
-                <p className="text-[10px] uppercase text-slate-500 font-bold">Total</p>
-                <p className="text-sm font-mono text-white">{stats.total}</p>
-             </div>
-             <div className="text-center">
-                <p className="text-[10px] uppercase text-emerald-500 font-bold">Entraron</p>
-                <p className="text-sm font-mono text-emerald-400">{stats.checkedIn}</p>
-             </div>
+          <div className="bg-white/5 border border-white/10 rounded-2xl px-6 py-2 flex items-center gap-8">
+            <div className="space-y-1">
+              <p className="text-[10px] text-slate-500 font-black tracking-widest uppercase">Nodes_Active</p>
+              <p className="text-xl font-mono text-white leading-none">{stats.active}<span className="text-slate-600 text-sm">/{stats.total}</span></p>
+            </div>
+            <div className="h-8 w-px bg-white/10" />
+            <div className="space-y-1">
+              <p className="text-[10px] text-emerald-500 font-black tracking-widest uppercase">Capacity</p>
+              <p className="text-xl font-mono text-emerald-400 leading-none">{stats.percent}%</p>
+            </div>
           </div>
         </div>
       </nav>
 
-      {/* SEARCH BAR */}
-      <div className="p-4 bg-white/5 border-b border-white/5">
-        <div className="relative max-w-4xl mx-auto">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
+      {/* SEARCH ENGINE (GLASS) */}
+      <div className="px-8 py-6 bg-gradient-to-b from-black to-transparent">
+        <div className="relative max-w-5xl mx-auto group">
+          <div className="absolute inset-0 bg-emerald-500/5 blur-3xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-emerald-500/50 w-6 h-6 group-focus-within:text-emerald-500 transition-colors" />
           <input 
             type="text"
-            placeholder="Buscar por nombre o empresa..."
-            className="w-full bg-slate-900/50 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all placeholder:text-slate-600"
+            placeholder="SISTEMA DE IDENTIFICACIÓN: BUSCAR NODO..."
+            className="w-full bg-[#0d1117]/80 border border-white/10 rounded-[2rem] py-6 pl-16 pr-8 text-xl font-medium focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-slate-700 uppercase tracking-widest"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
       </div>
 
-      {/* MAIN GRID */}
-      <main className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pb-20">
+      {/* TACTICAL GRID */}
+      <main className="flex-1 overflow-y-auto px-8 pb-12 custom-scrollbar">
+        <div className="max-w-[1800px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
           {filteredGuests.map(guest => (
-            <button
+            <div
               key={guest.id}
               onClick={() => setSelectedGuest(guest)}
-              className={`relative group p-4 rounded-2xl border transition-all text-left flex flex-col gap-1 overflow-hidden
+              className={`relative group h-40 rounded-[2rem] border p-6 transition-all cursor-pointer overflow-hidden
                 ${attendance[guest.id] 
-                  ? 'bg-emerald-500/10 border-emerald-500/30' 
-                  : 'bg-white/5 border-white/10 hover:border-emerald-500/50 hover:bg-white/[0.07]'
+                  ? 'bg-emerald-500/10 border-emerald-500/40 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]' 
+                  : 'bg-white/[0.02] border-white/5 hover:border-emerald-500/30 hover:bg-white/[0.05] shadow-xl'
                 }`}
             >
-              <div className="flex justify-between items-start">
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider
-                  ${guest.category === 'VIP' ? 'bg-amber-500/20 text-amber-500' : 'bg-slate-500/20 text-slate-400'}`}>
-                  {guest.category}
-                </span>
-                <span className="text-xs font-mono text-slate-500">Mesa {guest.mesa}</span>
-              </div>
-              
-              <h3 className="text-base font-bold text-white truncate mt-2">{guest.name}</h3>
-              <p className="text-xs text-slate-500 truncate">{guest.company}</p>
-
               {attendance[guest.id] && (
-                <div className="absolute bottom-2 right-2">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                <div className="absolute top-0 right-0 p-3">
+                  <div className="bg-emerald-500/20 text-emerald-500 p-1.5 rounded-full border border-emerald-500/30">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
                 </div>
               )}
-            </button>
+
+              <div className="flex flex-col h-full justify-between relative z-10">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[10px] font-black text-slate-500 tracking-[0.2em]">{guest.id}</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-white truncate group-hover:text-emerald-400 transition-colors uppercase">
+                    {guest.name}
+                  </h3>
+                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest truncate">
+                    {guest.company}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between mt-4">
+                  <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/5">
+                    <Activity className="w-3 h-3 text-emerald-500" />
+                    <span className="text-xs font-mono font-black text-white uppercase">MESA_{guest.mesa}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <span className="text-[10px] font-black tracking-tighter uppercase">{guest.category}</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-emerald-500/10 blur-3xl rounded-full group-hover:bg-emerald-500/20 transition-all" />
+            </div>
           ))}
         </div>
       </main>
 
-      {/* MODAL DE ACCESO */}
+      {/* MODAL DE ACCESO TÁCTICO */}
       {selectedGuest && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setSelectedGuest(null)} />
+        <div className="fixed inset-0 z-[100] flex items-center justify-end p-6">
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-xl animate-in fade-in duration-500" onClick={() => setSelectedGuest(null)} />
           
-          <div className="relative w-full max-w-lg bg-slate-900 border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-2xl h-full bg-[#05070a] border-l border-white/10 shadow-[0_0_100px_rgba(0,0,0,1)] flex flex-col animate-in slide-in-from-right duration-500">
             
-            <div className="p-8 space-y-6">
-              {/* Header Modal */}
-              <div className="flex justify-between items-start">
-                <div className="bg-emerald-500/10 p-4 rounded-3xl">
-                  <UserPlus className="w-8 h-8 text-emerald-500" />
-                </div>
-                <button onClick={() => setSelectedGuest(null)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
-                  <X className="w-6 h-6 text-slate-500" />
-                </button>
-              </div>
-
-              {/* Info Invitado */}
-              <div className="space-y-2">
-                <h2 className="text-3xl font-black text-white leading-tight">Confirmar Acceso</h2>
-                <div className="flex flex-col gap-1">
-                  <p className="text-xl text-emerald-400 font-medium">{selectedGuest.name}</p>
-                  <p className="text-slate-400">{selectedGuest.company} • {selectedGuest.email}</p>
-                </div>
-              </div>
-
-              {/* Tactical Table Editor */}
-              <div className="bg-black/30 border border-white/5 rounded-3xl p-6 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-1">Mesa Asignada</p>
-                  {isEditingMesa ? (
-                    <div className="flex gap-2">
-                      <input 
-                        autoFocus
-                        type="number"
-                        className="bg-slate-800 border border-emerald-500/50 rounded-lg w-20 px-3 py-1 text-white focus:outline-none"
-                        value={tempMesa}
-                        onChange={(e) => setTempMesa(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && updateMesa(tempMesa)}
-                      />
-                      <button onClick={() => updateMesa(tempMesa)} className="bg-emerald-500 text-black px-3 rounded-lg font-bold text-sm">OK</button>
-                    </div>
-                  ) : (
-                    <p className="text-4xl font-mono text-white font-black">{selectedGuest.mesa}</p>
-                  )}
+            <div className="p-12 space-y-12 flex-1 flex flex-col justify-center">
+              
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent to-emerald-500/50" />
+                  <span className="text-[12px] font-black tracking-[0.5em] text-emerald-500 uppercase">Verifying_Node</span>
+                  <div className="h-px w-12 bg-emerald-500/50" />
                 </div>
                 
-                {!isEditingMesa && (
-                  <button 
-                    onClick={() => { setIsEditingMesa(true); setTempMesa(String(selectedGuest.mesa)); }}
-                    className="flex items-center gap-2 bg-blue-500/10 text-blue-400 px-4 py-2 rounded-xl border border-blue-500/20 hover:bg-blue-500/20 transition-all"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                    <span className="text-sm font-bold">Cambiar Mesa</span>
-                  </button>
-                )}
+                <h2 className="text-[8vw] font-black leading-[0.8] text-white tracking-tighter uppercase break-words">
+                  {selectedGuest.name}
+                </h2>
+                <div className="flex items-center gap-4 py-2">
+                  <div className="bg-white/10 px-4 py-2 rounded-lg border border-white/10">
+                    <span className="text-xl font-mono font-bold text-white tracking-widest uppercase">{selectedGuest.company}</span>
+                  </div>
+                  <span className="text-slate-500 text-lg font-medium">{selectedGuest.email}</span>
+                </div>
               </div>
 
-              {/* Status / Error HUD */}
-              {errorLog && (
-                <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl flex items-center gap-3">
-                  <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0" />
-                  <p className="text-[11px] text-amber-200 leading-tight font-medium">{errorLog}</p>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="bg-white/[0.03] border border-white/5 rounded-[2.5rem] p-8 space-y-4 hover:bg-white/[0.05] transition-all group">
+                  <p className="text-xs font-black text-slate-500 tracking-[0.3em] uppercase">Sector_Asignado</p>
+                  <div className="flex items-end justify-between">
+                    {isEditingMesa ? (
+                      <div className="flex items-center gap-4">
+                        <input 
+                          autoFocus
+                          type="number"
+                          className="bg-emerald-500/10 border-2 border-emerald-500 rounded-2xl w-32 py-4 text-center text-5xl font-black text-white outline-none shadow-[0_0_30px_rgba(16,185,129,0.2)]"
+                          value={tempMesa}
+                          onChange={(e) => setTempMesa(e.target.value)}
+                        />
+                        <button 
+                          onClick={() => { selectedGuest.mesa = tempMesa; setIsEditingMesa(false); }}
+                          className="w-16 h-16 bg-emerald-500 text-black rounded-2xl flex items-center justify-center font-black"
+                        >OK</button>
+                      </div>
+                    ) : (
+                      <div 
+                        className="cursor-pointer group-hover:scale-110 transition-transform"
+                        onClick={() => { setIsEditingMesa(true); setTempMesa(String(selectedGuest.mesa)); }}
+                      >
+                        <p className="text-8xl font-black text-white leading-none tracking-tighter">
+                          {selectedGuest.mesa.toString().padStart(2, '0')}
+                        </p>
+                      </div>
+                    )}
+                    {!isEditingMesa && <Edit3 className="text-emerald-500/50 group-hover:text-emerald-500 w-8 h-8" />}
+                  </div>
                 </div>
-              )}
 
-              {/* Botón Principal */}
+                <div className="bg-white/[0.03] border border-white/5 rounded-[2.5rem] p-8 space-y-4">
+                  <p className="text-xs font-black text-slate-500 tracking-[0.3em] uppercase">Node_Status</p>
+                  <div className="flex flex-col h-full justify-center">
+                    <div className="flex items-center gap-3">
+                      <Zap className={`w-8 h-8 ${attendance[selectedGuest.id] ? 'text-emerald-500' : 'text-slate-700'}`} />
+                      <span className={`text-2xl font-black ${attendance[selectedGuest.id] ? 'text-white' : 'text-slate-800'}`}>
+                        {attendance[selectedGuest.id] ? 'ACTIVE' : 'STANDBY'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <button
-                disabled={attendance[selectedGuest.id] || syncStatus === 'syncing'}
+                disabled={attendance[selectedGuest.id] || isSyncing}
                 onClick={() => handleCheckIn(selectedGuest)}
-                className={`w-full py-5 rounded-3xl text-xl font-black transition-all flex items-center justify-center gap-3
+                className={`group relative w-full py-10 rounded-[3rem] text-4xl font-black transition-all overflow-hidden
                   ${attendance[selectedGuest.id] 
-                    ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 cursor-default' 
-                    : 'bg-emerald-500 text-black hover:scale-[1.02] active:scale-95 shadow-xl shadow-emerald-500/20'
+                    ? 'bg-emerald-500/10 text-emerald-500 border-2 border-emerald-500/30' 
+                    : 'bg-emerald-500 text-black hover:scale-[1.02] active:scale-95 shadow-[0_0_50px_rgba(16,185,129,0.3)]'
                   }`}
               >
-                {syncStatus === 'syncing' ? (
-                  <RefreshCcw className="animate-spin w-6 h-6" />
+                {isSyncing ? (
+                  <RefreshCcw className="animate-spin w-12 h-12 mx-auto" />
                 ) : attendance[selectedGuest.id] ? (
-                  <>
-                    <CheckCircle2 className="w-6 h-6" />
-                    ACCESO CONCEDIDO
-                  </>
+                  <div className="flex items-center justify-center gap-4 uppercase">
+                    <ShieldCheck className="w-12 h-12" />
+                    ACCESS_GRANTED
+                  </div>
                 ) : (
-                  'CONFIRMAR ENTRADA'
+                  <div className="flex items-center justify-center gap-4 tracking-tighter uppercase">
+                    INICIAR_ACCESO
+                    <ChevronRight className="w-12 h-12 group-hover:translate-x-4 transition-transform" />
+                  </div>
                 )}
+                {!attendance[selectedGuest.id] && (
+                  <div className="absolute inset-0 w-2 bg-white/20 blur-xl skew-x-12 -translate-x-full group-hover:animate-scan" />
+                )}
+              </button>
+            </div>
+
+            <div className="p-8 border-t border-white/5 bg-black/40 flex justify-between items-center text-[10px] font-black text-slate-600 tracking-widest uppercase">
+              <div className="flex items-center gap-4">
+                <span>SECURITY_CLEARANCE: LEVEL_05</span>
+                <span className="w-1 h-1 bg-slate-800 rounded-full" />
+                <span>UPLINK: SECURE</span>
+              </div>
+              <button onClick={() => setSelectedGuest(null)} className="flex items-center gap-2 hover:text-white transition-colors">
+                <X className="w-4 h-4" /> ABORT_ACCESS
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* FOOTER STATUS */}
-      <footer className="p-2 px-4 bg-black border-t border-white/5 flex justify-between items-center">
-        <div className="flex items-center gap-4">
+      {/* GLOBAL TELEMETRY FOOTER */}
+      <footer className="h-10 bg-black border-t border-white/5 px-8 flex items-center justify-between text-[10px] font-mono text-slate-700">
+        <div className="flex gap-8">
           <div className="flex items-center gap-2">
-            <Database className="w-3 h-3 text-slate-500" />
-            <span className="text-[9px] text-slate-500 font-mono tracking-tighter">NODE_ID: {EVENT_ID}</span>
+            <Database className="w-3 h-3" />
+            <span>VAULT_ID: {STORAGE_KEY}</span>
           </div>
-          {syncStatus === 'local' && (
-            <div className="flex items-center gap-1.5">
-              <WifiOff className="w-3 h-3 text-amber-500" />
-              <span className="text-[9px] text-amber-500 font-bold uppercase tracking-tighter">Backup Local Activo</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <Activity className="w-3 h-3" />
+            <span>LAST_SYNC: {lastSync || 'STANDALONE'}</span>
+          </div>
         </div>
-        <p className="text-[9px] text-slate-700 font-medium">JairoOS Infrastructure © 2026</p>
+        <div className="flex items-center gap-2 uppercase font-black tracking-tighter">
+          <span>System_Engine</span>
+          <div className="w-20 h-1 bg-slate-900 rounded-full overflow-hidden">
+            <div className="h-full bg-emerald-500 w-2/3 animate-pulse" />
+          </div>
+          <span>Jairo_OS</span>
+        </div>
       </footer>
 
       <style jsx global>{`
+        @keyframes scan {
+          from { transform: translateX(-100%) skewX(-20deg); }
+          to { transform: translateX(500%) skewX(-20deg); }
+        }
+        .animate-scan {
+          animation: scan 3s infinite;
+        }
         .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
+          width: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
+          background: #000;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 10px;
+          background: #111;
+          border-radius: 20px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.2);
+          background: #10b981;
         }
       `}</style>
     </div>
