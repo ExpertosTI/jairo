@@ -13,6 +13,8 @@ import { motion, AnimatePresence } from "framer-motion";
 // --- CONFIGURACIÓN ESTRATÉGICA ---
 const API_BASE = '/api'; 
 const EVENT_ID = 'evt_circulo_001';
+const SYNC_PATH_GET = `${API_BASE}/events/${EVENT_ID}/attendance`;
+const SYNC_PATH_POST = `${API_BASE}/events/attendance`;
 
 const ROLES_ESTRATEGICOS = ["CEO", "Estrategia", "Tecnología", "Operaciones", "Socio", "Invitado Especial"];
 const EMPRESAS_DOMINIOS: Record<string, string> = {
@@ -155,7 +157,7 @@ export default function RecepcionCommandCenter() {
     const syncAttendance = useCallback(async () => {
         const start = Date.now();
         try {
-            const res = await fetch(`${API_BASE}/events/${EVENT_ID}/attendance`, { cache: 'no-store' });
+            const res = await fetch(`${SYNC_PATH_GET}`, { cache: 'no-store' });
             if (res.ok) {
                 const data = await res.json();
                 setNetworkLatency(Date.now() - start);
@@ -200,7 +202,7 @@ export default function RecepcionCommandCenter() {
         setStatus('loading');
         
         try {
-            const res = await fetch(`${API_BASE}/events/attendance`, {
+            const res = await fetch(`${SYNC_PATH_POST}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -298,12 +300,12 @@ export default function RecepcionCommandCenter() {
                             </div>
                         </div>
                     </div>
-                    <div className="relative w-[220px] md:w-[450px]">
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-700" />
+                    <div className="relative flex-1 max-w-xl min-w-[150px]">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500/50" />
                         <input 
                             value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Identificar nodo..."
-                            className="w-full bg-white/[0.03] border border-white/10 rounded-full py-4 pl-14 pr-8 text-sm font-bold focus:border-emerald-500/50 outline-none transition-all shadow-inner"
+                            placeholder="IDENTIFICAR NODO..."
+                            className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-3 pl-12 pr-6 text-sm font-black focus:border-emerald-500/50 outline-none transition-all shadow-inner uppercase tracking-widest placeholder:text-gray-800"
                         />
                     </div>
                 </div>
@@ -317,11 +319,11 @@ export default function RecepcionCommandCenter() {
             <main className="flex-1 overflow-y-auto p-6 lg:p-14 z-10 custom-scrollbar pb-40">
                 <AnimatePresence mode="wait">
                     {view === 'directory' ? (
-                        <motion.div key="grid" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        <motion.div key="grid" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                             {filtered.map((inv) => (
                                 <motion.div 
                                     key={inv.id} layout initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={() => setSelectedGuest(inv)}
-                                    className={`p-10 rounded-[3rem] border transition-all bg-white/[0.01] relative group active:scale-95 flex flex-col h-full ${inv.status === 'cleared' ? 'border-emerald-500/40 bg-emerald-500/[0.05] shadow-[0_20px_50px_rgba(16,185,129,0.05)]' : 'border-white/5 hover:border-emerald-500/30 hover:bg-white/[0.03]'}`}
+                                    className={`p-6 md:p-8 rounded-[2.5rem] border transition-all bg-white/[0.01] relative group active:scale-95 flex flex-col h-full ${inv.status === 'cleared' ? 'border-emerald-500/40 bg-emerald-500/[0.05] shadow-[0_20px_50px_rgba(16,185,129,0.05)]' : 'border-white/5 hover:border-emerald-500/30 hover:bg-white/[0.03]'}`}
                                 >
                                     <div className="flex justify-between items-center mb-8">
                                         <div className="flex items-center gap-4">
@@ -330,8 +332,8 @@ export default function RecepcionCommandCenter() {
                                         </div>
                                         {inv.status === 'cleared' && <CheckCircle2 className="w-6 h-6 text-emerald-500 shadow-[0_0_15px_#10b981]" />}
                                     </div>
-                                    <h3 className="text-3xl font-black uppercase leading-[0.9] tracking-tighter group-hover:text-emerald-400 transition-colors mb-4">{inv.nombre}</h3>
-                                    <div className="mt-auto pt-6 flex items-center gap-3">
+                                    <h3 className="text-2xl font-black uppercase leading-[1] tracking-tighter group-hover:text-emerald-400 transition-colors mb-4">{inv.nombre}</h3>
+                                    <div className="mt-auto pt-4 flex items-center gap-3">
                                         <span className={`text-[11px] font-bold uppercase tracking-[0.2em] ${EMPRESAS_DOMINIOS[inv.empresa.toLowerCase()] || inv.empresa !== 'Invitado' ? 'text-emerald-500/60' : 'text-gray-700'}`}>
                                             {inv.empresa}
                                         </span>
@@ -341,7 +343,7 @@ export default function RecepcionCommandCenter() {
                             ))}
                         </motion.div>
                     ) : (
-                        <motion.div key="tables" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-12">
+                        <motion.div key="tables" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {mesasIds.map(mesaId => {
                                 const mesaInvs = filtered.filter(i => i.mesa === mesaId);
                                 if (searchTerm && mesaInvs.length === 0) return null;
@@ -395,7 +397,7 @@ export default function RecepcionCommandCenter() {
                                         <input 
                                             value={formData.nombre} 
                                             onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                                            className="text-[clamp(2rem,10vw,8rem)] bg-transparent font-black uppercase leading-[0.8] tracking-tighter outline-none w-full border-b-2 border-white/5 focus:border-emerald-500/60 pb-8 transition-all overflow-hidden text-ellipsis whitespace-nowrap"
+                                            className="text-[clamp(2.5rem,8vw,6.5rem)] bg-transparent font-black uppercase leading-[0.9] tracking-tighter outline-none w-full border-b-2 border-white/5 focus:border-emerald-500/60 pb-8 transition-all break-words"
                                             placeholder="EDITAR NOMBRE"
                                         />
                                     </div>
@@ -501,8 +503,8 @@ export default function RecepcionCommandCenter() {
                             {/* Acciones Maestras */}
                             <div className="p-14 lg:p-20 bg-white/[0.01] border-t border-white/5 flex flex-col sm:flex-row gap-12 items-center justify-between mt-auto">
                                 <button onClick={() => { setSelectedGuest(null); setStatus('idle'); }} className="text-[13px] font-black text-gray-700 hover:text-white tracking-[0.8em] uppercase transition-all italic">Abortar_Registro</button>
-                                <button onClick={handleGrantAccess} className="w-full sm:w-auto px-32 py-12 bg-emerald-600 rounded-[3.5rem] text-white font-black uppercase tracking-[0.5em] shadow-[0_0_120px_#10b98160] hover:bg-emerald-500 active:scale-95 transition-all text-4xl flex items-center justify-center gap-8 group">
-                                    CONCEDER ACCESO <ChevronRight className="w-12 h-12 group-hover:translate-x-3 transition-transform" />
+                                <button onClick={handleGrantAccess} className="w-full sm:w-auto px-16 py-10 bg-emerald-600 rounded-[3rem] text-white font-black uppercase tracking-[0.2em] shadow-[0_0_100px_#10b98140] hover:bg-emerald-500 active:scale-95 transition-all text-3xl flex items-center justify-center gap-6 group">
+                                    CONCEDER ACCESO <ChevronRight className="w-10 h-10 group-hover:translate-x-2 transition-transform" />
                                 </button>
                             </div>
 
