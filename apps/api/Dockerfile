@@ -9,19 +9,16 @@ COPY . .
 RUN pnpm install --no-frozen-lockfile
 RUN pnpm turbo build --filter=api...
 
-# 2. Runner: Independencia total del monorepo para ejecución estable
+# 2. Runner
 FROM base AS runner
-WORKDIR /app
+WORKDIR /app/apps/api
 
 ENV NODE_ENV=production
 
-# Copiamos solo el código compilado de la API (que ya incluye el esquema interno)
-COPY --from=builder /app/apps/api/package.json ./package.json
-COPY --from=builder /app/apps/api/drizzle.config.ts ./drizzle.config.ts
-COPY --from=builder /app/apps/api/src ./src
-COPY --from=builder /app/apps/api/dist ./dist
+# Copiamos la API completa desde el builder
+COPY --from=builder /app/apps/api ./
 
-# Instalación de producción limpia (Sin symlinks rotos)
+# Instalación de producción limpia
 RUN pnpm install --prod --no-frozen-lockfile
 
 # Seguridad
@@ -32,4 +29,5 @@ RUN addgroup --system --gid 1001 nodejs && \
 USER nestjs
 
 EXPOSE 3001
+# Apuntamos a la ruta real de NestJS en dist
 CMD ["node", "dist/main"]
