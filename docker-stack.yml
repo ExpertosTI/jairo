@@ -40,6 +40,9 @@ services:
 
   api:
     image: ghcr.io/expertosti/jairo-api:latest
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
     environment:
       - DATABASE_URL=postgresql://jairo:jairo_pass_v8@jairo_db:5432/jairo_db
       - REDIS_URL=redis://redis:6379
@@ -89,6 +92,9 @@ services:
 
   web:
     image: ghcr.io/expertosti/jairo-web:latest
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
     environment:
       - NEXT_PUBLIC_API_URL=https://jairoapp.renace.tech/api
       - NODE_ENV=production
