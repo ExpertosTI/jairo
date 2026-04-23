@@ -105,7 +105,6 @@ export default function Home() {
               <div className="absolute inset-0 bg-primary/20 blur-md rounded-full group-hover:bg-primary/30 transition-all"></div>
               <img src="/logo.svg" alt="JairoApp" className="w-10 h-10 object-contain relative z-10" />
             </div>
-            <span className="text-xl font-black uppercase tracking-tighter text-gray-900 italic">JairoOS</span>
           </Link>
           
           <div className="flex items-center gap-4">

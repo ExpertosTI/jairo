@@ -17,6 +17,8 @@ ENV NODE_ENV=production
 
 # Copiamos solo el código compilado de la API (que ya incluye el esquema interno)
 COPY --from=builder /app/apps/api/package.json ./package.json
+COPY --from=builder /app/apps/api/drizzle.config.ts ./drizzle.config.ts
+COPY --from=builder /app/apps/api/src ./src
 COPY --from=builder /app/apps/api/dist ./dist
 
 # Instalación de producción limpia (Sin symlinks rotos)
