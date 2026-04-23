@@ -97,8 +97,30 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Header Táctico */}
+      <nav className="fixed top-0 left-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 blur-md rounded-full group-hover:bg-primary/30 transition-all"></div>
+              <img src="/logo.svg" alt="JairoApp" className="w-10 h-10 object-contain relative z-10" />
+            </div>
+            <span className="text-xl font-black uppercase tracking-tighter text-gray-900 italic">JairoOS</span>
+          </Link>
+          
+          <div className="flex items-center gap-4">
+            <Link href="/login" className="text-sm font-bold text-gray-600 hover:text-primary transition-all px-4 py-2">
+              Iniciar Sesión
+            </Link>
+            <Link href="/registro" className="bg-primary text-white text-sm font-bold px-6 py-2.5 rounded-xl hover:bg-primary-600 transition-all shadow-lg shadow-primary/20">
+              Registrar Empresa
+            </Link>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero Section */}
-      <section className="pt-10 pb-20 bg-gradient-to-br from-primary via-primary-600 to-primary-700 text-white overflow-hidden relative">
+      <section className="pt-24 pb-20 bg-gradient-to-br from-primary via-primary-600 to-primary-700 text-white overflow-hidden relative">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-72 h-72 bg-secondary rounded-full blur-3xl" />
           <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl" />
