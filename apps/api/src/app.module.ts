@@ -20,6 +20,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { AdminModule } from './admin/admin.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { AdminModule } from './admin/admin.module';
     NotificationsModule,
     ActivitiesModule,
     AdminModule,
+    EventsModule,
 
     // Rate Limiting: 100 requests per minute per IP
     ThrottlerModule.forRoot([{
