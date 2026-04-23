@@ -1,33 +1,36 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { 
-    Users, ShieldCheck, Fingerprint, LayoutGrid, Search, CheckCircle2, 
-    X, Star, Layers, Phone, Mail, Radar, Activity, Target, Globe, 
-    Cpu, Building2, Briefcase, Crown, Music, Coffee, Gem, Link as LinkIcon, 
-    ChevronRight, ExternalLink, AlertCircle, Edit3, WifiOff, RefreshCw,
-    Maximize2, Zap
+import {
+    Users, ShieldCheck, Fingerprint, LayoutGrid, Search, CheckCircle2,
+    X, Layers, Phone, Mail, Activity, Building2, Briefcase, Crown,
+    Music, Coffee, Link as LinkIcon, ChevronRight, Edit3, WifiOff,
+    RefreshCw, Zap, ArrowRight, Clock, TrendingUp
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// --- CONFIGURACIÓN ESTRATÉGICA ---
-const API_BASE = '/api'; 
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const API_BASE = '/api';
 const EVENT_ID = 'evt_circulo_001';
 const SYNC_PATH_GET = `${API_BASE}/events/${EVENT_ID}/attendance`;
 const SYNC_PATH_POST = `${API_BASE}/events/attendance`;
 
 const ROLES_ESTRATEGICOS = ["CEO", "Estrategia", "Tecnología", "Operaciones", "Socio", "Invitado Especial"];
+const TIPOS_RELACION = [
+    { value: 'socio', label: 'Socio Estratégico' },
+    { value: 'cliente', label: 'Cliente' },
+    { value: 'proveedor', label: 'Proveedor' },
+    { value: 'distribuidor', label: 'Distribuidor' },
+];
 const EMPRESAS_DOMINIOS: Record<string, string> = {
     "coopseguros.com": "Coopseguros",
     "coopmaimon.com": "Coopmaimon",
     "renace.tech": "RenaceTech",
     "gmail.com": "Invitado Particular",
     "outlook.com": "Invitado Particular",
-    "apple.com": "Tecnología Global",
-    "google.com": "Tecnología Global"
 };
 
-// --- MANIFIESTO ESTRATÉGICO FINAL (107 NODOS) ---
+// ─── MANIFEST (107 NODOS) ─────────────────────────────────────────────────────
 const INITIAL_MANIFEST: any[] = [
     { id: "1", nombre: "Angel Flores", empresa: "Invitado", mesa: "1", status: 'pending' },
     { id: "2", nombre: "Eduardo Lama", empresa: "Invitado", mesa: "2", status: 'pending' },
@@ -134,234 +137,508 @@ const INITIAL_MANIFEST: any[] = [
     { id: "107", nombre: "Ambra Montini", empresa: "Invitado", mesa: "5", status: 'pending' },
 ];
 
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function getInitials(name: string) {
+    const parts = name.trim().split(" ").filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+function getMesaIcon(mesa: string, size = "w-4 h-4") {
+    const m = parseInt(mesa);
+    if (m <= 2) return <Crown className={`${size} text-amber-400`} />;
+    if (m >= 7 && m <= 11) return <Music className={`${size} text-violet-400`} />;
+    return <Coffee className={`${size} text-emerald-400`} />;
+}
+
+function getAvatarColor(empresa: string) {
+    if (empresa === 'Coopseguros') return 'from-blue-600 to-blue-800';
+    if (empresa === 'Coopmaimon') return 'from-indigo-600 to-indigo-800';
+    if (empresa === 'Musicos') return 'from-violet-600 to-violet-800';
+    if (empresa === 'RenaceTech') return 'from-emerald-600 to-emerald-800';
+    return 'from-zinc-700 to-zinc-900';
+}
+
+// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function RecepcionCommandCenter() {
-    const [view, setView] = useState<'tables' | 'directory'>('directory');
+    const [view, setView] = useState<'directory' | 'tables'>('directory');
     const [searchTerm, setSearchTerm] = useState("");
     const [invitados, setInvitados] = useState(INITIAL_MANIFEST);
     const [selectedGuest, setSelectedGuest] = useState<any>(null);
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-    const [networkLatency, setNetworkLatency] = useState(0);
-    
-    const [formData, setFormData] = useState({
-        nombre: "",
-        empresa: "",
-        rol: "Estrategia",
-        telefono: "",
-        correo: ""
-    });
+    const [networkLatency, setNetworkLatency] = useState<number | null>(null);
+    const [isOnline, setIsOnline] = useState(true);
+    const [lastSync, setLastSync] = useState<Date | null>(null);
 
+    const [formData, setFormData] = useState({ nombre: "", empresa: "", rol: "Estrategia", telefono: "", correo: "" });
     const [isEditingMesa, setIsEditingMesa] = useState(false);
     const [tempMesa, setTempMesa] = useState("");
 
-    // Sincronización Maestra con el Stack Central
+    // Vincular state
+    const [showVincular, setShowVincular] = useState(false);
+    const [vincularStatus, setVincularStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [vincularForm, setVincularForm] = useState({ empresaDestino: "", tipo: "socio", notas: "" });
+    const [lastCheckedInCompanyId, setLastCheckedInCompanyId] = useState<string | null>(null);
+
+    // ─── SYNC ──────────────────────────────────────────────────────────────
     const syncAttendance = useCallback(async () => {
         const start = Date.now();
         try {
-            const res = await fetch(`${SYNC_PATH_GET}`, { cache: 'no-store' });
+            const res = await fetch(SYNC_PATH_GET, { cache: 'no-store' });
             if (res.ok) {
                 const data = await res.json();
                 setNetworkLatency(Date.now() - start);
+                setIsOnline(true);
+                setLastSync(new Date());
                 setInvitados(prev => prev.map(inv => {
                     const cleared = data.find((a: any) => String(a.guestId) === String(inv.id));
                     return cleared ? { ...inv, status: 'cleared' } : inv;
                 }));
             }
-        } catch (e) { setStatus('error'); }
+        } catch {
+            setIsOnline(false);
+        }
     }, []);
 
     useEffect(() => {
         syncAttendance();
-        const interval = setInterval(syncAttendance, 15000); 
+        const interval = setInterval(syncAttendance, 15000);
         return () => clearInterval(interval);
     }, [syncAttendance]);
 
-    // Inteligencia de Detección Proactiva
+    // Auto-detect company from email domain
     useEffect(() => {
         if (formData.correo.includes("@")) {
-            const domain = formData.correo.split("@")[1].toLowerCase();
-            if (EMPRESAS_DOMINIOS[domain]) {
+            const domain = formData.correo.split("@")[1]?.toLowerCase();
+            if (domain && EMPRESAS_DOMINIOS[domain]) {
                 setFormData(prev => ({ ...prev, empresa: EMPRESAS_DOMINIOS[domain] }));
             }
         }
     }, [formData.correo]);
 
+    // Populate form when guest is selected
     useEffect(() => {
         if (selectedGuest) {
-            setFormData({
-                nombre: selectedGuest.nombre,
-                empresa: selectedGuest.empresa,
-                rol: "Estrategia",
-                telefono: "",
-                correo: ""
-            });
+            setFormData({ nombre: selectedGuest.nombre, empresa: selectedGuest.empresa, rol: "Estrategia", telefono: "", correo: "" });
+            setShowVincular(false);
+            setVincularStatus('idle');
+            setLastCheckedInCompanyId(null);
         }
     }, [selectedGuest]);
 
+    // ─── CONFIRM ATTENDANCE ────────────────────────────────────────────────
     const handleGrantAccess = async () => {
         if (!selectedGuest) return;
         setStatus('loading');
-        
+
+        const payload = {
+            eventId: EVENT_ID,
+            guestId: Number(selectedGuest.id),
+            metadata: {
+                nombre: formData.nombre,
+                empresa: formData.empresa,
+                email: formData.correo,
+                mesa: selectedGuest.mesa,
+                timestamp: new Date().toISOString()
+            }
+        };
+
+        const markCleared = (companyId?: string) => {
+            setStatus('success');
+            if (companyId) setLastCheckedInCompanyId(companyId);
+            setInvitados(prev => prev.map(inv =>
+                inv.id === selectedGuest.id
+                    ? { ...inv, status: 'cleared', nombre: formData.nombre, empresa: formData.empresa }
+                    : inv
+            ));
+            setTimeout(() => setStatus('idle'), 2200);
+        };
+
         try {
-            const res = await fetch(`${SYNC_PATH_POST}`, {
+            const res = await fetch(SYNC_PATH_POST, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    eventId: EVENT_ID,
-                    guestId: Number(selectedGuest.id),
-                    metadata: {
-                        nombre: formData.nombre,
-                        empresa: formData.empresa,
-                        email: formData.correo,
-                        mesa: selectedGuest.mesa,
-                        timestamp: new Date().toISOString()
-                    }
-                })
+                body: JSON.stringify(payload)
             });
 
             if (res.ok) {
-                setStatus('success');
-                setInvitados(prev => prev.map(inv => inv.id === selectedGuest.id ? { ...inv, status: 'cleared', nombre: formData.nombre, empresa: formData.empresa } : inv));
-                setTimeout(() => {
-                    setSelectedGuest(null);
-                    setStatus('idle');
-                }, 2000);
-            } else { 
-                // FALLBACK ESTRATÉGICO
-                const localData = JSON.parse(localStorage.getItem(`offline_attendance_${EVENT_ID}`) || '[]');
-                localData.push(selectedGuest.id);
-                localStorage.setItem(`offline_attendance_${EVENT_ID}`, JSON.stringify(localData));
-                
-                setStatus('success');
-                setInvitados(prev => prev.map(inv => inv.id === selectedGuest.id ? { ...inv, status: 'cleared', nombre: formData.nombre, empresa: formData.empresa } : inv));
-                setTimeout(() => {
-                    setSelectedGuest(null);
-                    setStatus('idle');
-                }, 2000);
+                const data = await res.json();
+                const companyId = data[0]?.metadata ? JSON.parse(data[0].metadata)?.companyId : null;
+                markCleared(companyId);
+            } else {
+                // Offline fallback: persist locally
+                const stored = JSON.parse(localStorage.getItem(`offline_${EVENT_ID}`) || '[]');
+                stored.push({ ...payload, storedAt: new Date().toISOString() });
+                localStorage.setItem(`offline_${EVENT_ID}`, JSON.stringify(stored));
+                markCleared();
             }
-        } catch (e) { 
-            // FALLBACK TOTAL
-            const localData = JSON.parse(localStorage.getItem(`offline_attendance_${EVENT_ID}`) || '[]');
-            localData.push(selectedGuest.id);
-            localStorage.setItem(`offline_attendance_${EVENT_ID}`, JSON.stringify(localData));
-
-            setStatus('success');
-            setInvitados(prev => prev.map(inv => inv.id === selectedGuest.id ? { ...inv, status: 'cleared', nombre: formData.nombre, empresa: formData.empresa } : inv));
-            setTimeout(() => {
-                setSelectedGuest(null);
-                setStatus('idle');
-            }, 2000);
+        } catch {
+            const stored = JSON.parse(localStorage.getItem(`offline_${EVENT_ID}`) || '[]');
+            stored.push({ ...payload, storedAt: new Date().toISOString() });
+            localStorage.setItem(`offline_${EVENT_ID}`, JSON.stringify(stored));
+            markCleared();
         }
     };
 
+    // ─── VINCULAR EMPRESA ──────────────────────────────────────────────────
+    const handleVincular = async () => {
+        if (!vincularForm.empresaDestino.trim()) return;
+        setVincularStatus('loading');
+
+        try {
+            const guestEmpresa = formData.empresa || selectedGuest?.empresa || 'Invitado';
+
+            // Search source company
+            const srcRes = await fetch(`${API_BASE}/empresas?busqueda=${encodeURIComponent(guestEmpresa)}`);
+            const srcData = srcRes.ok ? await srcRes.json() : [];
+
+            // Search destination company
+            const dstRes = await fetch(`${API_BASE}/empresas?busqueda=${encodeURIComponent(vincularForm.empresaDestino)}`);
+            const dstData = dstRes.ok ? await dstRes.json() : [];
+
+            if (!srcData.length || !dstData.length) {
+                // Companies might not exist yet – record intent in attendance metadata for admin processing
+                const intentPayload = {
+                    eventId: EVENT_ID,
+                    guestId: Number(selectedGuest?.id),
+                    metadata: {
+                        nombre: formData.nombre,
+                        empresa: guestEmpresa,
+                        vincularIntent: {
+                            empresaDestino: vincularForm.empresaDestino,
+                            tipo: vincularForm.tipo,
+                            notas: vincularForm.notas,
+                            timestamp: new Date().toISOString()
+                        }
+                    }
+                };
+                await fetch(SYNC_PATH_POST, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(intentPayload)
+                }).catch(() => null);
+
+                setVincularStatus('success');
+                return;
+            }
+
+            const relRes = await fetch(`${API_BASE}/relaciones`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    empresaOrigenId: srcData[0].id,
+                    empresaDestinoId: dstData[0].id,
+                    tipo: vincularForm.tipo,
+                    notas: vincularForm.notas || `Conexión generada en Círculo 001 — ${new Date().toLocaleDateString('es-DO')}`
+                })
+            });
+
+            setVincularStatus(relRes.ok ? 'success' : 'error');
+        } catch {
+            setVincularStatus('error');
+        }
+    };
+
+    // ─── MESA UPDATE ───────────────────────────────────────────────────────
     const handleMesaUpdate = (guestId: string, newMesa: string) => {
         setInvitados(prev => prev.map(inv => inv.id === guestId ? { ...inv, mesa: newMesa } : inv));
-        if (selectedGuest?.id === guestId) setSelectedGuest({ ...selectedGuest, mesa: newMesa });
+        if (selectedGuest?.id === guestId) setSelectedGuest((p: any) => ({ ...p, mesa: newMesa }));
         setIsEditingMesa(false);
     };
 
-    const filtered = useMemo(() => invitados.filter(inv => 
-        inv.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    // ─── COMPUTED DATA ─────────────────────────────────────────────────────
+    const stats = useMemo(() => {
+        const cleared = invitados.filter(i => i.status === 'cleared').length;
+        const total = invitados.length;
+        const mesasActivas = new Set(invitados.filter(i => i.status === 'cleared').map(i => i.mesa)).size;
+        return { cleared, total, pending: total - cleared, mesasActivas, pct: Math.round((cleared / total) * 100) };
+    }, [invitados]);
+
+    const filtered = useMemo(() => invitados.filter(inv =>
+        inv.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         inv.empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
         inv.mesa.includes(searchTerm)
     ), [searchTerm, invitados]);
 
-    const mesasIds = useMemo(() => Array.from(new Set(invitados.map(i => i.mesa))).sort((a,b) => parseInt(a) - parseInt(b)), [invitados]);
+    const mesasIds = useMemo(() =>
+        Array.from(new Set(invitados.map(i => i.mesa))).sort((a, b) => parseInt(a) - parseInt(b)),
+        [invitados]
+    );
 
-    const getIcon = (mesa: string) => {
-        const m = parseInt(mesa);
-        if (m <= 2) return <Crown className="text-amber-500 w-5 h-5" />;
-        if (m >= 7 && m <= 11) return <Music className="text-purple-500 w-5 h-5" />;
-        return <Coffee className="text-emerald-500 w-5 h-5" />;
+    const closeModal = () => {
+        setSelectedGuest(null);
+        setStatus('idle');
+        setIsEditingMesa(false);
+        setShowVincular(false);
+        setVincularStatus('idle');
     };
 
+    // ─── RENDER ────────────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen bg-[#020408] text-white selection:bg-emerald-500/30 flex flex-col overflow-hidden relative">
-            
-            {/* Background Telemetry 2026 */}
-            <div className="fixed inset-0 z-0 pointer-events-none">
-                <Radar className="absolute -top-60 -right-60 w-[50rem] h-[50rem] text-emerald-500/5 animate-pulse" />
-                <div className="absolute top-1/2 left-0 w-full h-[1px] bg-emerald-500/10 shadow-[0_0_20px_#10b98120]" />
+        <div className="min-h-screen bg-[#020408] text-white selection:bg-emerald-500/20 flex flex-col overflow-hidden">
+
+            {/* Ambient background */}
+            <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+                <div className="absolute -top-[30rem] -right-[20rem] w-[70rem] h-[70rem] rounded-full bg-emerald-950/30 blur-[120px]" />
+                <div className="absolute -bottom-[20rem] -left-[10rem] w-[50rem] h-[50rem] rounded-full bg-indigo-950/20 blur-[100px]" />
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSA0MCAwIEwgMCAwIDAgNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjAxNSkiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-40" />
             </div>
 
-            {/* Nav Mando Táctico */}
-            <nav className="h-20 border-b border-white/10 bg-[#020408]/95 backdrop-blur-3xl flex items-center justify-between px-6 lg:px-12 z-50 sticky top-0 shadow-2xl">
-                <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center border border-emerald-400/20 shadow-[0_0_25px_rgba(16,185,129,0.3)]">
-                            <Fingerprint className="w-6 h-6 text-white" />
-                        </div>
-                        <div className="hidden md:block">
-                            <span className="text-xl font-black uppercase tracking-tighter italic">JairoOS_v2</span>
-                            <div className="flex items-center gap-2">
-                                <div className={`w-1.5 h-1.5 rounded-full ${status === 'error' ? 'bg-red-500' : 'bg-emerald-500 animate-pulse'}`} />
-                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">
-                                    {status === 'error' ? 'SYSTEM_OFFLINE' : `LINK_STABLE_${networkLatency}MS`}
-                                </span>
-                            </div>
-                        </div>
+            {/* ── NAV ─────────────────────────────────────────────────────── */}
+            <nav className="sticky top-0 z-50 h-16 sm:h-20 border-b border-white/[0.06] bg-[#020408]/90 backdrop-blur-2xl flex items-center justify-between px-4 sm:px-8 lg:px-12 gap-4">
+                {/* Logo */}
+                <div className="flex items-center gap-3 shrink-0">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.35)]">
+                        <Fingerprint className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </div>
-                    <div className="relative flex-1 max-w-xl min-w-[150px]">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500/50" />
-                        <input 
-                            value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="IDENTIFICAR NODO..."
-                            className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-3 pl-12 pr-6 text-sm font-black focus:border-emerald-500/50 outline-none transition-all shadow-inner uppercase tracking-widest placeholder:text-gray-800"
-                        />
+                    <div className="hidden sm:block">
+                        <div className="text-sm font-black uppercase tracking-tight">JairoOS v2</div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                            <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
+                            <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">
+                                {isOnline ? `SYNC ${networkLatency != null ? `${networkLatency}ms` : '—'}` : 'OFFLINE'}
+                            </span>
+                        </div>
                     </div>
                 </div>
-                <div className="flex gap-3">
-                    <button onClick={() => setView('directory')} className={`p-4 rounded-2xl transition-all ${view === 'directory' ? 'bg-emerald-600 shadow-[0_0_20px_rgba(16,185,129,0.4)] text-white' : 'bg-white/5 text-gray-600 hover:bg-white/10'}`}><LayoutGrid className="w-5 h-5" /></button>
-                    <button onClick={() => setView('tables')} className={`p-4 rounded-2xl transition-all ${view === 'tables' ? 'bg-emerald-600 shadow-[0_0_20px_rgba(16,185,129,0.4)] text-white' : 'bg-white/5 text-gray-600 hover:bg-white/10'}`}><Layers className="w-5 h-5" /></button>
+
+                {/* Search */}
+                <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+                    <input
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Buscar invitado, empresa o mesa..."
+                        className="w-full bg-white/[0.04] border border-white/[0.07] rounded-xl py-2.5 pl-10 pr-4 text-sm font-medium focus:border-emerald-500/40 focus:bg-white/[0.06] outline-none transition-all placeholder:text-zinc-700"
+                    />
+                    {searchTerm && (
+                        <button onClick={() => setSearchTerm("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white">
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    )}
+                </div>
+
+                {/* View toggle */}
+                <div className="flex gap-1.5 shrink-0">
+                    <button
+                        onClick={() => setView('directory')}
+                        className={`p-2.5 sm:p-3 rounded-xl transition-all ${view === 'directory' ? 'bg-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.35)] text-white' : 'bg-white/[0.04] text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.07]'}`}
+                    >
+                        <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </button>
+                    <button
+                        onClick={() => setView('tables')}
+                        className={`p-2.5 sm:p-3 rounded-xl transition-all ${view === 'tables' ? 'bg-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.35)] text-white' : 'bg-white/[0.04] text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.07]'}`}
+                    >
+                        <Layers className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </button>
                 </div>
             </nav>
 
-            {/* Listado de Nodos */}
-            <main className="flex-1 overflow-y-auto p-6 lg:p-14 z-10 custom-scrollbar pb-40">
+            {/* ── STATS BAR ────────────────────────────────────────────────── */}
+            <div className="sticky top-16 sm:top-20 z-40 bg-[#020408]/80 backdrop-blur-xl border-b border-white/[0.04] px-4 sm:px-8 lg:px-12 py-3">
+                <div className="flex items-center gap-4 sm:gap-8 flex-wrap">
+                    {/* Progress */}
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="relative flex-1 min-w-[80px] max-w-[200px] h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                            <motion.div
+                                className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full"
+                                initial={{ width: 0 }}
+                                animate={{ width: `${stats.pct}%` }}
+                                transition={{ duration: 1, ease: "easeOut" }}
+                            />
+                        </div>
+                        <span className="text-xs font-black text-emerald-400 tabular-nums">{stats.pct}%</span>
+                    </div>
+
+                    <div className="h-4 w-px bg-white/[0.08] hidden sm:block" />
+
+                    {/* Stats pills */}
+                    <div className="flex items-center gap-3 text-xs font-bold">
+                        <div className="flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                            <span className="text-emerald-400 tabular-nums">{stats.cleared}</span>
+                            <span className="text-zinc-700">ingresados</span>
+                        </div>
+                        <div className="h-3 w-px bg-white/[0.08]" />
+                        <div className="flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-zinc-600" />
+                            <span className="text-zinc-500 tabular-nums">{stats.pending}</span>
+                            <span className="text-zinc-700">pendientes</span>
+                        </div>
+                        <div className="h-3 w-px bg-white/[0.08] hidden sm:block" />
+                        <div className="hidden sm:flex items-center gap-1.5">
+                            <TrendingUp className="w-3.5 h-3.5 text-violet-400" />
+                            <span className="text-zinc-400 tabular-nums">{stats.mesasActivas}</span>
+                            <span className="text-zinc-700">mesas activas</span>
+                        </div>
+                    </div>
+
+                    {/* Search result count */}
+                    {searchTerm && (
+                        <>
+                            <div className="h-3 w-px bg-white/[0.08]" />
+                            <span className="text-xs text-zinc-600 tabular-nums">
+                                {filtered.length} resultado{filtered.length !== 1 ? 's' : ''}
+                            </span>
+                        </>
+                    )}
+
+                    {lastSync && (
+                        <div className="hidden lg:flex items-center gap-1.5 ml-auto text-[10px] text-zinc-700">
+                            <Activity className="w-3 h-3" />
+                            <span>Sync {lastSync.toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* ── MAIN CONTENT ──────────────────────────────────────────────── */}
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 z-10 custom-scrollbar pb-24">
                 <AnimatePresence mode="wait">
-                    {view === 'directory' ? (
-                        <motion.div key="grid" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-                            {filtered.map((inv) => (
-                                <motion.div 
-                                    key={inv.id} layout initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={() => setSelectedGuest(inv)}
-                                    className={`p-6 md:p-8 rounded-[2.5rem] border transition-all bg-white/[0.01] relative group active:scale-95 flex flex-col h-full ${inv.status === 'cleared' ? 'border-emerald-500/40 bg-emerald-500/[0.05] shadow-[0_20px_50px_rgba(16,185,129,0.05)]' : 'border-white/5 hover:border-emerald-500/30 hover:bg-white/[0.03]'}`}
+
+                    {/* Directory view */}
+                    {view === 'directory' && (
+                        <motion.div
+                            key="grid"
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.25 }}
+                            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4"
+                        >
+                            {filtered.length === 0 && (
+                                <div className="col-span-full flex flex-col items-center justify-center py-24 gap-4 text-zinc-700">
+                                    <Search className="w-10 h-10 opacity-30" />
+                                    <p className="text-sm font-semibold">Sin resultados para "{searchTerm}"</p>
+                                </div>
+                            )}
+                            {filtered.map((inv, i) => (
+                                <motion.div
+                                    key={inv.id}
+                                    layout
+                                    initial={{ opacity: 0, scale: 0.94 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: Math.min(i * 0.015, 0.3), duration: 0.2 }}
+                                    onClick={() => setSelectedGuest(inv)}
+                                    className={`
+                                        relative p-4 sm:p-5 rounded-2xl border cursor-pointer
+                                        transition-all duration-200 group select-none active:scale-[0.97]
+                                        ${inv.status === 'cleared'
+                                            ? 'border-emerald-500/25 bg-emerald-500/[0.06] shadow-[0_0_30px_rgba(16,185,129,0.04)]'
+                                            : 'border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]'
+                                        }
+                                    `}
                                 >
-                                    <div className="flex justify-between items-center mb-8">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 bg-white/5 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">{getIcon(inv.mesa)}</div>
-                                            <span className="text-[11px] font-black text-gray-600 uppercase tracking-[0.3em] italic">SEC_# {inv.mesa}</span>
+                                    {/* VIP badge */}
+                                    {inv.isVIP && (
+                                        <div className="absolute top-3 right-3 w-5 h-5 bg-amber-500/20 border border-amber-500/40 rounded-full flex items-center justify-center">
+                                            <Crown className="w-2.5 h-2.5 text-amber-400" />
                                         </div>
-                                        {inv.status === 'cleared' && <CheckCircle2 className="w-6 h-6 text-emerald-500 shadow-[0_0_15px_#10b981]" />}
-                                    </div>
-                                    <h3 className="text-2xl font-black uppercase leading-[1] tracking-tighter group-hover:text-emerald-400 transition-colors mb-4">{inv.nombre}</h3>
-                                    <div className="mt-auto pt-4 flex items-center gap-3">
-                                        <span className={`text-[11px] font-bold uppercase tracking-[0.2em] ${EMPRESAS_DOMINIOS[inv.empresa.toLowerCase()] || inv.empresa !== 'Invitado' ? 'text-emerald-500/60' : 'text-gray-700'}`}>
-                                            {inv.empresa}
+                                    )}
+
+                                    {/* Avatar */}
+                                    <div className={`
+                                        w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br ${getAvatarColor(inv.empresa)}
+                                        flex items-center justify-center mb-4 border border-white/[0.08]
+                                        group-hover:scale-105 transition-transform duration-200
+                                    `}>
+                                        <span className="text-xs sm:text-sm font-black text-white/90 tracking-tight">
+                                            {getInitials(inv.nombre)}
                                         </span>
-                                        {(EMPRESAS_DOMINIOS[inv.empresa.toLowerCase()] || inv.empresa !== 'Invitado') && <Zap className="w-3 h-3 text-emerald-500/40" />}
+                                    </div>
+
+                                    {/* Name */}
+                                    <h3 className="text-xs sm:text-sm font-bold leading-tight mb-1 group-hover:text-emerald-300 transition-colors line-clamp-2">
+                                        {inv.nombre}
+                                    </h3>
+
+                                    {/* Footer */}
+                                    <div className="mt-3 flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-1.5 min-w-0">
+                                            {getMesaIcon(inv.mesa, "w-3 h-3")}
+                                            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">M.{inv.mesa}</span>
+                                        </div>
+                                        {inv.status === 'cleared'
+                                            ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                                            : <div className="w-1.5 h-1.5 rounded-full bg-zinc-800 shrink-0" />
+                                        }
                                     </div>
                                 </motion.div>
                             ))}
                         </motion.div>
-                    ) : (
-                        <motion.div key="tables" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    )}
+
+                    {/* Tables view */}
+                    {view === 'tables' && (
+                        <motion.div
+                            key="tables"
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.25 }}
+                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                        >
                             {mesasIds.map(mesaId => {
-                                const mesaInvs = filtered.filter(i => i.mesa === mesaId);
-                                if (searchTerm && mesaInvs.length === 0) return null;
+                                const mesaInvs = invitados.filter(i => i.mesa === mesaId);
+                                const filteredMesaInvs = filtered.filter(i => i.mesa === mesaId);
+                                if (searchTerm && filteredMesaInvs.length === 0) return null;
+
+                                const clearedCount = mesaInvs.filter(i => i.status === 'cleared').length;
+                                const total = mesaInvs.length;
+                                const pct = Math.round((clearedCount / total) * 100);
+                                const displayList = searchTerm ? filteredMesaInvs : mesaInvs;
+
                                 return (
-                                    <div key={mesaId} className="p-12 rounded-[4rem] bg-white/[0.01] border border-white/5 hover:border-white/10 transition-all group relative flex flex-col h-full shadow-2xl">
-                                        <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none group-hover:scale-125 transition-transform">{getIcon(mesaId)}</div>
-                                        <h3 className="text-4xl font-black uppercase mb-12 border-b border-white/10 pb-8 flex justify-between items-end">
-                                            <span className="tracking-tighter italic">Mesa {mesaId}</span>
-                                            <span className="text-[10px] text-emerald-500/30 tracking-[0.5em] font-black">{mesaInvs.length} NODOS</span>
-                                        </h3>
-                                        <div className="space-y-5 flex-1">
-                                            {mesaInvs.map(inv => (
-                                                <div key={inv.id} onClick={() => setSelectedGuest(inv)} className={`p-7 rounded-[2.5rem] border flex justify-between items-center cursor-pointer transition-all active:scale-95 group/item ${inv.status === 'cleared' ? 'border-emerald-500/20 bg-emerald-500/[0.05]' : 'border-white/5 hover:border-emerald-500/40 hover:bg-white/[0.04]'}`}>
-                                                    <div className="flex flex-col text-left">
-                                                        <span className="text-xl font-black uppercase leading-none tracking-tighter group-hover/item:text-emerald-400 transition-colors">{inv.nombre}</span>
-                                                        <span className="text-[10px] font-bold text-gray-700 uppercase mt-2 tracking-widest">{inv.empresa}</span>
+                                    <div key={mesaId} className="rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.1] transition-all overflow-hidden">
+                                        {/* Table header */}
+                                        <div className="px-5 pt-5 pb-4 border-b border-white/[0.05]">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div className="flex items-center gap-2.5">
+                                                    {getMesaIcon(mesaId, "w-4 h-4")}
+                                                    <span className="text-base font-black uppercase tracking-tight">Mesa {mesaId}</span>
+                                                </div>
+                                                <span className="text-xs font-bold text-zinc-600 tabular-nums">{clearedCount}/{total}</span>
+                                            </div>
+                                            {/* Progress bar */}
+                                            <div className="h-1 bg-white/[0.05] rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-emerald-500/60 rounded-full transition-all duration-700"
+                                                    style={{ width: `${pct}%` }}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Guest list */}
+                                        <div className="p-3 space-y-1">
+                                            {displayList.map(inv => (
+                                                <div
+                                                    key={inv.id}
+                                                    onClick={() => setSelectedGuest(inv)}
+                                                    className={`
+                                                        flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl
+                                                        cursor-pointer transition-all active:scale-[0.98] group/item
+                                                        ${inv.status === 'cleared'
+                                                            ? 'bg-emerald-500/[0.08] border border-emerald-500/20'
+                                                            : 'hover:bg-white/[0.04] border border-transparent'
+                                                        }
+                                                    `}
+                                                >
+                                                    <div className="flex items-center gap-2.5 min-w-0">
+                                                        <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${getAvatarColor(inv.empresa)} flex items-center justify-center shrink-0`}>
+                                                            <span className="text-[8px] font-black text-white">{getInitials(inv.nombre)}</span>
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="text-xs font-bold leading-tight truncate group-hover/item:text-emerald-300 transition-colors">{inv.nombre}</p>
+                                                            {inv.empresa !== 'Invitado' && (
+                                                                <p className="text-[9px] text-zinc-600 font-semibold truncate">{inv.empresa}</p>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                    {inv.status === 'cleared' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                                                    {inv.status === 'cleared'
+                                                        ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                                        : <ChevronRight className="w-3.5 h-3.5 text-zinc-800 group-hover/item:text-zinc-500 transition-colors shrink-0" />
+                                                    }
                                                 </div>
                                             ))}
                                         </div>
@@ -370,193 +647,355 @@ export default function RecepcionCommandCenter() {
                             })}
                         </motion.div>
                     )}
+
                 </AnimatePresence>
             </main>
 
-            {/* Centro de Mando: Modal Táctico Final */}
+            {/* ── MODAL ─────────────────────────────────────────────────────── */}
             <AnimatePresence>
                 {selectedGuest && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-12 backdrop-blur-[50px] bg-black/98">
-                        <motion.div 
-                            initial={{ opacity: 0, scale: 0.98, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
-                            className="w-full max-w-[1000px] max-h-[92vh] bg-[#05080f] rounded-[5rem] border border-white/10 flex flex-col relative overflow-hidden shadow-[0_100px_250px_rgba(0,0,0,1)]"
+                    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/80 backdrop-blur-xl">
+                        <motion.div
+                            initial={{ opacity: 0, y: 60, scale: 0.97 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 40, scale: 0.97 }}
+                            transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+                            className="w-full sm:max-w-2xl lg:max-w-3xl max-h-[95vh] sm:max-h-[90vh] bg-[#06090f] rounded-t-3xl sm:rounded-3xl border border-white/[0.08] flex flex-col relative overflow-hidden shadow-[0_-40px_100px_rgba(0,0,0,0.8)] sm:shadow-[0_40px_120px_rgba(0,0,0,0.8)]"
                         >
-                            <button onClick={() => { setSelectedGuest(null); setStatus('idle'); }} className="absolute top-10 right-10 z-[110] p-6 bg-white/5 rounded-full hover:bg-white/10 text-gray-600 hover:text-white transition-all active:scale-90"><X className="w-8 h-8" /></button>
-                            
+                            {/* Close button */}
+                            <button
+                                onClick={closeModal}
+                                className="absolute top-4 right-4 sm:top-5 sm:right-5 z-10 p-2 bg-white/[0.06] hover:bg-white/10 rounded-xl text-zinc-500 hover:text-white transition-all"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+
+                            {/* Mobile drag handle */}
+                            <div className="sm:hidden flex justify-center pt-3 pb-1">
+                                <div className="w-10 h-1 bg-white/10 rounded-full" />
+                            </div>
+
+                            {/* Scrollable body */}
                             <div className="flex-1 overflow-y-auto custom-scrollbar">
-                                {/* Zona Identidad */}
-                                <div className="p-14 lg:p-20 border-b border-white/5 bg-white/[0.01] relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-16 opacity-5 pointer-events-none animate-pulse"><Fingerprint className="w-64 h-64" /></div>
-                                    <div className="flex items-center gap-5 mb-10">
-                                        <div className="p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20"><ShieldCheck className="w-8 h-8 text-emerald-500" /></div>
-                                        <span className="text-[12px] font-black tracking-[0.6em] text-emerald-500 uppercase italic">Verificación_Master_2026</span>
-                                    </div>
-                                    
-                                    <div className="group relative max-w-3xl">
-                                        <Edit3 className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 text-white/5 group-focus-within:text-emerald-500/50 transition-all pointer-events-none" />
-                                        <input 
-                                            value={formData.nombre} 
-                                            onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                                            className="text-[clamp(2.5rem,8vw,6.5rem)] bg-transparent font-black uppercase leading-[0.9] tracking-tighter outline-none w-full border-b-2 border-white/5 focus:border-emerald-500/60 pb-8 transition-all break-words"
-                                            placeholder="EDITAR NOMBRE"
-                                        />
-                                    </div>
-                                    
-                                    <div className="mt-12 flex items-center gap-8">
-                                        <p className={`text-3xl font-black uppercase tracking-[0.2em] italic ${EMPRESAS_DOMINIOS[formData.correo.split("@")[1]?.toLowerCase()] ? 'text-emerald-500' : 'text-gray-700'}`}>
-                                            {formData.empresa || selectedGuest.empresa}
-                                        </p>
-                                        {EMPRESAS_DOMINIOS[formData.correo.split("@")[1]?.toLowerCase()] && (
-                                            <div className="px-6 py-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center gap-3 shadow-[0_0_30px_#10b98110]">
-                                                <Cpu className="w-5 h-5 text-emerald-500" />
-                                                <span className="text-[11px] font-black text-emerald-500 uppercase tracking-[0.3em]">Red_Detectada</span>
+
+                                {/* Identity header */}
+                                <div className="px-6 sm:px-8 pt-5 sm:pt-7 pb-6 border-b border-white/[0.06]">
+                                    <div className="flex items-start gap-4">
+                                        {/* Avatar */}
+                                        <div className={`
+                                            w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br ${getAvatarColor(selectedGuest.empresa)}
+                                            flex items-center justify-center border border-white/10 shrink-0
+                                            shadow-[0_8px_30px_rgba(0,0,0,0.4)]
+                                        `}>
+                                            <span className="text-xl font-black text-white">{getInitials(selectedGuest.nombre)}</span>
+                                        </div>
+
+                                        <div className="flex-1 min-w-0 pt-0.5">
+                                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em]">Verificación de Acceso</span>
+                                                {selectedGuest.isVIP && (
+                                                    <span className="px-2 py-0.5 bg-amber-500/15 border border-amber-500/30 rounded-full text-[9px] font-black text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                                                        <Crown className="w-2.5 h-2.5" /> VIP
+                                                    </span>
+                                                )}
+                                                {selectedGuest.status === 'cleared' && (
+                                                    <span className="px-2 py-0.5 bg-emerald-500/15 border border-emerald-500/30 rounded-full text-[9px] font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+                                                        <CheckCircle2 className="w-2.5 h-2.5" /> Confirmado
+                                                    </span>
+                                                )}
                                             </div>
-                                        )}
+                                            <input
+                                                value={formData.nombre}
+                                                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                                                className="text-xl sm:text-2xl font-black uppercase tracking-tight bg-transparent outline-none border-b-2 border-transparent focus:border-emerald-500/50 transition-all pb-0.5 w-full truncate"
+                                                placeholder="Nombre del invitado"
+                                            />
+                                            <div className="flex items-center gap-2 mt-1.5">
+                                                {getMesaIcon(selectedGuest.mesa, "w-3.5 h-3.5")}
+                                                <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Mesa {selectedGuest.mesa}</span>
+                                                <span className="text-zinc-800">·</span>
+                                                <span className="text-xs font-semibold text-zinc-600">{formData.empresa || selectedGuest.empresa}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Zona de Datos Inteligentes */}
-                                <div className="p-14 lg:p-20 space-y-16">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-14">
-                                        <div className="space-y-10">
-                                            <div className="space-y-4">
-                                                <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest flex items-center gap-3">Identificador Digital <Mail className="w-4 h-4" /></label>
-                                                <div className="relative group">
-                                                    <div className="absolute left-7 top-1/2 -translate-y-1/2 text-xl font-black text-gray-700 group-focus-within:text-emerald-500 transition-colors">@</div>
-                                                    <input 
-                                                        placeholder="mail@dominio.com" value={formData.correo} 
-                                                        onChange={(e) => setFormData({...formData, correo: e.target.value})}
-                                                        className="w-full h-24 bg-white/[0.02] border border-white/10 rounded-[2.5rem] pl-16 pr-10 font-black text-2xl outline-none focus:border-emerald-500/50 shadow-inner"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-4">
-                                                <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Organización Validada</label>
-                                                <div className="relative">
-                                                    <Building2 className="absolute left-7 top-1/2 -translate-y-1/2 w-8 h-8 text-gray-700" />
-                                                    <input 
-                                                        value={formData.empresa} onChange={(e) => setFormData({...formData, empresa: e.target.value})}
-                                                        className="w-full h-24 bg-white/[0.02] border border-white/10 rounded-[2.5rem] pl-20 pr-10 font-black text-2xl outline-none focus:border-emerald-500/50 shadow-inner"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-10">
-                                            <div className="space-y-4">
-                                                <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Enlace Móvil (WhatsApp)</label>
-                                                <div className="relative group">
-                                                    <Phone className="absolute left-7 top-1/2 -translate-y-1/2 w-8 h-8 text-gray-700 group-focus-within:text-emerald-500 transition-colors" />
-                                                    <input 
-                                                        placeholder="849-000-0000" value={formData.telefono} 
-                                                        onChange={(e) => setFormData({...formData, telefono: e.target.value})}
-                                                        className="w-full h-24 bg-white/[0.02] border border-white/10 rounded-[2.5rem] pl-20 pr-10 font-black text-2xl outline-none focus:border-emerald-500/50 shadow-inner"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-4">
-                                                <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Rol de Estrategia</label>
-                                                <div className="relative">
-                                                    <Briefcase className="absolute left-7 top-1/2 -translate-y-1/2 w-8 h-8 text-gray-700" />
-                                                    <select 
-                                                        value={formData.rol} onChange={(e) => setFormData({...formData, rol: e.target.value})}
-                                                        className="w-full h-24 bg-white/[0.02] border border-white/10 rounded-[2.5rem] pl-20 pr-10 font-black text-2xl outline-none focus:border-emerald-500/50 appearance-none italic shadow-inner"
-                                                    >
-                                                        {ROLES_ESTRATEGICOS.map(r => <option key={r} value={r} className="bg-[#05080f] text-white">{r}</option>)}
-                                                    </select>
-                                                </div>
-                                            </div>
+                                {/* Form fields */}
+                                <div className="px-6 sm:px-8 py-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {/* Email */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-1.5">
+                                            <Mail className="w-3 h-3" /> Correo electrónico
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                type="email"
+                                                placeholder="nombre@empresa.com"
+                                                value={formData.correo}
+                                                onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
+                                                className="w-full h-12 bg-white/[0.03] border border-white/[0.07] focus:border-emerald-500/40 rounded-xl px-4 text-sm font-semibold outline-none transition-all"
+                                            />
                                         </div>
                                     </div>
 
-                                    {/* Mando de Mesa Consolidado */}
-                                    <div className="p-14 bg-emerald-500/[0.03] rounded-[4rem] border border-emerald-500/10 flex items-center justify-between shadow-2xl relative group/mesa">
-                                        <div className="absolute top-4 right-4"><Maximize2 className="w-4 h-4 text-emerald-500/20 group-hover/mesa:text-emerald-500 transition-colors" /></div>
-                                        <div className="flex items-center gap-10">
-                                            <div className="w-24 h-24 bg-emerald-600/10 rounded-[2rem] flex items-center justify-center border border-emerald-500/20 shadow-2xl group-hover/mesa:scale-110 transition-transform">{getIcon(selectedGuest.mesa)}</div>
+                                    {/* Company */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-1.5">
+                                            <Building2 className="w-3 h-3" /> Organización
+                                        </label>
+                                        <input
+                                            value={formData.empresa}
+                                            onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
+                                            className="w-full h-12 bg-white/[0.03] border border-white/[0.07] focus:border-emerald-500/40 rounded-xl px-4 text-sm font-semibold outline-none transition-all"
+                                        />
+                                    </div>
+
+                                    {/* Phone */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-1.5">
+                                            <Phone className="w-3 h-3" /> Teléfono
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            placeholder="849-000-0000"
+                                            value={formData.telefono}
+                                            onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                                            className="w-full h-12 bg-white/[0.03] border border-white/[0.07] focus:border-emerald-500/40 rounded-xl px-4 text-sm font-semibold outline-none transition-all"
+                                        />
+                                    </div>
+
+                                    {/* Role */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-1.5">
+                                            <Briefcase className="w-3 h-3" /> Rol
+                                        </label>
+                                        <div className="relative">
+                                            <select
+                                                value={formData.rol}
+                                                onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
+                                                className="w-full h-12 bg-white/[0.03] border border-white/[0.07] focus:border-emerald-500/40 rounded-xl px-4 text-sm font-semibold outline-none appearance-none transition-all"
+                                            >
+                                                {ROLES_ESTRATEGICOS.map(r => <option key={r} value={r} className="bg-[#06090f]">{r}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Mesa control */}
+                                <div className="px-6 sm:px-8 pb-6">
+                                    <div className="p-4 bg-white/[0.02] rounded-2xl border border-white/[0.06] flex items-center justify-between gap-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center">
+                                                {getMesaIcon(selectedGuest.mesa)}
+                                            </div>
                                             <div>
-                                                <span className="text-[12px] font-black text-emerald-600 uppercase tracking-[0.6em] italic">Configuración_Mesa (1-14)</span>
+                                                <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-0.5">Mesa asignada</div>
                                                 {!isEditingMesa ? (
-                                                    <p className="text-7xl font-black text-emerald-500 tracking-tighter">MESA {selectedGuest.mesa}</p>
+                                                    <span className="text-2xl font-black text-emerald-400 tracking-tighter">#{selectedGuest.mesa}</span>
                                                 ) : (
-                                                    <div className="flex items-center gap-8 mt-5">
-                                                        <input 
-                                                            autoFocus type="number" min="1" max="14" value={tempMesa} 
+                                                    <div className="flex items-center gap-2">
+                                                        <input
+                                                            autoFocus
+                                                            type="number" min="1" max="14"
+                                                            value={tempMesa}
                                                             onChange={(e) => setTempMesa(e.target.value)}
-                                                            className="bg-white/10 border-4 border-emerald-500 rounded-3xl px-8 py-5 text-5xl font-black w-36 outline-none text-center shadow-[0_0_50px_#10b98150]"
+                                                            className="bg-white/10 border-2 border-emerald-500 rounded-lg px-2 py-1 text-lg font-black w-16 outline-none text-center"
                                                         />
-                                                        <button onClick={() => handleMesaUpdate(selectedGuest.id, tempMesa)} className="bg-emerald-600 px-10 py-6 rounded-3xl font-black uppercase text-base tracking-[0.2em] hover:bg-emerald-500 shadow-xl transition-all">SINC_MESA</button>
+                                                        <button
+                                                            onClick={() => handleMesaUpdate(selectedGuest.id, tempMesa)}
+                                                            className="px-3 py-1 bg-emerald-600 rounded-lg text-xs font-black uppercase tracking-wider hover:bg-emerald-500 transition-all"
+                                                        >
+                                                            OK
+                                                        </button>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
-                                        <button 
-                                            onClick={() => { setTempMesa(selectedGuest.mesa); setIsEditingMesa(!isEditingMesa); }} 
-                                            className="w-28 h-28 bg-emerald-600 rounded-[3rem] flex items-center justify-center shadow-[0_20px_50px_#10b98140] active:scale-90 transition-all hover:scale-105 border border-white/20"
+                                        <button
+                                            onClick={() => { setTempMesa(selectedGuest.mesa); setIsEditingMesa(!isEditingMesa); }}
+                                            className="px-4 py-2 bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.07] rounded-xl text-xs font-bold text-zinc-500 hover:text-white transition-all"
                                         >
-                                            {isEditingMesa ? <X className="w-12 h-12 text-white" /> : <Layers className="w-12 h-12 text-white" />}
+                                            {isEditingMesa ? 'Cancelar' : 'Cambiar'}
                                         </button>
                                     </div>
                                 </div>
+
+                                {/* ── VINCULAR SECTION ────────────────────────────────── */}
+                                <div className="px-6 sm:px-8 pb-6">
+                                    <button
+                                        onClick={() => setShowVincular(!showVincular)}
+                                        className={`
+                                            w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-all
+                                            ${showVincular
+                                                ? 'border-violet-500/30 bg-violet-500/[0.06]'
+                                                : 'border-white/[0.06] bg-white/[0.02] hover:border-white/[0.1]'
+                                            }
+                                        `}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${showVincular ? 'bg-violet-500/20' : 'bg-white/[0.04]'}`}>
+                                                <LinkIcon className={`w-4 h-4 ${showVincular ? 'text-violet-400' : 'text-zinc-600'}`} />
+                                            </div>
+                                            <div className="text-left">
+                                                <div className={`text-sm font-bold ${showVincular ? 'text-violet-300' : 'text-zinc-400'}`}>Vincular Empresa</div>
+                                                <div className="text-[10px] text-zinc-700">Crear conexión B2B con otra organización</div>
+                                            </div>
+                                        </div>
+                                        <ChevronRight className={`w-4 h-4 transition-transform ${showVincular ? 'rotate-90 text-violet-400' : 'text-zinc-700'}`} />
+                                    </button>
+
+                                    <AnimatePresence>
+                                        {showVincular && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: 'auto' }}
+                                                exit={{ opacity: 0, height: 0 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="overflow-hidden"
+                                            >
+                                                <div className="mt-3 p-4 bg-violet-500/[0.04] rounded-2xl border border-violet-500/20 space-y-3">
+                                                    {vincularStatus === 'success' ? (
+                                                        <div className="flex flex-col items-center py-4 gap-3 text-center">
+                                                            <CheckCircle2 className="w-10 h-10 text-violet-400" />
+                                                            <p className="text-sm font-bold text-violet-300">¡Conexión registrada!</p>
+                                                            <p className="text-xs text-zinc-600">La relación entre empresas ha sido guardada en el sistema.</p>
+                                                            <button onClick={() => { setVincularStatus('idle'); setVincularForm({ empresaDestino: "", tipo: "socio", notas: "" }); }} className="text-xs text-zinc-600 hover:text-white underline">Nueva conexión</button>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <div>
+                                                                <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest block mb-1.5">Empresa origen</label>
+                                                                <div className="h-10 bg-white/[0.03] rounded-xl border border-white/[0.06] px-3 flex items-center text-sm font-semibold text-zinc-400">
+                                                                    {formData.empresa || selectedGuest.empresa}
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest block mb-1.5">Conectar con empresa</label>
+                                                                <input
+                                                                    value={vincularForm.empresaDestino}
+                                                                    onChange={(e) => setVincularForm({ ...vincularForm, empresaDestino: e.target.value })}
+                                                                    placeholder="Nombre de la empresa destino"
+                                                                    className="w-full h-10 bg-white/[0.03] border border-white/[0.07] focus:border-violet-500/40 rounded-xl px-3 text-sm font-semibold outline-none transition-all"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest block mb-1.5">Tipo de relación</label>
+                                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                                                                    {TIPOS_RELACION.map(t => (
+                                                                        <button
+                                                                            key={t.value}
+                                                                            onClick={() => setVincularForm({ ...vincularForm, tipo: t.value })}
+                                                                            className={`py-2 px-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${vincularForm.tipo === t.value ? 'bg-violet-600 text-white shadow-[0_0_10px_rgba(139,92,246,0.3)]' : 'bg-white/[0.03] border border-white/[0.06] text-zinc-600 hover:text-zinc-300'}`}
+                                                                        >
+                                                                            {t.label}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={handleVincular}
+                                                                disabled={!vincularForm.empresaDestino || vincularStatus === 'loading'}
+                                                                className="w-full h-11 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-black text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                                                            >
+                                                                {vincularStatus === 'loading' ? (
+                                                                    <><RefreshCw className="w-4 h-4 animate-spin" /> Registrando...</>
+                                                                ) : (
+                                                                    <><LinkIcon className="w-4 h-4" /> Crear Conexión</>
+                                                                )}
+                                                            </button>
+                                                            {vincularStatus === 'error' && (
+                                                                <p className="text-xs text-red-400 text-center">Error al crear la conexión. Intente nuevamente.</p>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+
                             </div>
 
-                            {/* Acciones Maestras */}
-                            <div className="p-14 lg:p-20 bg-white/[0.01] border-t border-white/5 flex flex-col sm:flex-row gap-12 items-center justify-between mt-auto">
-                                <button onClick={() => { setSelectedGuest(null); setStatus('idle'); }} className="text-[13px] font-black text-gray-700 hover:text-white tracking-[0.8em] uppercase transition-all italic">Abortar_Registro</button>
-                                <button onClick={handleGrantAccess} className="w-full sm:w-auto px-16 py-10 bg-emerald-600 rounded-[3rem] text-white font-black uppercase tracking-[0.2em] shadow-[0_0_100px_#10b98140] hover:bg-emerald-500 active:scale-95 transition-all text-3xl flex items-center justify-center gap-6 group">
-                                    CONCEDER ACCESO <ChevronRight className="w-10 h-10 group-hover:translate-x-2 transition-transform" />
+                            {/* ── ACTION FOOTER ────────────────────────────────── */}
+                            <div className="px-6 sm:px-8 py-5 bg-white/[0.01] border-t border-white/[0.05] flex items-center justify-between gap-4 shrink-0">
+                                <button
+                                    onClick={closeModal}
+                                    className="text-xs font-bold text-zinc-700 hover:text-zinc-400 uppercase tracking-widest transition-all"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleGrantAccess}
+                                    disabled={selectedGuest.status === 'cleared' || status === 'loading'}
+                                    className={`
+                                        flex items-center gap-2.5 px-7 py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider
+                                        transition-all active:scale-[0.97] shadow-[0_0_30px_rgba(16,185,129,0.25)]
+                                        ${selectedGuest.status === 'cleared'
+                                            ? 'bg-emerald-900/50 text-emerald-500 border border-emerald-500/30 cursor-default'
+                                            : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                                        }
+                                    `}
+                                >
+                                    {selectedGuest.status === 'cleared' ? (
+                                        <><CheckCircle2 className="w-4 h-4" /> Acceso confirmado</>
+                                    ) : status === 'loading' ? (
+                                        <><RefreshCw className="w-4 h-4 animate-spin" /> Procesando...</>
+                                    ) : (
+                                        <>Confirmar acceso <ArrowRight className="w-4 h-4" /></>
+                                    )}
                                 </button>
                             </div>
 
-                            {/* HUD de Estado de Red JairoOS */}
+                            {/* ── STATUS OVERLAY ───────────────────────────────── */}
                             <AnimatePresence>
-                                {status !== 'idle' && (
-                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-[150] bg-[#05080f]/99 flex flex-col items-center justify-center p-16 text-center">
+                                {(status === 'loading' || status === 'success') && (
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="absolute inset-0 bg-[#06090f]/95 backdrop-blur-sm flex flex-col items-center justify-center z-50 rounded-t-3xl sm:rounded-3xl"
+                                    >
                                         {status === 'loading' && (
-                                            <div className="space-y-16">
-                                                <div className="relative">
-                                                    <div className="w-64 h-64 border-[15px] border-emerald-500/10 border-t-emerald-500 rounded-full animate-spin mx-auto shadow-[0_0_100px_#10b98110]" />
-                                                    <div className="absolute inset-0 flex items-center justify-center"><Fingerprint className="w-24 h-24 text-emerald-500/20 animate-pulse" /></div>
+                                            <div className="flex flex-col items-center gap-6">
+                                                <div className="relative w-20 h-20">
+                                                    <div className="absolute inset-0 rounded-full border-4 border-emerald-500/10 border-t-emerald-500 animate-spin" />
+                                                    <Fingerprint className="absolute inset-0 m-auto w-8 h-8 text-emerald-500/40 animate-pulse" />
                                                 </div>
-                                                <p className="text-5xl font-black uppercase tracking-tighter animate-pulse text-emerald-500 italic">Sincronizando con Stack Central_2026...</p>
+                                                <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-500">Sincronizando...</p>
                                             </div>
                                         )}
                                         {status === 'success' && (
-                                            <div className="space-y-16">
-                                                <div className="w-56 h-56 bg-emerald-500 rounded-[4.5rem] flex items-center justify-center mx-auto shadow-[0_0_150px_#10b981]"><CheckCircle2 className="w-28 h-28 text-white" /></div>
-                                                <p className="text-[10rem] font-black text-emerald-500 tracking-tighter leading-none">VALIDADO</p>
-                                                <p className="text-3xl font-bold italic text-gray-500 uppercase tracking-[0.3em] mt-10">Nodo Sincronizado Correctamente</p>
-                                            </div>
-                                        )}
-                                        {status === 'error' && (
-                                            <div className="space-y-16">
-                                                <div className="w-40 h-40 bg-red-500/10 border-4 border-red-500/50 rounded-[4rem] flex items-center justify-center mx-auto shadow-[0_0_100px_#ef444410]"><WifiOff className="w-20 h-20 text-red-500" /></div>
-                                                <p className="text-7xl font-black text-red-500 tracking-tighter uppercase leading-none">Fallo_de_Red</p>
-                                                <div className="bg-red-500/5 p-12 rounded-[3rem] border border-red-500/10 max-w-xl mx-auto shadow-inner">
-                                                    <p className="text-lg font-bold text-gray-500 mb-10 leading-relaxed italic">El Stack Central no responde. Por favor, verifica la conexión estratégica en el VPS de Producción.</p>
-                                                    <button onClick={() => setStatus('idle')} className="w-full py-8 bg-red-500 text-white font-black uppercase tracking-[0.4em] rounded-[2rem] flex items-center justify-center gap-5 active:scale-95 transition-all text-xl shadow-2xl hover:bg-red-600">
-                                                        <RefreshCw className="w-7 h-7" /> REINTENTAR_SINC
-                                                    </button>
+                                            <motion.div
+                                                initial={{ scale: 0.8 }}
+                                                animate={{ scale: 1 }}
+                                                className="flex flex-col items-center gap-6"
+                                            >
+                                                <div className="w-20 h-20 bg-emerald-500 rounded-3xl flex items-center justify-center shadow-[0_0_60px_rgba(16,185,129,0.6)]">
+                                                    <CheckCircle2 className="w-10 h-10 text-white" />
                                                 </div>
-                                            </div>
+                                                <div className="text-center">
+                                                    <p className="text-4xl sm:text-5xl font-black text-emerald-400 tracking-tighter">ACCESO CONFIRMADO</p>
+                                                    <p className="text-sm text-zinc-600 mt-2 font-semibold">{formData.nombre}</p>
+                                                </div>
+                                            </motion.div>
                                         )}
                                     </motion.div>
                                 )}
                             </AnimatePresence>
+
                         </motion.div>
                     </div>
                 )}
             </AnimatePresence>
 
             <style jsx global>{`
-                .custom-scrollbar::-webkit-scrollbar { width: 5px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.2); border-radius: 20px; }
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.15); border-radius: 20px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(16,185,129,0.3); }
                 select { -webkit-appearance: none; appearance: none; }
-                input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-                @font-face {
-                    font-family: 'Outfit';
-                    src: url('https://fonts.googleapis.com/css2?family=Outfit:wght@900&display=swap');
-                }
+                input[type="number"]::-webkit-inner-spin-button,
+                input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
             `}</style>
         </div>
     );
