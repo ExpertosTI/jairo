@@ -209,8 +209,8 @@ export default function RecepcionCommandCenter() {
                     eventId: EVENT_ID,
                     guestId: Number(selectedGuest.id),
                     metadata: {
-                        name: formData.nombre,
-                        company: formData.empresa,
+                        nombre: formData.nombre,
+                        empresa: formData.empresa,
                         email: formData.correo,
                         mesa: selectedGuest.mesa,
                         timestamp: new Date().toISOString()
